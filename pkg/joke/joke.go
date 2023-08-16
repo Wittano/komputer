@@ -1,7 +1,15 @@
 package joke
 
-import "github.com/wittano/komputer/internal"
+type JokeCategory interface {
+	Category() string
+}
 
-type JokeMapper interface {
-	ToJoke() (internal.Joke, error)
+type Joke interface {
+	JokeCategory
+	Content() string
+}
+
+type JokeTwoParts interface {
+	JokeCategory
+	ContentTwoPart() (string, string)
 }

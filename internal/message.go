@@ -3,22 +3,9 @@ package internal
 import (
 	"fmt"
 	"github.com/bwmarrin/discordgo"
+	"github.com/wittano/komputer/pkg/joke"
 	"log"
 )
-
-type JokeCategory interface {
-	Category() string
-}
-
-type Joke interface {
-	JokeCategory
-	Content() string
-}
-
-type JokeTwoParts interface {
-	JokeCategory
-	ContentTwoPart() (string, string)
-}
 
 type messageComponentHandler func(s *discordgo.Session, i *discordgo.InteractionCreate)
 
@@ -55,7 +42,7 @@ func sendMessage(msg string, s *discordgo.Session, i *discordgo.InteractionCreat
 	}
 }
 
-func CreateJokeMessage(username string, joke Joke) *discordgo.InteractionResponseData {
+func CreateJokeMessage(username string, joke joke.Joke) *discordgo.InteractionResponseData {
 	return &discordgo.InteractionResponseData{
 		Content:    fmt.Sprintf("BEEP BOOP, Yes my captin %s!", username),
 		Components: createButtonReactions(),
@@ -79,7 +66,7 @@ func CreateJokeMessage(username string, joke Joke) *discordgo.InteractionRespons
 	}
 }
 
-func CreateTwoPartJokeMessage(username string, joke JokeTwoParts) *discordgo.InteractionResponseData {
+func CreateTwoPartJokeMessage(username string, joke joke.JokeTwoParts) *discordgo.InteractionResponseData {
 	question, answer := joke.ContentTwoPart()
 
 	return &discordgo.InteractionResponseData{
