@@ -14,10 +14,10 @@ var WelcomeCommand = DiscordCommand{
 		GuildID:     os.Getenv("SERVER_GUID"),
 		Type:        discordgo.ChatApplicationCommand,
 	},
-	Execute: execute,
+	Execute: executeWelcomeCommand,
 }
 
-func execute(s *discordgo.Session, i *discordgo.InteractionCreate) {
+func executeWelcomeCommand(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{

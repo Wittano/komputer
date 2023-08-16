@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"github.com/joho/godotenv"
+	"github.com/wittano/komputer/internal"
 	"github.com/wittano/komputer/pkg/command"
 	"log"
 	"os"
@@ -13,7 +14,8 @@ import (
 var (
 	bot      *discordgo.Session
 	commands = map[string]command.DiscordCommand{
-		command.WeclomeCommand.Command.Name: command.WeclomeCommand,
+		command.WelcomeCommand.Command.Name: command.WelcomeCommand,
+		command.JokeCommand.Command.Name:    command.JokeCommand,
 	}
 )
 
@@ -34,6 +36,13 @@ func init() {
 
 func init() {
 	bot.AddHandler(func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+		if i.Type == discordgo.InteractionMessageComponent {
+			if handler, ok := internal.JokeMessageComponentHandler[i.Data.(discordgo.MessageComponentInteractionData).CustomID]; ok {
+				handler(s, i)
+				return
+			}
+		}
+
 		if c, ok := commands[i.ApplicationCommandData().Name]; ok {
 			c.Execute(s, i)
 		}
