@@ -1,12 +1,15 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
+	"github.com/google/uuid"
 	"github.com/joho/godotenv"
+	zerolog "github.com/rs/zerolog/log"
 	"github.com/wittano/komputer/internal"
+	"github.com/wittano/komputer/internal/log"
 	"github.com/wittano/komputer/pkg/command"
-	"log"
 	"os"
 	"os/signal"
 )
@@ -36,15 +39,19 @@ func init() {
 
 func init() {
 	bot.AddHandler(func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+		ctx := context.WithValue(context.Background(), "traceID", uuid.New().String())
+
 		if i.Type == discordgo.InteractionMessageComponent {
 			if handler, ok := internal.JokeMessageComponentHandler[i.Data.(discordgo.MessageComponentInteractionData).CustomID]; ok {
-				handler(s, i)
+				log.Info(ctx, fmt.Sprintf("User %s execute message component action '%s'", i.Member.User.ID, i.Data.(discordgo.MessageComponentInteractionData).CustomID))
+				handler(ctx, s, i)
 				return
 			}
 		}
 
 		if c, ok := commands[i.ApplicationCommandData().Name]; ok {
-			c.Execute(s, i)
+			log.Info(ctx, fmt.Sprintf("User %s execute slash command '%s'", i.Member.User.ID, i.ApplicationCommandData().Name))
+			c.Execute(ctx, s, i)
 		}
 	})
 }
@@ -58,7 +65,7 @@ func init() {
 			os.Getenv("SERVER_GUID"),
 			&c.Command,
 		); err != nil {
-			log.Print(err)
+			zerolog.Err(err).Msg("Registration slash command failed")
 		}
 	}
 }
@@ -66,7 +73,7 @@ func init() {
 func checkEnvVariables(vars ...string) {
 	for _, v := range vars {
 		if _, ok := os.LookupEnv(v); !ok {
-			log.Fatalf("Missing %s varaiable", v)
+			zerolog.Fatal().Msg(fmt.Sprintf("Missing %s varaiable", v))
 		}
 	}
 }
@@ -77,6 +84,6 @@ func main() {
 
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt)
-	log.Print("Bot is ready!. Press Ctrl+C to exit")
+	zerolog.Info().Msg("Bot is ready!. Press Ctrl+C to exit")
 	<-stop
 }

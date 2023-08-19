@@ -1,13 +1,14 @@
 package internal
 
 import (
+	"context"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"github.com/wittano/komputer/pkg/joke"
 	"log"
 )
 
-type messageComponentHandler func(s *discordgo.Session, i *discordgo.InteractionCreate)
+type messageComponentHandler func(ctx context.Context, s *discordgo.Session, i *discordgo.InteractionCreate)
 
 const (
 	PleaseButtonId = "ApologiesButtonId"
@@ -21,11 +22,11 @@ var (
 	}
 )
 
-func funnyMe(s *discordgo.Session, i *discordgo.InteractionCreate) {
+func funnyMe(_ context.Context, s *discordgo.Session, i *discordgo.InteractionCreate) {
 	sendMessage("Funny", s, i)
 }
 
-func apologiseMe(s *discordgo.Session, i *discordgo.InteractionCreate) {
+func apologiseMe(_ context.Context, s *discordgo.Session, i *discordgo.InteractionCreate) {
 	sendMessage("Przepraszam", s, i)
 }
 
@@ -50,7 +51,7 @@ func CreateJokeMessage(username string, joke joke.Joke) *discordgo.InteractionRe
 			{
 				Type:        discordgo.EmbedTypeRich,
 				Title:       "Joke",
-				Description: joke.Content(),
+				Description: joke.Content(), // TODO Add handling when content is empty
 				Color:       0x02f5f5,
 				Author: &discordgo.MessageEmbedAuthor{
 					Name: "komputer",

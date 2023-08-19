@@ -1,16 +1,20 @@
 package jokedev
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
+	zerolog "github.com/rs/zerolog/log"
 	"github.com/wittano/komputer/internal"
 	"io"
-	"log"
 	"math/rand"
+	"net/url"
+	"strings"
 )
 
 type JokeApiDev struct {
 	category JokeType
+	ctx      context.Context
 }
 
 type jokeApiFlags struct {
@@ -65,8 +69,9 @@ const (
 	ANY         JokeType = "Any"
 )
 
-func New(category JokeType) JokeApiDev {
+func New(ctx context.Context, category JokeType) JokeApiDev {
 	return JokeApiDev{
+		ctx:      ctx,
 		category: category,
 	}
 }
@@ -89,7 +94,11 @@ func (j JokeApiDev) Content() string {
 
 	joke, err := j.getSingleJoke()
 	if err != nil {
-		log.Print(err)
+		zerolog.Error().
+			Str("traceID", j.ctx.Value("traceID").(string)).
+			Str("url", err.(*url.Error).URL).
+			Str("Method", strings.ToUpper(err.(*url.Error).Op)).
+			Msg(err.Error())
 		return ""
 	}
 
@@ -101,7 +110,11 @@ func (j JokeApiDev) Content() string {
 func (j JokeApiDev) ContentTwoPart() (string, string) {
 	joke, err := j.getTwoPartJoke()
 	if err != nil {
-		log.Print(err)
+		zerolog.Error().
+			Str("traceID", j.ctx.Value("traceID").(string)).
+			Str("url", err.(*url.Error).URL).
+			Str("Method", strings.ToUpper(err.(*url.Error).Op)).
+			Msg(err.Error())
 		return "", ""
 	}
 
@@ -128,22 +141,21 @@ func (j JokeApiDev) getSingleJoke() (joke jokeApiSingleResponse, err error) {
 	return jokeRes, err
 }
 
-func (j JokeApiDev) getTwoPartJoke() (jokeApiTwoPartResponse, error) {
+func (j JokeApiDev) getTwoPartJoke() (joke jokeApiTwoPartResponse, err error) {
 	res, err := internal.Client.Get(fmt.Sprintf("https://v2.jokeapi.dev/joke/%s?type=%s", j.category, TwoPart))
 	if err != nil {
-		return jokeApiTwoPartResponse{}, err
+		return
 	}
 	defer res.Body.Close()
 
 	resBody, err := io.ReadAll(res.Body)
 	if err != nil {
-		return jokeApiTwoPartResponse{}, err
+		return
 	}
 
-	var jokeRes jokeApiTwoPartResponse
-	err = json.Unmarshal(resBody, &jokeRes)
+	err = json.Unmarshal(resBody, &joke)
 
-	return jokeRes, err
+	return joke, err
 }
 
 func yoMommaJoke() string {

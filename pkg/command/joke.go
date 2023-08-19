@@ -1,10 +1,12 @@
 package command
 
 import (
+	"context"
+	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"github.com/wittano/komputer/internal"
+	"github.com/wittano/komputer/internal/log"
 	"github.com/wittano/komputer/pkg/joke/jokedev"
-	"log"
 	"os"
 )
 
@@ -67,7 +69,7 @@ var JokeCommand = DiscordCommand{
 	Execute: executeJokeCommand,
 }
 
-func executeJokeCommand(s *discordgo.Session, i *discordgo.InteractionCreate) {
+func executeJokeCommand(ctx context.Context, s *discordgo.Session, i *discordgo.InteractionCreate) {
 	category := jokedev.ANY
 	jokeType := jokedev.Single
 
@@ -77,10 +79,12 @@ func executeJokeCommand(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			category = jokedev.JokeType(o.Value.(string))
 		case "type":
 			jokeType = jokedev.JokeStructureType(o.Value.(string))
+		default:
+			log.Warn(ctx, fmt.Sprintf("Invalid option for %s", o.Name))
 		}
 	}
 
-	joke := jokedev.New(category)
+	joke := jokedev.New(ctx, category)
 
 	var msg *discordgo.InteractionResponseData
 
@@ -97,6 +101,6 @@ func executeJokeCommand(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	})
 
 	if err != nil {
-		log.Print(err)
+		log.Error(ctx, "Failed to send response", err)
 	}
 }

@@ -1,9 +1,10 @@
 package command
 
 import (
+	"context"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
-	"log"
+	zerolog "github.com/rs/zerolog/log"
 	"os"
 )
 
@@ -17,7 +18,7 @@ var WelcomeCommand = DiscordCommand{
 	Execute: executeWelcomeCommand,
 }
 
-func executeWelcomeCommand(s *discordgo.Session, i *discordgo.InteractionCreate) {
+func executeWelcomeCommand(ctx context.Context, s *discordgo.Session, i *discordgo.InteractionCreate) {
 	err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{
@@ -26,6 +27,6 @@ func executeWelcomeCommand(s *discordgo.Session, i *discordgo.InteractionCreate)
 	})
 
 	if err != nil {
-		log.Print(err)
+		zerolog.Err(err).Ctx(ctx).Str("traceID", ctx.Value("traceID").(string)).Msg("Failed send response message")
 	}
 }

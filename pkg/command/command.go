@@ -1,8 +1,11 @@
 package command
 
-import "github.com/bwmarrin/discordgo"
+import (
+	"context"
+	"github.com/bwmarrin/discordgo"
+)
 
-type discordHandler func(s *discordgo.Session, i *discordgo.InteractionCreate)
+type discordHandler func(ctx context.Context, s *discordgo.Session, i *discordgo.InteractionCreate)
 
 type DiscordCommand struct {
 	Command discordgo.ApplicationCommand
