@@ -44,6 +44,11 @@ func sendMessage(msg string, s *discordgo.Session, i *discordgo.InteractionCreat
 }
 
 func CreateJokeMessage(username string, joke joke.Joke) *discordgo.InteractionResponseData {
+	content, err := joke.Content()
+	if err != nil {
+		return createErrorMsg()
+	}
+
 	return &discordgo.InteractionResponseData{
 		Content:    fmt.Sprintf("BEEP BOOP, Yes my captin %s!", username),
 		Components: createButtonReactions(),
@@ -51,7 +56,7 @@ func CreateJokeMessage(username string, joke joke.Joke) *discordgo.InteractionRe
 			{
 				Type:        discordgo.EmbedTypeRich,
 				Title:       "Joke",
-				Description: joke.Content(), // TODO Add handling when content is empty
+				Description: content,
 				Color:       0x02f5f5,
 				Author: &discordgo.MessageEmbedAuthor{
 					Name: "komputer",
@@ -68,7 +73,10 @@ func CreateJokeMessage(username string, joke joke.Joke) *discordgo.InteractionRe
 }
 
 func CreateTwoPartJokeMessage(username string, joke joke.JokeTwoParts) *discordgo.InteractionResponseData {
-	question, answer := joke.ContentTwoPart()
+	question, answer, err := joke.ContentTwoPart()
+	if err != nil {
+		return createErrorMsg()
+	}
 
 	return &discordgo.InteractionResponseData{
 		Content:    fmt.Sprintf("BEEP BOOP, Yes my captin %s!", username),
@@ -100,6 +108,10 @@ func CreateTwoPartJokeMessage(username string, joke joke.JokeTwoParts) *discordg
 			},
 		},
 	}
+}
+
+func createErrorMsg() *discordgo.InteractionResponseData {
+	return &discordgo.InteractionResponseData{Content: fmt.Sprintf("BEEP BOOM. Something went wrong :(")}
 }
 
 func createButtonReactions() []discordgo.MessageComponent {

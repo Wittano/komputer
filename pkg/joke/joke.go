@@ -6,10 +6,10 @@ type JokeCategory interface {
 
 type Joke interface {
 	JokeCategory
-	Content() string
+	Content() (string, error)
 }
 
 type JokeTwoParts interface {
 	JokeCategory
-	ContentTwoPart() (string, string)
+	ContentTwoPart() (string, string, error)
 }

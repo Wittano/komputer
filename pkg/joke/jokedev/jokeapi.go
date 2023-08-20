@@ -80,7 +80,7 @@ func (j JokeApiDev) Category() string {
 	return string(j.category)
 }
 
-func (j JokeApiDev) Content() string {
+func (j JokeApiDev) Content() (string, error) {
 	specialJoke := yoMommaJoke()
 
 	var joke jokeApiSingleResponse
@@ -99,15 +99,15 @@ func (j JokeApiDev) Content() string {
 			Str("url", err.(*url.Error).URL).
 			Str("Method", strings.ToUpper(err.(*url.Error).Op)).
 			Msg(err.Error())
-		return ""
+		return "", err
 	}
 
 	j.category = JokeType(joke.Category)
 
-	return joke.Joke
+	return joke.Joke, nil
 }
 
-func (j JokeApiDev) ContentTwoPart() (string, string) {
+func (j JokeApiDev) ContentTwoPart() (string, string, error) {
 	joke, err := j.getTwoPartJoke()
 	if err != nil {
 		zerolog.Error().
@@ -115,12 +115,12 @@ func (j JokeApiDev) ContentTwoPart() (string, string) {
 			Str("url", err.(*url.Error).URL).
 			Str("Method", strings.ToUpper(err.(*url.Error).Op)).
 			Msg(err.Error())
-		return "", ""
+		return "", "", err
 	}
 
 	j.category = JokeType(joke.Category)
 
-	return joke.Setup, joke.Delivery
+	return joke.Setup, joke.Delivery, nil
 }
 
 func (j JokeApiDev) getSingleJoke() (joke jokeApiSingleResponse, err error) {
