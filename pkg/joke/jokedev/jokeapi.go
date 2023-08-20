@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	zerolog "github.com/rs/zerolog/log"
-	"github.com/wittano/komputer/internal"
+	joke2 "github.com/wittano/komputer/pkg/joke"
 	"io"
 	"math/rand"
 	"net/url"
@@ -124,7 +124,7 @@ func (j JokeApiDev) ContentTwoPart() (string, string, error) {
 }
 
 func (j JokeApiDev) getSingleJoke() (joke jokeApiSingleResponse, err error) {
-	res, err := internal.Client.Get(fmt.Sprintf("https://v2.jokeapi.dev/joke/%s?type=%s", j.category, Single))
+	res, err := joke2.Client.Get(fmt.Sprintf("https://v2.jokeapi.dev/joke/%s?type=%s", j.category, Single))
 	if err != nil {
 		return
 	}
@@ -142,7 +142,7 @@ func (j JokeApiDev) getSingleJoke() (joke jokeApiSingleResponse, err error) {
 }
 
 func (j JokeApiDev) getTwoPartJoke() (joke jokeApiTwoPartResponse, err error) {
-	res, err := internal.Client.Get(fmt.Sprintf("https://v2.jokeapi.dev/joke/%s?type=%s", j.category, TwoPart))
+	res, err := joke2.Client.Get(fmt.Sprintf("https://v2.jokeapi.dev/joke/%s?type=%s", j.category, TwoPart))
 	if err != nil {
 		return
 	}

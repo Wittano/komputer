@@ -23,15 +23,15 @@ var JokeCommand = DiscordCommand{
 				Description: "Joke category",
 				Choices: []*discordgo.ApplicationCommandOptionChoice{
 					{
-						Name:  "Programming",
+						Name:  "Programowanie",
 						Value: "Programming",
 					},
 					{
-						Name:  "Misc",
+						Name:  "Różne",
 						Value: "Misc",
 					},
 					{
-						Name:  "Dark",
+						Name:  "Czarny humor",
 						Value: "Dark",
 					},
 					{
@@ -39,11 +39,11 @@ var JokeCommand = DiscordCommand{
 						Value: "Pun",
 					},
 					{
-						Name:  "Spooky",
+						Name:  "Straszne",
 						Value: "Spooky",
 					},
 					{
-						Name:  "Christmas",
+						Name:  "Świątecznie",
 						Value: "Christmas",
 					},
 				},
@@ -90,9 +90,9 @@ func executeJokeCommand(ctx context.Context, s *discordgo.Session, i *discordgo.
 
 	switch jokeType {
 	case jokedev.Single:
-		msg = internal.CreateJokeMessage(i.Member.User.Username, joke)
+		msg = internal.CreateJokeMessage(ctx, i.Member.User.Username, joke)
 	case jokedev.TwoPart:
-		msg = internal.CreateTwoPartJokeMessage(i.Member.User.Username, joke)
+		msg = internal.CreateTwoPartJokeMessage(ctx, i.Member.User.Username, joke)
 	}
 
 	err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
