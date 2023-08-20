@@ -46,7 +46,7 @@ func nextJoke(ctx context.Context, s *discordgo.Session, i *discordgo.Interactio
 	})
 
 	if err != nil {
-		createErrorMsg(ctx, err)
+		CreateErrorMsg(ctx, err)
 	}
 }
 
@@ -63,6 +63,6 @@ func sendMessage(ctx context.Context, msg string, s *discordgo.Session, i *disco
 	})
 
 	if err != nil {
-		createErrorMsg(ctx, err)
+		CreateErrorMsg(ctx, err)
 	}
 }

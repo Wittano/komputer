@@ -11,7 +11,7 @@ import (
 func CreateJokeMessage(ctx context.Context, username string, joke joke.Joke) *discordgo.InteractionResponseData {
 	content, err := joke.Content()
 	if err != nil {
-		return createErrorMsg(ctx, err)
+		return CreateErrorMsg(ctx, err)
 	}
 
 	return &discordgo.InteractionResponseData{
@@ -40,7 +40,7 @@ func CreateJokeMessage(ctx context.Context, username string, joke joke.Joke) *di
 func CreateTwoPartJokeMessage(ctx context.Context, username string, joke joke.JokeTwoParts) *discordgo.InteractionResponseData {
 	question, answer, err := joke.ContentTwoPart()
 	if err != nil {
-		return createErrorMsg(ctx, err)
+		return CreateErrorMsg(ctx, err)
 	}
 
 	return &discordgo.InteractionResponseData{
@@ -75,7 +75,7 @@ func CreateTwoPartJokeMessage(ctx context.Context, username string, joke joke.Jo
 	}
 }
 
-func createErrorMsg(ctx context.Context, err error) *discordgo.InteractionResponseData {
+func CreateErrorMsg(ctx context.Context, err error) *discordgo.InteractionResponseData {
 	log.Err(err).Str("traceID", ctx.Value("traceID").(string)).Msg("Failed to send message!")
 
 	return &discordgo.InteractionResponseData{Content: fmt.Sprintf("BEEP BOOM. Something went wrong :(")}
