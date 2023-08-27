@@ -9,6 +9,7 @@ import (
 	zerolog "github.com/rs/zerolog/log"
 	"github.com/wittano/komputer/internal"
 	"github.com/wittano/komputer/internal/log"
+	"github.com/wittano/komputer/internal/mongo"
 	"github.com/wittano/komputer/pkg/command"
 	"os"
 	"os/signal"
@@ -81,6 +82,7 @@ func checkEnvVariables(vars ...string) {
 func main() {
 	bot.Open()
 	defer bot.Close()
+	defer mongo.CloseDb()
 
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt)
