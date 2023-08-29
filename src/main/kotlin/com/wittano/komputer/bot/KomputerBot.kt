@@ -19,9 +19,11 @@ class KomputerBot : Runnable {
             .build()
             .login()
             .doOnSuccess { log.info("Bot is ready!") }
-            .block()
+            .block() ?: throw IllegalStateException("Failed to start up discord bot")
 
-        client?.onDisconnect()?.block()
+        BotCommandRegister(client.restClient).singIn()
+
+        client.onDisconnect().block()
     }
 
 }
