@@ -22,6 +22,7 @@ dependencies {
     implementation("ch.qos.logback:logback-classic:1.4.11")
     implementation("info.picocli:picocli:$picocliVersion")
     implementation("io.github.cdimascio:dotenv-kotlin:6.4.1")
+    implementation("com.google.inject:guice:7.0.0")
 
     kapt("info.picocli:picocli-codegen:$picocliVersion")
 
