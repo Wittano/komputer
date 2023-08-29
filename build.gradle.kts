@@ -21,6 +21,7 @@ dependencies {
     implementation("org.apache.logging.log4j:log4j-core:2.20.0")
     implementation("ch.qos.logback:logback-classic:1.4.11")
     implementation("info.picocli:picocli:$picocliVersion")
+    implementation("io.github.cdimascio:dotenv-kotlin:6.4.1")
 
     kapt("info.picocli:picocli-codegen:$picocliVersion")
 
