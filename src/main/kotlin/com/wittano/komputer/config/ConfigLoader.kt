@@ -16,8 +16,8 @@ class ConfigLoader private constructor() {
 
             val loadedConfig = Config(
                 token = dotenv.getOrElseThrow("DISCORD_BOT_TOKEN"),
-                applicationId = dotenv.getOrElseThrow("APPLICATION_ID"),
-                serverGuid = dotenv.getOrElseThrow("SERVER_GUID"),
+                applicationId = dotenv.getOrElseThrow("APPLICATION_ID").toLong(),
+                guildId = dotenv.getOrElseThrow("SERVER_GUID").toLong(),
                 mongoDbUri = dotenv.getOrElseThrow("MONGODB_URI")
             )
 
