@@ -12,7 +12,8 @@ class ConfigLoader private constructor() {
                 return config as Config
             }
 
-            val dotenv = Dotenv.load()
+            // TODO Added .env path as command parameter
+            val dotenv = Dotenv.configure().filename(".env").systemProperties().load()
 
             val loadedConfig = Config(
                 token = dotenv.getOrElseThrow("DISCORD_BOT_TOKEN"),

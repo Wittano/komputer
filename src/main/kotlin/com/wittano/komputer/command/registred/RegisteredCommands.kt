@@ -13,10 +13,9 @@ class RegisteredCommandsUtils private constructor() {
             val jacksonResources = JacksonResources.create()
             val commands = mutableListOf<ApplicationCommandRequest>()
 
-            getCommandDirectory().toFile()
-                .listFiles()
-                ?.forEach {
-                    val commandConfig = Files.readAllBytes(it.toPath())
+            Files.newDirectoryStream(getCommandDirectory())
+                .forEach {
+                    val commandConfig = Files.readAllBytes(it)
                     val command =
                         jacksonResources.objectMapper.readValue(commandConfig, ApplicationCommandRequest::class.java)
 
@@ -30,9 +29,9 @@ class RegisteredCommandsUtils private constructor() {
             val uri = RegisteredCommandsUtils::class.java.classLoader?.getResource("commands")?.toURI()
 
             return if ("jar" == uri?.scheme) {
-                val fileSystem = FileSystems.newFileSystem(uri, mutableMapOf<String, Any>())
+                val fileSystem = FileSystems.newFileSystem(uri, emptyMap<String, Any>())
 
-                fileSystem.getPath("src/main/resources/commands")
+                fileSystem.getPath("commands")
             } else {
                 uri?.let { Paths.get(it) } ?: throw IllegalStateException("Commands directory wasn't found")
             }
