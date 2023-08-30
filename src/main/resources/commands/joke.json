@@ -1,0 +1,50 @@
+{
+  "name": "joke",
+  "description": "Tell me some joke",
+  "options": [
+    {
+      "type": 3,
+      "required": false,
+      "name": "category",
+      "description": "Joke category",
+      "choices": [
+        {
+          "name": "Programowanie",
+          "value": "Programming"
+        },
+        {
+          "name": "Dowolne",
+          "value": "Any"
+        },
+        {
+          "name": "Misc",
+          "value": "Misc"
+        },
+        {
+          "name": "Czarny humor",
+          "value": "Dark"
+        },
+        {
+          "name": "Straszne",
+          "value": "Spooky"
+        }
+      ]
+    },
+    {
+      "type": 3,
+      "required": false,
+      "name": "type",
+      "description": "Type of joke",
+      "choices": [
+        {
+          "name": "Single",
+          "value": "single"
+        },
+        {
+          "name": "Two-Part",
+          "value": "twopart"
+        }
+      ]
+    }
+  ]
+}

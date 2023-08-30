@@ -9,11 +9,8 @@ import com.wittano.komputer.message.createJokeReactionButtons
 import com.wittano.komputer.utils.toNullable
 import discord4j.core.event.domain.interaction.ChatInputInteractionEvent
 import discord4j.core.`object`.command.ApplicationCommandInteractionOption
-import discord4j.core.`object`.command.ApplicationCommandOption
 import discord4j.core.`object`.component.ActionRow
 import discord4j.core.spec.InteractionApplicationCommandCallbackSpec
-import discord4j.discordjson.json.ApplicationCommandOptionData
-import discord4j.discordjson.json.ApplicationCommandRequest
 import reactor.core.publisher.Mono
 
 class JokeCommand @Inject constructor(
@@ -42,30 +39,5 @@ class JokeCommand @Inject constructor(
                 .addComponent(ActionRow.of(createJokeReactionButtons()))
                 .build()
         )
-    }
-
-    override fun createCommand(): ApplicationCommandRequest {
-        return ApplicationCommandRequest.builder()
-            .name("joke")
-            .description("Tell me some joke")
-            .options(
-                listOf(
-                    ApplicationCommandOptionData.builder()
-                        .type(ApplicationCommandOption.Type.STRING.value)
-                        .required(false)
-                        .name("category")
-                        .description("Joke category")
-                        .choices(JOKE_CATEGORIES)
-                        .build(),
-                    ApplicationCommandOptionData.builder()
-                        .type(ApplicationCommandOption.Type.STRING.value)
-                        .required(false)
-                        .name("type")
-                        .description("Type of joke")
-                        .choices(JOKE_TYPES)
-                        .build()
-                )
-            )
-            .build()
     }
 }
