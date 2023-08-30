@@ -1,40 +1,29 @@
 package com.wittano.komputer.bot
 
-import discord4j.common.JacksonResources
+import com.wittano.komputer.config.ConfigLoader
+import discord4j.discordjson.json.ApplicationCommandData
 import discord4j.discordjson.json.ApplicationCommandRequest
 import discord4j.rest.RestClient
-import discord4j.rest.interaction.GlobalCommandRegistrar
-import java.nio.file.FileSystems
-import java.nio.file.Files
-import java.nio.file.Path
-import java.nio.file.Paths
+import reactor.core.publisher.Flux
+import reactor.kotlin.core.publisher.toFlux
 
-class BotCommandRegister(private val client: RestClient) {
+class BotCommandRegister private constructor() {
 
-    fun registerCommands() {
-        val jacksonResources = JacksonResources.create()
-        val commandDirectoryPath = getCommandDirectory()
-        val commands = mutableListOf<ApplicationCommandRequest>()
+    companion object {
+        fun registerCommands(
+            client: RestClient,
+            commands: List<ApplicationCommandRequest>,
+            registeredCommands: Flux<ApplicationCommandData>
+        ): Flux<ApplicationCommandData> {
+            val config = ConfigLoader.load()
 
-        commandDirectoryPath.toFile().listFiles()?.forEach {
-            val commandConfig = Files.readAllBytes(it.toPath())
-            val command = jacksonResources.objectMapper.readValue(commandConfig, ApplicationCommandRequest::class.java)
-
-            commands.add(command)
-        }
-
-        GlobalCommandRegistrar.create(client, commands).registerCommands().blockFirst()
-    }
-
-    private fun getCommandDirectory(): Path {
-        val uri = this::class.java.classLoader?.getResource("commands")?.toURI()
-
-        return if ("jar" == uri?.scheme) {
-            val fileSystem = FileSystems.newFileSystem(uri, mutableMapOf<String, Any>())
-
-            fileSystem.getPath("src/main/resources/commands")
-        } else {
-            uri?.let { Paths.get(it) } ?: throw IllegalStateException("Commands directory wasn't found")
+            return commands.toFlux()
+                .filterWhen { request ->
+                    registeredCommands.any { request.name().equals(it.name(), true) }
+                }
+                .flatMapSequential {
+                    client.applicationService.createGuildApplicationCommand(config.applicationId, config.guildId, it)
+                }
         }
     }
 
