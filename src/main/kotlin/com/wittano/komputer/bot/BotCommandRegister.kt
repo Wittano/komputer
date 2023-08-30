@@ -1,28 +1,40 @@
 package com.wittano.komputer.bot
 
-import com.google.inject.Inject
-import com.wittano.komputer.command.SlashCommand
-import com.wittano.komputer.config.ConfigLoader
+import discord4j.common.JacksonResources
+import discord4j.discordjson.json.ApplicationCommandRequest
 import discord4j.rest.RestClient
-import org.slf4j.LoggerFactory
+import discord4j.rest.interaction.GlobalCommandRegistrar
+import java.nio.file.FileSystems
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.Paths
 
-class BotCommandRegister @Inject constructor(
-    private val commands: Set<SlashCommand>,
-) {
-    private val logger = LoggerFactory.getLogger(BotCommandRegister::class.java)
+class BotCommandRegister(private val client: RestClient) {
 
-    // TODO Replace my command register via discord4j register method: https://docs.discord4j.com/interactions/application-commands#simplifying-the-lifecycle
-    fun singIn(client: RestClient) {
-        val config = ConfigLoader.load()
+    fun registerCommands() {
+        val jacksonResources = JacksonResources.create()
+        val commandDirectoryPath = getCommandDirectory()
+        val commands = mutableListOf<ApplicationCommandRequest>()
 
-        commands.forEach {
-            client.applicationService.createGuildApplicationCommand(
-                config.applicationId,
-                config.guildId,
-                it.createCommand()
-            ).doOnError { exception ->
-                logger.error("Failed to register command. Cause: ${exception.message}")
-            }.subscribe()
+        commandDirectoryPath.toFile().listFiles()?.forEach {
+            val commandConfig = Files.readAllBytes(it.toPath())
+            val command = jacksonResources.objectMapper.readValue(commandConfig, ApplicationCommandRequest::class.java)
+
+            commands.add(command)
+        }
+
+        GlobalCommandRegistrar.create(client, commands).registerCommands().blockFirst()
+    }
+
+    private fun getCommandDirectory(): Path {
+        val uri = this::class.java.classLoader?.getResource("commands")?.toURI()
+
+        return if ("jar" == uri?.scheme) {
+            val fileSystem = FileSystems.newFileSystem(uri, mutableMapOf<String, Any>())
+
+            fileSystem.getPath("src/main/resources/commands")
+        } else {
+            uri?.let { Paths.get(it) } ?: throw IllegalStateException("Commands directory wasn't found")
         }
     }
 

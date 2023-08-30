@@ -30,8 +30,7 @@ class KomputerBot(private val injector: Injector) : Runnable {
             .doOnSuccess { log.info("Bot is ready!") }
             .block() ?: throw IllegalStateException("Failed to start up discord bot")
 
-        val commandRegister = injector.getInstance(BotCommandRegister::class.java)
-        commandRegister.singIn(client.restClient)
+        BotCommandRegister(client.restClient).registerCommands()
 
         client.on(ChatInputInteractionEvent::class.java) {
             try {
