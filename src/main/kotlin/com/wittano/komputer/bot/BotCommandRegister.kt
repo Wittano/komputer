@@ -11,6 +11,7 @@ class BotCommandRegister @Inject constructor(
 ) {
     private val logger = LoggerFactory.getLogger(BotCommandRegister::class.java)
 
+    // TODO Replace my command register via discord4j register method: https://docs.discord4j.com/interactions/application-commands#simplifying-the-lifecycle
     fun singIn(client: RestClient) {
         val config = ConfigLoader.load()
 

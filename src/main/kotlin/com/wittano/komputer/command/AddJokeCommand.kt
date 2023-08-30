@@ -1,13 +1,13 @@
 package com.wittano.komputer.command
 
-import discord4j.core.event.domain.interaction.ApplicationCommandInteractionEvent
+import discord4j.core.event.domain.interaction.ChatInputInteractionEvent
 import discord4j.core.`object`.command.ApplicationCommandOption
-import discord4j.core.spec.InteractionApplicationCommandCallbackReplyMono
 import discord4j.discordjson.json.ApplicationCommandOptionData
 import discord4j.discordjson.json.ApplicationCommandRequest
+import reactor.core.publisher.Mono
 
 class AddJokeCommand : SlashCommand {
-    override fun execute(event: ApplicationCommandInteractionEvent): InteractionApplicationCommandCallbackReplyMono {
+    override fun execute(event: ChatInputInteractionEvent): Mono<Void> {
         TODO("Not yet implemented")
     }
 

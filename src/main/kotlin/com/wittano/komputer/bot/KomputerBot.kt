@@ -6,8 +6,10 @@ import com.google.inject.Key
 import com.google.inject.name.Names
 import com.wittano.komputer.command.SlashCommand
 import com.wittano.komputer.config.ConfigLoader
+import com.wittano.komputer.message.interaction.ButtonReaction
 import discord4j.core.DiscordClientBuilder
-import discord4j.core.event.domain.interaction.ApplicationCommandInteractionEvent
+import discord4j.core.event.domain.interaction.ButtonInteractionEvent
+import discord4j.core.event.domain.interaction.ChatInputInteractionEvent
 import org.slf4j.LoggerFactory
 import picocli.CommandLine.Command
 import reactor.core.publisher.Mono
@@ -31,19 +33,31 @@ class KomputerBot(private val injector: Injector) : Runnable {
         val commandRegister = injector.getInstance(BotCommandRegister::class.java)
         commandRegister.singIn(client.restClient)
 
-        client.on(ApplicationCommandInteractionEvent::class.java) { event ->
+        client.on(ChatInputInteractionEvent::class.java) {
             try {
-                val slashCommand: SlashCommand =
-                    injector.getInstance(
-                        Key.get(
-                            SlashCommand::class.java,
-                            Names.named(event.commandName.replace("-", ""))
-                        )
+                val slashCommand: SlashCommand = injector.getInstance(
+                    Key.get(
+                        SlashCommand::class.java,
+                        Names.named(it.commandName.replace("-", ""))
                     )
+                )
 
-                return@on Mono.from<Nothing> {
-                    slashCommand.execute(event)
-                }
+                return@on slashCommand.execute(it)
+            } catch (ex: ConfigurationException) {
+                return@on Mono.error(ex)
+            }
+        }.subscribe()
+
+        client.on(ButtonInteractionEvent::class.java) {
+            try {
+                val buttonReaction = injector.getInstance(
+                    Key.get(
+                        ButtonReaction::class.java,
+                        Names.named(it.customId.replace("-", ""))
+                    )
+                )
+
+                return@on buttonReaction.execute(it)
             } catch (ex: ConfigurationException) {
                 return@on Mono.error(ex)
             }
