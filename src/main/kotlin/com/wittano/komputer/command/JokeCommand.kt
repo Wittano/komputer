@@ -3,7 +3,9 @@ package com.wittano.komputer.command
 import com.google.inject.Inject
 import com.wittano.komputer.joke.JokeCategory
 import com.wittano.komputer.joke.JokeType
+import com.wittano.komputer.joke.jokedev.JokeDevApiException
 import com.wittano.komputer.joke.jokedev.JokeDevClient
+import com.wittano.komputer.message.createErrorMessage
 import com.wittano.komputer.message.createJokeMessage
 import com.wittano.komputer.message.createJokeReactionButtons
 import com.wittano.komputer.utils.toNullable
@@ -31,7 +33,11 @@ class JokeCommand @Inject constructor(
             ?.let { type -> JokeType.entries.find { it.value == type } }
             ?: JokeType.SINGLE
 
-        val joke = jokeDevClient.getRandomJoke(category, type)
+        val joke = try {
+            jokeDevClient.getRandomJoke(category, type)
+        } catch (_: JokeDevApiException) {
+            return event.reply(createErrorMessage())
+        }
 
         return event.reply(
             InteractionApplicationCommandCallbackSpec.builder()
