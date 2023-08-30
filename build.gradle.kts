@@ -15,6 +15,7 @@ repositories {
 }
 
 val picocliVersion = "4.7.4"
+val jacksonVersion = "2.15.2"
 
 dependencies {
     implementation("com.discord4j:discord4j-core:3.2.5")
@@ -23,6 +24,10 @@ dependencies {
     implementation("info.picocli:picocli:$picocliVersion")
     implementation("io.github.cdimascio:dotenv-kotlin:6.4.1")
     implementation("com.google.inject:guice:7.0.0")
+    implementation("com.squareup.okhttp3:okhttp:4.11.0")
+
+    implementation("com.fasterxml.jackson.core:jackson-core:$jacksonVersion")
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion")
 
     kapt("info.picocli:picocli-codegen:$picocliVersion")
 
