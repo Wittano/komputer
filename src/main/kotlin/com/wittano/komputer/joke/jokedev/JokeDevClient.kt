@@ -7,10 +7,13 @@ import com.wittano.komputer.joke.Joke
 import com.wittano.komputer.joke.JokeCategory
 import com.wittano.komputer.joke.JokeExtractor
 import com.wittano.komputer.joke.JokeType
+import com.wittano.komputer.joke.jokedev.response.JokeDevErrorResponse
 import com.wittano.komputer.joke.jokedev.response.JokeDevSingleResponse
 import com.wittano.komputer.joke.jokedev.response.JokeDevTwoPartResponse
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import org.slf4j.LoggerFactory
+import java.io.IOException
 
 class JokeDevClient @Inject constructor(
     @Named("jokeDevClient")
@@ -18,10 +21,12 @@ class JokeDevClient @Inject constructor(
     private val objectMapper: ObjectMapper
 ) {
 
+    private val log = LoggerFactory.getLogger(this::class.qualifiedName)
+
+    @Throws(JokeDevApiException::class)
     fun getRandomJoke(category: JokeCategory, type: JokeType): Joke {
-        val request = Request.Builder()
-            .url("https://v2.jokeapi.dev/joke/${category.category}?type=${type.value}")
-            .build()
+        val requestUrl = "https://v2.jokeapi.dev/joke/${category.category}?type=${type.value}"
+        val request = Request.Builder().url(requestUrl).build()
 
         val rawResponse = client.newCall(request).execute()
         if (!rawResponse.isSuccessful || rawResponse.body == null) {
@@ -34,9 +39,21 @@ class JokeDevClient @Inject constructor(
             JokeDevTwoPartResponse::class.java
         }
 
-        val jokeResponse = objectMapper.readValue(rawResponse.body!!.byteStream(), responseType)
+        val responseBytes = rawResponse.body!!.bytes()
+        val jokeResponse = try {
+            objectMapper.readValue(responseBytes, responseType)
+        } catch (ex: IOException) {
+            objectMapper.readValue(responseBytes, JokeDevErrorResponse::class.java)
+        }
 
-        return jokeResponse.toJoke()
+        return when (jokeResponse) {
+            is JokeDevErrorResponse -> {
+                log.warn("Failed get random joke from URL ${requestUrl}. Error message: ${jokeResponse.message}")
+                throw JokeDevApiException(jokeResponse.message)
+            }
+
+            else -> (jokeResponse as JokeExtractor).toJoke()
+        }
     }
 
 }
