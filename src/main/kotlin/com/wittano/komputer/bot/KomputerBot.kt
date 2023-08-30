@@ -5,9 +5,11 @@ import com.google.inject.Injector
 import com.google.inject.Key
 import com.google.inject.name.Names
 import com.wittano.komputer.command.SlashCommand
+import com.wittano.komputer.command.registred.RegisteredCommandsUtils
 import com.wittano.komputer.config.ConfigLoader
 import com.wittano.komputer.message.interaction.ButtonReaction
 import discord4j.core.DiscordClientBuilder
+import discord4j.core.GatewayDiscordClient
 import discord4j.core.event.domain.interaction.ButtonInteractionEvent
 import discord4j.core.event.domain.interaction.ChatInputInteractionEvent
 import org.slf4j.LoggerFactory
@@ -30,23 +32,21 @@ class KomputerBot(private val injector: Injector) : Runnable {
             .doOnSuccess { log.info("Bot is ready!") }
             .block() ?: throw IllegalStateException("Failed to start up discord bot")
 
-        BotCommandRegister(client.restClient).registerCommands()
+        val commands = RegisteredCommandsUtils.getCommandsFromJsonFiles()
+        val registeredCommands =
+            client.restClient.applicationService.getGuildApplicationCommands(config.applicationId, config.guildId)
 
-        client.on(ChatInputInteractionEvent::class.java) {
-            try {
-                val slashCommand: SlashCommand = injector.getInstance(
-                    Key.get(
-                        SlashCommand::class.java,
-                        Names.named(it.commandName.replace("-", ""))
-                    )
-                )
+        BotCommandCleaner.deleteUnusedGuildCommands(client.restClient, commands, registeredCommands)
+            .thenMany(BotCommandRegister.registerCommands(client.restClient, commands, registeredCommands))
+            .subscribe()
 
-                return@on slashCommand.execute(it)
-            } catch (ex: ConfigurationException) {
-                return@on Mono.error(ex)
-            }
-        }.subscribe()
+        handleChatInputEvents(client)
+        handleButtonInteractionEvents(client)
 
+        client.onDisconnect().block()
+    }
+
+    private fun handleButtonInteractionEvents(client: GatewayDiscordClient) {
         client.on(ButtonInteractionEvent::class.java) {
             try {
                 val buttonReaction = injector.getInstance(
@@ -56,13 +56,28 @@ class KomputerBot(private val injector: Injector) : Runnable {
                     )
                 )
 
-                return@on buttonReaction.execute(it)
+                buttonReaction.execute(it)
             } catch (ex: ConfigurationException) {
-                return@on Mono.error(ex)
+                Mono.error(ex)
             }
         }.subscribe()
+    }
 
-        client.onDisconnect().block()
+    private fun handleChatInputEvents(client: GatewayDiscordClient) {
+        client.on(ChatInputInteractionEvent::class.java) {
+            try {
+                val slashCommand: SlashCommand = injector.getInstance(
+                    Key.get(
+                        SlashCommand::class.java,
+                        Names.named(it.commandName.replace("-", ""))
+                    )
+                )
+
+                slashCommand.execute(it)
+            } catch (ex: ConfigurationException) {
+                Mono.error(ex)
+            }
+        }.subscribe()
     }
 
 }

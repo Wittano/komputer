@@ -25,6 +25,7 @@ dependencies {
     implementation("io.github.cdimascio:dotenv-kotlin:6.4.1")
     implementation("com.google.inject:guice:7.0.0")
     implementation("com.squareup.okhttp3:okhttp:4.11.0")
+    implementation("io.projectreactor.kotlin:reactor-kotlin-extensions:1.2.2")
 
     implementation("com.fasterxml.jackson.core:jackson-core:$jacksonVersion")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion")
