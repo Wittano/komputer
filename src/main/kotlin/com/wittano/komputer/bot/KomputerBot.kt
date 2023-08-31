@@ -3,6 +3,7 @@ package com.wittano.komputer.bot
 import com.wittano.komputer.command.registred.RegisteredCommandsUtils
 import com.wittano.komputer.config.ConfigLoader
 import com.wittano.komputer.config.dagger.DaggerKomputerComponent
+import com.wittano.komputer.message.createErrorMessage
 import discord4j.core.DiscordClientBuilder
 import discord4j.core.GatewayDiscordClient
 import discord4j.core.event.domain.interaction.ButtonInteractionEvent
@@ -10,7 +11,6 @@ import discord4j.core.event.domain.interaction.ChatInputInteractionEvent
 import org.slf4j.LoggerFactory
 import picocli.CommandLine.Command
 import reactor.core.publisher.Mono
-import javax.naming.ConfigurationException
 
 @Command(
     name = "komputer",
@@ -51,8 +51,9 @@ class KomputerBot : Runnable {
 
                 buttonReaction?.execute(it)
                     ?: Mono.error(NoSuchElementException("Button with id $customId wasn't found"))
-            } catch (ex: ConfigurationException) {
-                Mono.error(ex)
+            } catch (ex: Exception) {
+                log.error("Unexpected error during handling '${it.customId}' button interaction", ex)
+                it.reply(createErrorMessage())
             }
         }.subscribe()
     }
@@ -65,8 +66,9 @@ class KomputerBot : Runnable {
 
                 slashCommand?.execute(it)
                     ?: Mono.error(NoSuchElementException("Slash command '$commandName' wasn't found"))
-            } catch (ex: ConfigurationException) {
-                Mono.error(ex)
+            } catch (ex: Exception) {
+                log.error("Unexpected error during handling '${it.commandName}' chat interaction", ex)
+                it.reply(createErrorMessage())
             }
         }.subscribe()
     }

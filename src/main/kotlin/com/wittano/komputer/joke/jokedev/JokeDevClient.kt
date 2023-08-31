@@ -25,7 +25,7 @@ class JokeDevClient @Inject constructor(
 
     @Throws(JokeDevApiException::class)
     fun getRandomJoke(category: JokeCategory, type: JokeType): Joke {
-        val requestUrl = "https://v2.jokeapi.dev/joke/${category.category}?type=${type.value}"
+        val requestUrl = "https://v2.jokeapi.dev/joke/${category.category}?type=${type.jokeDevValue}"
         val request = Request.Builder().url(requestUrl).build()
 
         val rawResponse = client.newCall(request).execute()

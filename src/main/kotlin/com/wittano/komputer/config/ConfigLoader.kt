@@ -13,13 +13,14 @@ class ConfigLoader private constructor() {
             }
 
             // TODO Added .env path as command parameter
-            val dotenv = Dotenv.configure().filename(".env").systemProperties().load()
+            val dotenv = Dotenv.load()
 
             val loadedConfig = Config(
                 token = dotenv.getOrElseThrow("DISCORD_BOT_TOKEN"),
                 applicationId = dotenv.getOrElseThrow("APPLICATION_ID").toLong(),
                 guildId = dotenv.getOrElseThrow("SERVER_GUID").toLong(),
-                mongoDbUri = dotenv.getOrElseThrow("MONGODB_URI")
+                mongoDbUri = dotenv.getOrElseThrow("MONGODB_URI"),
+                mongoDbName = dotenv.getOrElseThrow("MONGODB_DB_NAME")
             )
 
             config = loadedConfig
@@ -30,5 +31,5 @@ class ConfigLoader private constructor() {
 
 }
 
-private fun Dotenv.getOrElseThrow(key: String): String = this[key].takeIf { it.isNotBlank() }
+private fun Dotenv.getOrElseThrow(key: String): String = this.get(key, "").takeIf { it.isNotBlank() }
     ?: throw IllegalStateException("Environment variable $key is missing")

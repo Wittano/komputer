@@ -7,9 +7,9 @@ import com.wittano.komputer.joke.jokedev.JokeDevClient
 import com.wittano.komputer.message.createErrorMessage
 import com.wittano.komputer.message.createJokeMessage
 import com.wittano.komputer.message.createJokeReactionButtons
-import com.wittano.komputer.utils.toNullable
+import com.wittano.komputer.utils.getJokeCategory
+import com.wittano.komputer.utils.getJokeType
 import discord4j.core.event.domain.interaction.ChatInputInteractionEvent
-import discord4j.core.`object`.command.ApplicationCommandInteractionOption
 import discord4j.core.`object`.component.ActionRow
 import discord4j.core.spec.InteractionApplicationCommandCallbackSpec
 import reactor.core.publisher.Mono
@@ -19,19 +19,8 @@ class JokeCommand @Inject constructor(
     private val jokeDevClient: JokeDevClient
 ) : SlashCommand {
     override fun execute(event: ChatInputInteractionEvent): Mono<Void> {
-        val category = event.getOption("category")
-            .flatMap(ApplicationCommandInteractionOption::getValue)
-            .toNullable()
-            ?.asString()
-            ?.let { category -> JokeCategory.entries.find { it.category == category } }
-            ?: JokeCategory.ANY
-
-        val type = event.getOption("type")
-            .flatMap(ApplicationCommandInteractionOption::getValue)
-            .toNullable()
-            ?.asString()
-            ?.let { type -> JokeType.entries.find { it.value == type } }
-            ?: JokeType.SINGLE
+        val category = event.getJokeCategory() ?: JokeCategory.ANY
+        val type = event.getJokeType() ?: JokeType.SINGLE
 
         val joke = try {
             jokeDevClient.getRandomJoke(category, type)

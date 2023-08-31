@@ -21,5 +21,5 @@ private fun JokeCategory.toApplicationCommandOptionChoice(): ApplicationCommandO
 private fun JokeType.toApplicationCommandOptionChoice(): ApplicationCommandOptionChoiceData =
     ApplicationCommandOptionChoiceData.builder()
         .name(this.displayName)
-        .value(this.value)
+        .value(this.jokeDevValue)
         .build()

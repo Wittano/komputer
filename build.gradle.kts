@@ -35,6 +35,9 @@ dependencies {
     implementation("com.google.dagger:dagger:$daggerVersion")
     kapt("com.google.dagger:dagger-compiler:$daggerVersion")
 
+    // MongoDB
+    implementation("org.mongodb:mongodb-driver-reactivestreams:4.10.0")
+
     // Utilis
     implementation("io.github.cdimascio:dotenv-kotlin:6.4.1")
     implementation("com.squareup.okhttp3:okhttp:4.11.0")

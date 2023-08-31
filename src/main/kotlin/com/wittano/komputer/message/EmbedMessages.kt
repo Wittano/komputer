@@ -15,11 +15,11 @@ fun createJokeMessage(joke: Joke): EmbedCreateSpec {
 
     if (joke.type == JokeType.TWO_PART) {
         val question = EmbedCreateFields.Field.of("Question", joke.question!!, false)
-        val answer = EmbedCreateFields.Field.of("Answer", joke.content, false)
+        val answer = EmbedCreateFields.Field.of("Answer", joke.answer, false)
 
         builder.addFields(question, answer)
     } else {
-        builder.addField("Joke", joke.content, false)
+        builder.addField("Joke", joke.answer, false)
     }
 
     builder.addField("Category", joke.category.polishTranslate, false)

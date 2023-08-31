@@ -17,7 +17,7 @@ data class JokeDevTwoPartResponse(
     val type: String
 ) : JokeExtractor {
     override fun toJoke(): Joke = Joke(
-        content = delivery,
+        answer = delivery,
         question = setup,
         category = category.toJokeCategory(),
         type = JokeType.TWO_PART
