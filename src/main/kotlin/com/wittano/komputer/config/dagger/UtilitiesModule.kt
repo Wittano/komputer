@@ -1,12 +1,13 @@
-package com.wittano.komputer.config.guice
+package com.wittano.komputer.config.dagger
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.KotlinFeature
 import com.fasterxml.jackson.module.kotlin.KotlinModule
-import com.google.inject.AbstractModule
-import com.google.inject.Provides
+import dagger.Module
+import dagger.Provides
 
-class UtilitiesModule : AbstractModule() {
+@Module
+class UtilitiesModule {
 
     @Provides
     fun objectMapper(): ObjectMapper {

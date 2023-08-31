@@ -1,6 +1,5 @@
 package com.wittano.komputer.command
 
-import com.google.inject.Inject
 import com.wittano.komputer.joke.JokeCategory
 import com.wittano.komputer.joke.JokeType
 import com.wittano.komputer.joke.jokedev.JokeDevApiException
@@ -14,6 +13,7 @@ import discord4j.core.`object`.command.ApplicationCommandInteractionOption
 import discord4j.core.`object`.component.ActionRow
 import discord4j.core.spec.InteractionApplicationCommandCallbackSpec
 import reactor.core.publisher.Mono
+import javax.inject.Inject
 
 class JokeCommand @Inject constructor(
     private val jokeDevClient: JokeDevClient
