@@ -13,6 +13,7 @@ import discord4j.core.`object`.component.ActionRow
 import discord4j.core.spec.InteractionApplicationCommandCallbackSpec
 import reactor.core.publisher.Mono
 import javax.inject.Inject
+import kotlin.random.Random
 
 class NextJokeButtonReaction @Inject constructor(
     private val jokeDevClient: JokeDevClient
@@ -36,8 +37,11 @@ class NextJokeButtonReaction @Inject constructor(
             return event.reply(createErrorMessage())
         }
 
+        val apologies = "Przepraszam".takeIf { Random.nextInt().mod(7) == 0 } ?: ""
+
         return event.reply(
             InteractionApplicationCommandCallbackSpec.builder()
+                .content(apologies)
                 .addEmbed(createJokeMessage(joke))
                 .addComponent(ActionRow.of(createJokeReactionButtons()))
                 .build()
