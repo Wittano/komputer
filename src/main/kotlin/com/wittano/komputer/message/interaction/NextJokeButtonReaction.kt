@@ -1,6 +1,5 @@
 package com.wittano.komputer.message.interaction
 
-import com.google.inject.Inject
 import com.wittano.komputer.joke.JokeCategory
 import com.wittano.komputer.joke.JokeType
 import com.wittano.komputer.joke.jokedev.JokeDevApiException
@@ -13,6 +12,7 @@ import discord4j.core.event.domain.interaction.ButtonInteractionEvent
 import discord4j.core.`object`.component.ActionRow
 import discord4j.core.spec.InteractionApplicationCommandCallbackSpec
 import reactor.core.publisher.Mono
+import javax.inject.Inject
 
 class NextJokeButtonReaction @Inject constructor(
     private val jokeDevClient: JokeDevClient

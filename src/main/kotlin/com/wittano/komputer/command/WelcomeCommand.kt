@@ -2,8 +2,8 @@ package com.wittano.komputer.command
 
 import com.wittano.komputer.utils.toNullable
 import discord4j.core.event.domain.interaction.ChatInputInteractionEvent
-import jakarta.inject.Named
 import reactor.core.publisher.Mono
+import javax.inject.Named
 
 @Named("welcomeCommand")
 class WelcomeCommand : SlashCommand {

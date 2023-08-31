@@ -1,13 +1,8 @@
 package com.wittano.komputer.bot
 
-import com.google.inject.ConfigurationException
-import com.google.inject.Injector
-import com.google.inject.Key
-import com.google.inject.name.Names
-import com.wittano.komputer.command.SlashCommand
 import com.wittano.komputer.command.registred.RegisteredCommandsUtils
 import com.wittano.komputer.config.ConfigLoader
-import com.wittano.komputer.message.interaction.ButtonReaction
+import com.wittano.komputer.config.dagger.DaggerKomputerComponent
 import discord4j.core.DiscordClientBuilder
 import discord4j.core.GatewayDiscordClient
 import discord4j.core.event.domain.interaction.ButtonInteractionEvent
@@ -15,14 +10,16 @@ import discord4j.core.event.domain.interaction.ChatInputInteractionEvent
 import org.slf4j.LoggerFactory
 import picocli.CommandLine.Command
 import reactor.core.publisher.Mono
+import javax.naming.ConfigurationException
 
 @Command(
     name = "komputer",
     description = ["Discord bot behave as like \"komputer\". One of character in Star Track parody series created by Dem3000"]
 )
-class KomputerBot(private val injector: Injector) : Runnable {
+class KomputerBot : Runnable {
 
     private val log = LoggerFactory.getLogger(this::class.qualifiedName)
+    private val komputerComponent = DaggerKomputerComponent.create()
 
     override fun run() {
         val config = ConfigLoader.load()
@@ -49,14 +46,11 @@ class KomputerBot(private val injector: Injector) : Runnable {
     private fun handleButtonInteractionEvents(client: GatewayDiscordClient) {
         client.on(ButtonInteractionEvent::class.java) {
             try {
-                val buttonReaction = injector.getInstance(
-                    Key.get(
-                        ButtonReaction::class.java,
-                        Names.named(it.customId.replace("-", ""))
-                    )
-                )
+                val customId = it.customId.replace("-", "")
+                val buttonReaction = DaggerKomputerComponent.create().getButtonReaction()[customId]
 
-                buttonReaction.execute(it)
+                buttonReaction?.execute(it)
+                    ?: Mono.error(NoSuchElementException("Button with id $customId wasn't found"))
             } catch (ex: ConfigurationException) {
                 Mono.error(ex)
             }
@@ -66,14 +60,11 @@ class KomputerBot(private val injector: Injector) : Runnable {
     private fun handleChatInputEvents(client: GatewayDiscordClient) {
         client.on(ChatInputInteractionEvent::class.java) {
             try {
-                val slashCommand: SlashCommand = injector.getInstance(
-                    Key.get(
-                        SlashCommand::class.java,
-                        Names.named(it.commandName.replace("-", ""))
-                    )
-                )
+                val commandName = it.commandName.replace("-", "")
+                val slashCommand = komputerComponent.getSlashCommand()[commandName]
 
-                slashCommand.execute(it)
+                slashCommand?.execute(it)
+                    ?: Mono.error(NoSuchElementException("Slash command '$commandName' wasn't found"))
             } catch (ex: ConfigurationException) {
                 Mono.error(ex)
             }

@@ -1,8 +1,6 @@
 package com.wittano.komputer.joke.jokedev
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.google.inject.Inject
-import com.google.inject.name.Named
 import com.wittano.komputer.joke.Joke
 import com.wittano.komputer.joke.JokeCategory
 import com.wittano.komputer.joke.JokeExtractor
@@ -14,6 +12,8 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.slf4j.LoggerFactory
 import java.io.IOException
+import javax.inject.Inject
+import javax.inject.Named
 
 class JokeDevClient @Inject constructor(
     @Named("jokeDevClient")

@@ -16,22 +16,32 @@ repositories {
 
 val picocliVersion = "4.7.4"
 val jacksonVersion = "2.15.2"
+val daggerVersion = "2.48"
 
 dependencies {
+    // Discord4j
     implementation("com.discord4j:discord4j-core:3.2.5")
-    implementation("ch.qos.logback:logback-classic:1.4.11")
-    implementation("org.codehaus.janino:janino:3.1.10")
-    
-    implementation("info.picocli:picocli:$picocliVersion")
-    implementation("io.github.cdimascio:dotenv-kotlin:6.4.1")
-    implementation("com.google.inject:guice:7.0.0")
-    implementation("com.squareup.okhttp3:okhttp:4.11.0")
     implementation("io.projectreactor.kotlin:reactor-kotlin-extensions:1.2.2")
 
+    // Logger
+    implementation("ch.qos.logback:logback-classic:1.4.11")
+    implementation("org.codehaus.janino:janino:3.1.10")
+
+    // Picocli
+    implementation("info.picocli:picocli:$picocliVersion")
+    kapt("info.picocli:picocli-codegen:$picocliVersion")
+
+    // Dager
+    implementation("com.google.dagger:dagger:$daggerVersion")
+    kapt("com.google.dagger:dagger-compiler:$daggerVersion")
+
+    // Utilis
+    implementation("io.github.cdimascio:dotenv-kotlin:6.4.1")
+    implementation("com.squareup.okhttp3:okhttp:4.11.0")
+
+    // Jakson object mapper
     implementation("com.fasterxml.jackson.core:jackson-core:$jacksonVersion")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion")
-
-    kapt("info.picocli:picocli-codegen:$picocliVersion")
 
     testImplementation(kotlin("test"))
 }
@@ -41,6 +51,8 @@ kapt {
         arg("project", "${project.group}/${project.name}")
     }
 }
+
+// TODO Create native image with GrallVM
 
 tasks.withType<Jar> {
     manifest {
