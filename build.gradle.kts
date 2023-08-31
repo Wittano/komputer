@@ -19,8 +19,9 @@ val jacksonVersion = "2.15.2"
 
 dependencies {
     implementation("com.discord4j:discord4j-core:3.2.5")
-    implementation("org.apache.logging.log4j:log4j-core:2.20.0")
     implementation("ch.qos.logback:logback-classic:1.4.11")
+    implementation("org.codehaus.janino:janino:3.1.10")
+    
     implementation("info.picocli:picocli:$picocliVersion")
     implementation("io.github.cdimascio:dotenv-kotlin:6.4.1")
     implementation("com.google.inject:guice:7.0.0")
