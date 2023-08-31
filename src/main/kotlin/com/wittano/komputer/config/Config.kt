@@ -5,4 +5,5 @@ data class Config(
     val applicationId: Long,
     val guildId: Long,
     val mongoDbUri: String,
+    val mongoDbName: String,
 )

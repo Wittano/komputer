@@ -16,7 +16,7 @@ data class JokeDevSingleResponse(
 ) : JokeExtractor {
     override fun toJoke(): Joke = Joke(
         category = category.jokeCategory,
-        content = joke,
+        answer = joke,
         type = JokeType.SINGLE
     )
 }

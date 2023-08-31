@@ -5,6 +5,7 @@ import com.wittano.komputer.command.JokeCommand
 import com.wittano.komputer.command.SlashCommand
 import com.wittano.komputer.command.WelcomeCommand
 import com.wittano.komputer.joke.jokedev.JokeDevClient
+import com.wittano.komputer.joke.mongodb.JokeDatabaseManager
 import dagger.Module
 import dagger.Provides
 import dagger.multibindings.IntoMap
@@ -22,7 +23,8 @@ class SlashCommandsModule {
     @Provides
     @StringKey("addjoke")
     @IntoMap
-    fun provideAddJokeCommand(): SlashCommand = AddJokeCommand()
+    @Inject
+    fun provideAddJokeCommand(databaseManager: JokeDatabaseManager): SlashCommand = AddJokeCommand(databaseManager)
 
     @Inject
     @IntoMap

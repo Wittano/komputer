@@ -9,7 +9,8 @@ import dagger.Component
         ButtonReactionModule::class,
         HttpClientsModule::class,
         SlashCommandsModule::class,
-        UtilitiesModule::class
+        UtilitiesModule::class,
+        MongoDbModule::class
     ]
 )
 interface KomputerComponent {
