@@ -52,7 +52,7 @@ class AddJokeCommand @Inject constructor(
             return event.reply(createErrorMessage())
         }
 
-        return databaseService.addJoke(joke)
+        return databaseService.add(joke)
             .timeout(Duration.ofSeconds(1))
             .flatMap { sendPositiveFeedback(it, event) }
             .switchIfEmpty(event.reply("BEEP BOOP. Coś poszło nie tak"))
