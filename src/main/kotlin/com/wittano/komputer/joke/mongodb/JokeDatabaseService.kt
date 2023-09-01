@@ -69,6 +69,7 @@ class JokeDatabaseService @Inject constructor(
         val jokeCollection = getJokeModelCollection()
 
         return jokeCollection.flatMap {
+            // TODO Add exception handler for invalid bson id
             Mono.from(it.find(id.toBson()))
         }.map {
             it.toJoke()
