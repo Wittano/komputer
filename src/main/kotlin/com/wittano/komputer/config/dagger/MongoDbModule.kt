@@ -13,11 +13,13 @@ import dagger.Provides
 import org.bson.Document
 import reactor.core.publisher.Mono
 import java.time.Duration
+import javax.inject.Singleton
 
 @Module
 class MongoDbModule {
 
     @Provides
+    @Singleton
     fun client(): MongoClient {
         val config = ConfigLoader.load()
 

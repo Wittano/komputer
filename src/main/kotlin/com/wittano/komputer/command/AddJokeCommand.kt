@@ -2,7 +2,7 @@ package com.wittano.komputer.command
 
 import com.wittano.komputer.joke.Joke
 import com.wittano.komputer.joke.JokeType
-import com.wittano.komputer.joke.mongodb.JokeDatabaseManager
+import com.wittano.komputer.joke.mongodb.JokeDatabaseService
 import com.wittano.komputer.message.createErrorMessage
 import com.wittano.komputer.utils.getJokeCategory
 import com.wittano.komputer.utils.getJokeType
@@ -16,7 +16,7 @@ import java.time.Duration
 import javax.inject.Inject
 
 class AddJokeCommand @Inject constructor(
-    private val databaseService: JokeDatabaseManager
+    private val databaseService: JokeDatabaseService
 ) : SlashCommand {
     private val log = LoggerFactory.getLogger(this::class.qualifiedName)
 

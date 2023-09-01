@@ -20,7 +20,7 @@ import javax.inject.Inject
 
 private const val JOKES_DATABASE_NAME = "jokes"
 
-class JokeDatabaseManager @Inject constructor(
+class JokeDatabaseService @Inject constructor(
     private val client: MongoClient
 ) : JokeService {
     private val log = LoggerFactory.getLogger(this::class.qualifiedName)
@@ -30,8 +30,7 @@ class JokeDatabaseManager @Inject constructor(
         Mono.just(this.client)
             .map {
                 it.getDatabase(dbName)
-            }
-            .doOnError {
+            }.doOnError {
                 log.error("Failed to find '${dbName}' database", it)
             }
     }
@@ -59,14 +58,11 @@ class JokeDatabaseManager @Inject constructor(
     override fun remove(id: String): Mono<Void> {
         val jokeCollection = getJokeCollection()
 
-        return jokeCollection
-            .flatMap {
-                Mono.from(it.deleteOne(id.toBson()))
-            }.filter {
-                it.wasAcknowledged()
-            }.doOnError {
-                log.error("Failed to remove joke with id $id into database. Cause: ${it.message}", it)
-            }.toMonoVoid()
+        return jokeCollection.flatMap {
+            Mono.from(it.deleteOne(id.toBson()))
+        }.doOnError {
+            log.error("Failed to remove joke with id $id into database. Cause: ${it.message}", it)
+        }.toMonoVoid()
     }
 
     override fun get(id: String): Mono<Joke> {
@@ -125,27 +121,21 @@ class JokeDatabaseManager @Inject constructor(
 
     private fun createJokesCollectionIfDontExist(database: MongoDatabase): Mono<Void> {
         val collectionsNames = Flux.from(database.listCollectionNames())
-        val createCollection = Mono.from(database.createCollection(JOKES_DATABASE_NAME))
 
-        return collectionsNames
+        return collectionsNames.collectList()
             .filter {
-                it == JOKES_DATABASE_NAME
-            }
-            .singleOrEmpty()
-            .toMonoVoid()
-            .switchIfEmpty(createCollection)
-            .doOnError {
+                !it.contains(JOKES_DATABASE_NAME)
+            }.flatMap {
+                Mono.from(database.createCollection(JOKES_DATABASE_NAME))
+            }.doOnError {
                 log.error("Failed to create '${JOKES_DATABASE_NAME}' collection", it)
             }
     }
 
 }
 
-private fun String.toBson(): Bson {
-    val bson = BasicDBObject()
-    bson["_id"] = ObjectId(this)
-
-    return bson
+private fun String.toBson(): Bson = BasicDBObject().apply {
+    this["_id"] = ObjectId(this@toBson)
 }
 
 private fun JokeModel.toJoke(): Joke = Joke(answer, category, type, question)
