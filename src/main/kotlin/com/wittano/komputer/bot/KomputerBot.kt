@@ -31,7 +31,12 @@ class KomputerBot : Runnable {
 
         val commands = RegisteredCommandsUtils.getCommandsFromJsonFiles()
         val registeredCommands =
-            client.restClient.applicationService.getGuildApplicationCommands(config.applicationId, config.guildId)
+            client.restClient.applicationService
+                .getGuildApplicationCommands(config.applicationId, config.guildId)
+                .collectList()
+                .filter {
+                    it.isNotEmpty()
+                }
 
         BotCommandCleaner.deleteUnusedGuildCommands(client.restClient, commands, registeredCommands)
             .thenMany(BotCommandRegister.registerCommands(client.restClient, commands, registeredCommands))
