@@ -6,12 +6,14 @@ import com.wittano.komputer.joke.mongodb.JokeDatabaseService
 import dagger.Module
 import dagger.Provides
 import javax.inject.Inject
+import javax.inject.Singleton
 
 @Module
 class JokeServiceModule {
 
     @Provides
     @Inject
+    @Singleton
     fun createJokeDatabaseService(client: MongoClient): JokeService = JokeDatabaseService(client)
 
 }
