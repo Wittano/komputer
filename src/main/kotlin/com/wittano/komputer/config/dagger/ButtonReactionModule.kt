@@ -9,6 +9,7 @@ import dagger.Provides
 import dagger.multibindings.IntoMap
 import dagger.multibindings.StringKey
 import javax.inject.Inject
+import javax.inject.Singleton
 
 @Module
 class ButtonReactionModule {
@@ -16,12 +17,14 @@ class ButtonReactionModule {
     @Provides
     @IntoMap
     @StringKey("apologies")
+    @Singleton
     fun apologiesButton(): ButtonReaction = ApologiesButtonReaction()
 
     @Inject
     @Provides
     @StringKey("nextjoke")
     @IntoMap
+    @Singleton
     fun nextJokeButton(jokeDevClient: JokeDevClient): ButtonReaction = NextJokeButtonReaction(jokeDevClient)
 
 }
