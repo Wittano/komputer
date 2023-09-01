@@ -5,21 +5,23 @@ import discord4j.discordjson.json.ApplicationCommandData
 import discord4j.discordjson.json.ApplicationCommandRequest
 import discord4j.rest.RestClient
 import reactor.core.publisher.Flux
-import reactor.kotlin.core.publisher.toFlux
+import reactor.core.publisher.Mono
 
-class BotCommandRegister private constructor() {
+internal class BotCommandRegister private constructor() {
 
     companion object {
         fun registerCommands(
             client: RestClient,
             commands: List<ApplicationCommandRequest>,
-            registeredCommands: Flux<ApplicationCommandData>
+            registeredCommands: Mono<MutableList<ApplicationCommandData>>
         ): Flux<ApplicationCommandData> {
             val config = ConfigLoader.load()
 
-            return commands.toFlux()
+            return Flux.fromIterable(commands)
                 .filterWhen { request ->
-                    registeredCommands.any { request.name().equals(it.name(), true) }
+                    registeredCommands.map {
+                        it.none { data -> data.name().equals(request.name(), true) }
+                    }.switchIfEmpty(Mono.just(true))
                 }
                 .flatMapSequential {
                     client.applicationService.createGuildApplicationCommand(config.applicationId, config.guildId, it)
