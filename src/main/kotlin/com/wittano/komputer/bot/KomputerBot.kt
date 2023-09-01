@@ -1,5 +1,6 @@
 package com.wittano.komputer.bot
 
+import com.wittano.komputer.command.exception.CommandException
 import com.wittano.komputer.command.registred.RegisteredCommandsUtils
 import com.wittano.komputer.config.ConfigLoader
 import com.wittano.komputer.config.dagger.DaggerKomputerComponent
@@ -19,7 +20,7 @@ import reactor.core.publisher.Mono
 class KomputerBot : Runnable {
 
     private val log = LoggerFactory.getLogger(this::class.qualifiedName)
-    private val komputerComponent = DaggerKomputerComponent.create()
+    private val komputerComponents = DaggerKomputerComponent.create()
 
     override fun run() {
         val config = ConfigLoader.load()
@@ -49,32 +50,43 @@ class KomputerBot : Runnable {
     }
 
     private fun handleButtonInteractionEvents(client: GatewayDiscordClient) {
-        client.on(ButtonInteractionEvent::class.java) {
-            try {
-                val customId = it.customId.replace("-", "")
-                val buttonReaction = DaggerKomputerComponent.create().getButtonReaction()[customId]
+        client.on(ButtonInteractionEvent::class.java) { event ->
+            val customId = event.customId.replace("-", "")
+            val buttonReaction = komputerComponents.getButtonReaction()[customId]
 
-                buttonReaction?.execute(it)
-                    ?: Mono.error(NoSuchElementException("Button with id $customId wasn't found"))
-            } catch (ex: Exception) {
-                log.error("Unexpected error during handling '${it.customId}' button interaction", ex)
-                it.reply(createErrorMessage())
-            }
+            val errorResponse = Mono.error<Void>(CommandException("Button with id $customId wasn't found", customId))
+                .transform {
+                    event.reply(createErrorMessage())
+                }
+
+            buttonReaction?.execute(event) ?: errorResponse
+        }.doOnError { exception ->
+            val buttonIdError = exception.takeIf { it is CommandException }
+                ?.let { "'${(it as CommandException).commandId}'" }
+                .orEmpty()
+
+            log.error("Unexpected error during handling $buttonIdError button interaction", exception)
         }.subscribe()
     }
 
     private fun handleChatInputEvents(client: GatewayDiscordClient) {
-        client.on(ChatInputInteractionEvent::class.java) {
-            try {
-                val commandName = it.commandName.replace("-", "")
-                val slashCommand = komputerComponent.getSlashCommand()[commandName]
+        client.on(ChatInputInteractionEvent::class.java) { event ->
+            val commandName = event.commandName.replace("-", "")
+            val slashCommand = komputerComponents.getSlashCommand()[commandName]
 
-                slashCommand?.execute(it)
-                    ?: Mono.error(NoSuchElementException("Slash command '$commandName' wasn't found"))
-            } catch (ex: Exception) {
-                log.error("Unexpected error during handling '${it.commandName}' chat interaction", ex)
-                it.reply(createErrorMessage())
-            }
+            val errorResponse =
+                Mono.error<Void>(CommandException("Slash command '$commandName' wasn't found", commandName))
+                    .transform {
+                        event.reply(createErrorMessage())
+                    }
+
+            slashCommand?.execute(event) ?: errorResponse
+        }.doOnError { exception ->
+            val commandIdError = exception.takeIf { it is CommandException }
+                ?.let { "'${(it as CommandException).commandId}'" }
+                .orEmpty()
+
+            log.error("Unexpected error during handling $commandIdError chat interaction", exception)
         }.subscribe()
     }
 
