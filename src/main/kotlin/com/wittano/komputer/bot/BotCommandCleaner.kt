@@ -5,17 +5,20 @@ import discord4j.discordjson.json.ApplicationCommandData
 import discord4j.discordjson.json.ApplicationCommandRequest
 import discord4j.rest.RestClient
 import reactor.core.publisher.Flux
+import reactor.core.publisher.Mono
 
-class BotCommandCleaner private constructor() {
+internal class BotCommandCleaner private constructor() {
     companion object {
         fun deleteUnusedGuildCommands(
             client: RestClient,
             commands: MutableList<ApplicationCommandRequest>,
-            registeredCommands: Flux<ApplicationCommandData>
+            registeredCommands: Mono<MutableList<ApplicationCommandData>>
         ): Flux<in Unit> {
             val config = ConfigLoader.load()
 
-            return registeredCommands.filter {
+            return registeredCommands.flatMapMany {
+                Flux.fromIterable(it)
+            }.filter {
                 !commands.map(ApplicationCommandRequest::name).contains(it.name())
             }.flatMap {
                 client.applicationService.deleteGuildApplicationCommand(
