@@ -1,3 +1,4 @@
+import org.apache.tools.ant.filters.Native2AsciiFilter
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
@@ -55,7 +56,7 @@ kapt {
     }
 }
 
-// TODO Create native image with GrallVM
+// TODO Create optional native image with GrallVM
 
 tasks.withType<Jar> {
     manifest {
@@ -70,6 +71,16 @@ tasks.withType<Jar> {
     from({
         configurations.runtimeClasspath.get().filter { it.name.endsWith("jar") }.map { zipTree(it) }
     })
+}
+
+val native2Ascii = Native2AsciiFilter()
+
+tasks.withType<ProcessResources>().configureEach {
+    filesMatching("**/i18n/*.properties") {
+        filter {
+            native2Ascii.filter(it)
+        }
+    }
 }
 
 tasks.test {
