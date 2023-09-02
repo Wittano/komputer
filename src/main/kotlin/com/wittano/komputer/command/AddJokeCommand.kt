@@ -6,7 +6,6 @@ import com.wittano.komputer.joke.mongodb.JokeDatabaseService
 import com.wittano.komputer.message.createErrorMessage
 import com.wittano.komputer.utils.getJokeCategory
 import com.wittano.komputer.utils.getJokeType
-import com.wittano.komputer.utils.toNullable
 import discord4j.core.event.domain.interaction.ChatInputInteractionEvent
 import discord4j.core.`object`.command.ApplicationCommandInteractionOption
 import discord4j.core.spec.InteractionApplicationCommandCallbackSpec
@@ -14,6 +13,7 @@ import org.slf4j.LoggerFactory
 import reactor.core.publisher.Mono
 import java.time.Duration
 import javax.inject.Inject
+import kotlin.jvm.optionals.getOrNull
 
 class AddJokeCommand @Inject constructor(
     private val databaseService: JokeDatabaseService
@@ -26,13 +26,12 @@ class AddJokeCommand @Inject constructor(
                 .flatMap(ApplicationCommandInteractionOption::getValue)
                 .filter {
                     it.asString().isNotBlank()
-                }
-                .toNullable()
+                }.getOrNull()
                 ?.asString()
 
             val question = event.getOption("question")
                 .flatMap(ApplicationCommandInteractionOption::getValue)
-                .toNullable()
+                .getOrNull()
                 ?.asString()
 
             val jokeType = event.getJokeType()

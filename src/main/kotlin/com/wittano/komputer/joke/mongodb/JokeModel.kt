@@ -5,6 +5,7 @@ import com.wittano.komputer.joke.JokeType
 import org.bson.codecs.pojo.annotations.BsonId
 import org.bson.types.ObjectId
 
+// TODO Add BSON serialization for model
 data class JokeModel(
     val answer: String,
     val question: String?,

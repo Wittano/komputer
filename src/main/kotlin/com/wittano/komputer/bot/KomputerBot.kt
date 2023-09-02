@@ -4,15 +4,21 @@ import com.wittano.komputer.command.exception.CommandException
 import com.wittano.komputer.command.registred.RegisteredCommandsUtils
 import com.wittano.komputer.config.ConfigLoader
 import com.wittano.komputer.config.dagger.DaggerKomputerComponent
+import com.wittano.komputer.joke.exception.JokeApiException
 import com.wittano.komputer.message.createErrorMessage
+import com.wittano.komputer.message.resource.MessageResource
 import discord4j.core.DiscordClientBuilder
 import discord4j.core.GatewayDiscordClient
 import discord4j.core.event.domain.interaction.ButtonInteractionEvent
 import discord4j.core.event.domain.interaction.ChatInputInteractionEvent
+import discord4j.core.event.domain.interaction.DeferrableInteractionEvent
+import discord4j.core.spec.InteractionApplicationCommandCallbackSpec
 import org.slf4j.LoggerFactory
 import picocli.CommandLine.Command
 import reactor.core.publisher.Mono
+import java.util.*
 
+// TODO Export cli option into new submodule e.g. cli
 @Command(
     name = "komputer",
     description = ["Discord bot behave as like \"komputer\". One of character in Star Track parody series created by Dem3000"]
@@ -39,6 +45,7 @@ class KomputerBot : Runnable {
                     it.isNotEmpty()
                 }
 
+        // TODO Export command registration management to separate subcommand
         BotCommandCleaner.deleteUnusedGuildCommands(client.restClient, commands, registeredCommands)
             .thenMany(BotCommandRegister.registerCommands(client.restClient, commands, registeredCommands))
             .subscribe()
@@ -55,17 +62,18 @@ class KomputerBot : Runnable {
             val buttonReaction = komputerComponents.getButtonReaction()[customId]
 
             val errorResponse = Mono.error<Void>(CommandException("Button with id $customId wasn't found", customId))
-                .transform {
-                    event.reply(createErrorMessage())
-                }
+                .doOnError { exception ->
+                    val buttonIdError = exception.takeIf { it is CommandException }
+                        ?.let { it as CommandException }
+                        ?.let { "'${it.commandId}'" }
+                        .orEmpty()
 
-            buttonReaction?.execute(event) ?: errorResponse
-        }.doOnError { exception ->
-            val buttonIdError = exception.takeIf { it is CommandException }
-                ?.let { "'${(it as CommandException).commandId}'" }
-                .orEmpty()
+                    log.error("Unexpected error during handling $buttonIdError button interaction", exception)
+                }.transform { event.reply(createErrorMessage()) }
 
-            log.error("Unexpected error during handling $buttonIdError button interaction", exception)
+            buttonReaction?.execute(event)
+                ?.onErrorResume { exception -> sendErrorMessage(event, exception) }
+                ?: errorResponse
         }.subscribe()
     }
 
@@ -76,18 +84,43 @@ class KomputerBot : Runnable {
 
             val errorResponse =
                 Mono.error<Void>(CommandException("Slash command '$commandName' wasn't found", commandName))
-                    .transform {
-                        event.reply(createErrorMessage())
-                    }
+                    .doOnError { exception ->
+                        val commandIdError = exception.takeIf { it is CommandException }
+                            ?.let { it as CommandException }
+                            ?.let { "'${it.commandId}'" }
+                            .orEmpty()
+                        
+                        log.error("Unexpected error during handling $commandIdError chat interaction", exception)
+                    }.transform { event.reply(createErrorMessage()) }
 
-            slashCommand?.execute(event) ?: errorResponse
-        }.doOnError { exception ->
-            val commandIdError = exception.takeIf { it is CommandException }
-                ?.let { "'${(it as CommandException).commandId}'" }
-                .orEmpty()
-
-            log.error("Unexpected error during handling $commandIdError chat interaction", exception)
+            slashCommand?.execute(event)
+                ?.onErrorResume { exception -> sendErrorMessage(event, exception) }
+                ?: errorResponse
         }.subscribe()
+    }
+
+    private fun sendErrorMessage(
+        event: DeferrableInteractionEvent,
+        exception: Throwable,
+        isUserOnlyVisible: Boolean = false
+    ): Mono<Void> {
+        val errorMessage = exception.takeIf { it is JokeApiException }
+            ?.let { it as JokeApiException }
+            ?.let {
+                val locale = event.interaction.userLocale.split("-")
+                    .takeIf { isUserOnlyVisible }
+                    ?.let { (language, country) ->
+                        Locale(language, country)
+                    } ?: Locale("pl")
+                val msg = MessageResource.get(it.code, locale)
+
+                InteractionApplicationCommandCallbackSpec.builder()
+                    .content(msg)
+                    .build()
+                    .withEphemeral(isUserOnlyVisible)
+            }
+
+        return event.reply(errorMessage ?: createErrorMessage())
     }
 
 }

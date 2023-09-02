@@ -5,5 +5,6 @@ enum class JokeCategory(val category: String, val polishTranslate: String) {
     ANY("Any", "Dowolne"),
     MISC("Misc", "Misc"),
     DARK("Dark", "Czarny humor"),
-    SPOOKY("Spooky", "Straszne")
+    SPOOKY("Spooky", "Straszne"),
+    YO_MAMA("YO_MAMA", "Twoja stara")
 }

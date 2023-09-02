@@ -27,4 +27,7 @@
         </else>
     </if>
 
+    <!-- TODO Create production log configuration -->
+    <!-- TODO Create log rolling file log for production -->
+
 </configuration>
