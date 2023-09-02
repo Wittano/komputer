@@ -5,10 +5,8 @@ import com.mongodb.reactivestreams.client.MongoClient
 import com.mongodb.reactivestreams.client.MongoCollection
 import com.mongodb.reactivestreams.client.MongoDatabase
 import com.wittano.komputer.config.ConfigLoader
-import com.wittano.komputer.joke.Joke
-import com.wittano.komputer.joke.JokeCategory
-import com.wittano.komputer.joke.JokeService
-import com.wittano.komputer.joke.JokeType
+import com.wittano.komputer.joke.*
+import com.wittano.komputer.message.resource.ErrorMessage
 import org.bson.Document
 import org.bson.conversions.Bson
 import org.bson.types.ObjectId
@@ -22,7 +20,7 @@ private const val JOKES_DATABASE_NAME = "jokes"
 
 class JokeDatabaseService @Inject constructor(
     private val client: MongoClient
-) : JokeService {
+) : JokeService, JokeRandomService {
     private val log = LoggerFactory.getLogger(this::class.qualifiedName)
     private val database by lazy {
         val dbName = ConfigLoader.load().mongoDbName
@@ -91,19 +89,30 @@ class JokeDatabaseService @Inject constructor(
         category: JokeCategory?,
         type: JokeType
     ): Mono<JokeModel> {
-        val sampleObject = BasicDBObject()
-        sampleObject["\$sample"] = BasicDBObject().also { doc ->
-            doc["size"] = 1
+        val sampleObject = BasicDBObject().apply {
+            this["\$sample"] = BasicDBObject().also { doc ->
+                doc["size"] = 1
+            }
         }
 
-        val matcherObject = BasicDBObject()
-        matcherObject["\$match"] = BasicDBObject().apply {
-            category?.also { c -> this["category"] = c }
+        val matcherObject = BasicDBObject().apply {
+            this["\$match"] = BasicDBObject().apply {
+                category?.takeIf { it != JokeCategory.ANY }
+                    ?.also { c -> this["category"] = c }
 
-            this["type"] = type.toString()
+                this["type"] = type.toString()
+            }
         }
 
         return Mono.from(collection.aggregate(mutableListOf(sampleObject, matcherObject), JokeModel::class.java))
+            .switchIfEmpty(
+                Mono.error(
+                    JokeException(
+                        "Joke with type '${type}' and category '${category}' wasn't found",
+                        ErrorMessage.JOKE_NOT_FOUND
+                    )
+                )
+            )
     }
 
     private fun getJokeCollection() =

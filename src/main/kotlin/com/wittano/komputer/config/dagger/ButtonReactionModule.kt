@@ -1,5 +1,6 @@
 package com.wittano.komputer.config.dagger
 
+import com.wittano.komputer.joke.JokeRandomService
 import com.wittano.komputer.joke.jokedev.JokeDevClient
 import com.wittano.komputer.message.interaction.ApologiesButtonReaction
 import com.wittano.komputer.message.interaction.ButtonReaction
@@ -25,6 +26,10 @@ class ButtonReactionModule {
     @StringKey("nextjoke")
     @IntoMap
     @Singleton
-    fun nextJokeButton(jokeDevClient: JokeDevClient): ButtonReaction = NextJokeButtonReaction(jokeDevClient)
+    fun nextJokeButton(
+        jokeDevClient: JokeDevClient,
+        jokeRandomServices: Set<@JvmSuppressWildcards JokeRandomService>
+    ): ButtonReaction =
+        NextJokeButtonReaction(jokeDevClient, jokeRandomServices)
 
 }

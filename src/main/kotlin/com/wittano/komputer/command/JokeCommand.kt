@@ -2,6 +2,7 @@ package com.wittano.komputer.command
 
 import com.wittano.komputer.joke.JokeApiService
 import com.wittano.komputer.joke.JokeCategory
+import com.wittano.komputer.joke.JokeRandomService
 import com.wittano.komputer.joke.JokeType
 import com.wittano.komputer.joke.jokedev.JokeDevApiException
 import com.wittano.komputer.message.createJokeMessage
@@ -17,7 +18,8 @@ import reactor.core.scheduler.Schedulers
 import javax.inject.Inject
 
 class JokeCommand @Inject constructor(
-    private val jokeDevClient: JokeApiService
+    private val jokeDevClient: JokeApiService,
+    private val jokeRandomServices: Set<@JvmSuppressWildcards JokeRandomService>
 ) : SlashCommand {
     override fun execute(event: ChatInputInteractionEvent): Mono<Void> {
         val category = event.getJokeCategory() ?: JokeCategory.ANY
@@ -36,7 +38,7 @@ class JokeCommand @Inject constructor(
             return Mono.error(JokeDevApiException("Joke type '$type' isn't support", ErrorMessage.UNSUPPORTED_TYPE))
         }
 
-        val joke = jokeDevClient.getRandom(category, type)
+        val joke = jokeRandomServices.random().getRandom(category, type)
 
         return joke.publishOn(Schedulers.boundedElastic())
             .flatMap {

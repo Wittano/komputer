@@ -10,6 +10,4 @@ interface JokeService {
 
     fun get(id: String): Mono<Joke>
 
-    fun getRandom(category: JokeCategory?, type: JokeType): Mono<Joke>
-
 }

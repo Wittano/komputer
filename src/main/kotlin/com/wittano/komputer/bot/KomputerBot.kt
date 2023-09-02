@@ -4,7 +4,7 @@ import com.wittano.komputer.command.exception.CommandException
 import com.wittano.komputer.command.registred.RegisteredCommandsUtils
 import com.wittano.komputer.config.ConfigLoader
 import com.wittano.komputer.config.dagger.DaggerKomputerComponent
-import com.wittano.komputer.joke.exception.JokeApiException
+import com.wittano.komputer.joke.JokeException
 import com.wittano.komputer.message.createErrorMessage
 import com.wittano.komputer.message.resource.MessageResource
 import discord4j.core.DiscordClientBuilder
@@ -89,7 +89,7 @@ class KomputerBot : Runnable {
                             ?.let { it as CommandException }
                             ?.let { "'${it.commandId}'" }
                             .orEmpty()
-                        
+
                         log.error("Unexpected error during handling $commandIdError chat interaction", exception)
                     }.transform { event.reply(createErrorMessage()) }
 
@@ -104,8 +104,8 @@ class KomputerBot : Runnable {
         exception: Throwable,
         isUserOnlyVisible: Boolean = false
     ): Mono<Void> {
-        val errorMessage = exception.takeIf { it is JokeApiException }
-            ?.let { it as JokeApiException }
+        val errorMessage = exception.takeIf { it is JokeException }
+            ?.let { it as JokeException }
             ?.let {
                 val locale = event.interaction.userLocale.split("-")
                     .takeIf { isUserOnlyVisible }
@@ -119,6 +119,8 @@ class KomputerBot : Runnable {
                     .build()
                     .withEphemeral(isUserOnlyVisible)
             }
+
+        log.error("During execute command, was thrown unexpected error", exception)
 
         return event.reply(errorMessage ?: createErrorMessage())
     }

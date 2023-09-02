@@ -18,12 +18,13 @@ class JokeDevClient @Inject constructor(
     @Named("jokeDevClient")
     private val client: OkHttpClient,
     private val objectMapper: ObjectMapper
-) : JokeApiService {
+) : JokeApiService, JokeRandomService {
 
     private val log = LoggerFactory.getLogger(this::class.qualifiedName)
 
-    override fun getRandom(category: JokeCategory, type: JokeType): Mono<Joke> {
-        val requestUrl = "https://v2.jokeapi.dev/joke/${category.category}?type=${type.jokeDevValue}"
+    override fun getRandom(category: JokeCategory?, type: JokeType): Mono<Joke> {
+        val apiCategory = category?.category ?: JokeCategory.ANY.category
+        val requestUrl = "https://v2.jokeapi.dev/joke/${apiCategory}?type=${type.jokeDevValue}"
         val request = Request.Builder().url(requestUrl).build()
 
         val rawResponse = Mono.just(client.newCall(request).execute())

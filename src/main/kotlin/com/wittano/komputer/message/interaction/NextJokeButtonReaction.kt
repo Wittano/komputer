@@ -2,6 +2,7 @@ package com.wittano.komputer.message.interaction
 
 import com.wittano.komputer.joke.JokeApiService
 import com.wittano.komputer.joke.JokeCategory
+import com.wittano.komputer.joke.JokeRandomService
 import com.wittano.komputer.joke.JokeType
 import com.wittano.komputer.joke.jokedev.JokeDevApiException
 import com.wittano.komputer.message.createErrorMessage
@@ -18,7 +19,8 @@ import kotlin.jvm.optionals.getOrNull
 import kotlin.random.Random
 
 class NextJokeButtonReaction @Inject constructor(
-    private val jokeDevClient: JokeApiService
+    private val jokeDevClient: JokeApiService,
+    private val jokeRandomService: Set<@JvmSuppressWildcards JokeRandomService>
 ) : ButtonReaction {
     override fun execute(event: ButtonInteractionEvent): Mono<Void> {
         val fields = event.interaction.message.getOrNull()?.embeds?.get(0)?.fields
@@ -43,7 +45,7 @@ class NextJokeButtonReaction @Inject constructor(
             )
         }
 
-        val joke = jokeDevClient.getRandom(category, type)
+        val joke = jokeRandomService.random().getRandom(category, type)
         val apologies = "Przepraszam".takeIf { Random.nextInt().mod(7) == 0 } ?: ""
 
         return joke.flatMap {
