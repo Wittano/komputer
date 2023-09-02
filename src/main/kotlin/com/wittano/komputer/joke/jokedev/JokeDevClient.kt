@@ -57,7 +57,11 @@ class JokeDevClient @Inject constructor(
                 Mono.error(JokeDevApiException("Failed to get joke", ErrorMessage.JOKE_NOT_FOUND, response))
             }
         }.map {
-            it.toJoke()
+            it.toJoke().apply {
+                if (this.isYoMama()) {
+                    this.category = JokeCategory.YO_MAMA
+                }
+            }
         }.doOnError {
             val errorResponse = (it as JokeDevApiException).response
 

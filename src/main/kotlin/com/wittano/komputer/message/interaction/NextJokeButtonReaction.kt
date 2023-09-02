@@ -25,16 +25,8 @@ class NextJokeButtonReaction @Inject constructor(
         val category = fields?.get(fields.size - 1)
             ?.value
             ?.let { value -> JokeCategory.entries.find { it.polishTranslate == value } }
+            ?.takeIf { it != JokeCategory.YO_MAMA }
             ?: JokeCategory.ANY
-
-        if (!jokeDevClient.supports(category)) {
-            return Mono.error(
-                JokeDevApiException(
-                    "Joke category '$category' isn't support by API",
-                    ErrorMessage.UNSUPPORTED_CATEGORY
-                )
-            )
-        }
 
         val type = if (fields?.size == 3) {
             JokeType.TWO_PART

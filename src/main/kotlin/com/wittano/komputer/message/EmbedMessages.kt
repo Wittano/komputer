@@ -1,6 +1,7 @@
 package com.wittano.komputer.message
 
 import com.wittano.komputer.joke.Joke
+import com.wittano.komputer.joke.JokeCategory
 import com.wittano.komputer.joke.JokeType
 import discord4j.core.spec.EmbedCreateFields
 import discord4j.core.spec.EmbedCreateSpec
@@ -20,6 +21,10 @@ fun createJokeMessage(joke: Joke): EmbedCreateSpec {
         builder.addFields(question, answer)
     } else {
         builder.addField("Joke", joke.answer, false)
+    }
+
+    if (joke.category == JokeCategory.YO_MAMA) {
+        builder.image("https://media.tenor.com/sgS8GdoZGn8AAAAd/muscle-man-regular-show-muscle-man.gif")
     }
 
     builder.addField("Category", joke.category.polishTranslate, false)
