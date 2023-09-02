@@ -3,15 +3,20 @@ package com.wittano.komputer.joke.mongodb
 import com.wittano.komputer.joke.JokeCategory
 import com.wittano.komputer.joke.JokeType
 import org.bson.codecs.pojo.annotations.BsonId
+import org.bson.codecs.pojo.annotations.BsonProperty
 import org.bson.types.ObjectId
 
-// TODO Add BSON serialization for model
 data class JokeModel(
+    @BsonProperty("answer")
     val answer: String,
-    val question: String?,
+    @BsonProperty("type")
     val type: JokeType,
-    val category: JokeCategory
+    @BsonProperty("category")
+    val category: JokeCategory,
+    @BsonProperty("question")
+    var question: String? = null
 ) {
     @BsonId
+    @BsonProperty("_id")
     lateinit var id: ObjectId
 }

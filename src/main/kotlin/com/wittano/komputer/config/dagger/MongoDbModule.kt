@@ -11,6 +11,8 @@ import com.wittano.komputer.config.ConfigLoader
 import dagger.Module
 import dagger.Provides
 import org.bson.Document
+import org.bson.codecs.configuration.CodecRegistries
+import org.bson.codecs.pojo.PojoCodecProvider
 import reactor.core.publisher.Mono
 import java.time.Duration
 import javax.inject.Singleton
@@ -27,9 +29,18 @@ class MongoDbModule {
             .version(ServerApiVersion.V1)
             .build()
 
+        val pojoProvider = CodecRegistries.fromProviders(
+            PojoCodecProvider.builder()
+                .automatic(true)
+                .build()
+        )
+
+        val codecRegister = CodecRegistries.fromRegistries(MongoClients.getDefaultCodecRegistry(), pojoProvider)
+
         val settings = MongoClientSettings.builder()
             .applyConnectionString(ConnectionString(config.mongoDbUri))
             .serverApi(serverApi)
+            .codecRegistry(codecRegister)
             .build()
 
         val client = MongoClients.create(settings)

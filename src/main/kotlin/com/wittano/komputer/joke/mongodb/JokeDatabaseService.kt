@@ -40,10 +40,10 @@ class JokeDatabaseService @Inject constructor(
     }
 
     override fun add(joke: Joke): Mono<String> {
-        val jokeCollection = getJokeCollection()
+        val jokeCollection = getJokeModelCollection()
 
         return jokeCollection.flatMap {
-            it.insertOne(joke.toDocument()).toMono()
+            it.insertOne(joke.toModel()).toMono()
         }.filter {
             it.wasAcknowledged()
         }.doOnError {
@@ -54,7 +54,7 @@ class JokeDatabaseService @Inject constructor(
     }
 
     override fun remove(id: String): Mono<Void> {
-        val jokeCollection = getJokeCollection()
+        val jokeCollection = getJokeModelCollection()
 
         return jokeCollection.flatMap {
             Mono.from(it.deleteOne(id.toBson()))
@@ -67,8 +67,11 @@ class JokeDatabaseService @Inject constructor(
         val jokeCollection = getJokeModelCollection()
 
         return jokeCollection.flatMap {
-            // TODO Add exception handler for invalid bson id
-            Mono.from(it.find(id.toBson()))
+            try {
+                Mono.from(it.find(id.toBson()))
+            } catch (_: Exception) {
+                Mono.error(InvalidJokeIdException("Joke ID is invalid", ErrorMessage.JOKE_ID_INVALID))
+            }
         }.map {
             it.toJoke()
         }
@@ -144,17 +147,10 @@ class JokeDatabaseService @Inject constructor(
 
 }
 
+private fun Joke.toModel(): JokeModel = JokeModel(answer, type, category, question)
+
 private fun String.toBson(): Bson = BasicDBObject().apply {
     this["_id"] = ObjectId(this@toBson)
 }
 
 private fun JokeModel.toJoke(): Joke = Joke(answer, category, type, question)
-
-private fun Joke.toDocument(): Document = Document(
-    mapOf(
-        Pair("category", this.category),
-        Pair("type", this.type),
-        Pair("question", this.question),
-        Pair("answer", this.answer)
-    )
-)
