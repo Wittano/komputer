@@ -6,4 +6,5 @@ data class Config(
     val guildId: Long,
     val mongoDbUri: String,
     val mongoDbName: String,
+    val rapidApiKey: String?,
 )

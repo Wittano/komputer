@@ -2,7 +2,7 @@ package com.wittano.komputer.config.dagger
 
 import com.wittano.komputer.command.*
 import com.wittano.komputer.joke.JokeRandomService
-import com.wittano.komputer.joke.jokedev.JokeDevClient
+import com.wittano.komputer.joke.api.jokedev.JokeDevClient
 import com.wittano.komputer.joke.mongodb.JokeDatabaseService
 import dagger.Module
 import dagger.Provides

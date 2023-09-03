@@ -1,4 +1,4 @@
-package com.wittano.komputer.joke.jokedev
+package com.wittano.komputer.joke.api.jokedev
 
 import com.wittano.komputer.joke.JokeCategory
 

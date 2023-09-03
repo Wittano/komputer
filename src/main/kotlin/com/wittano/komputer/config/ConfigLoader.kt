@@ -20,7 +20,8 @@ class ConfigLoader private constructor() {
                 applicationId = dotenv.getOrElseThrow("APPLICATION_ID").toLong(),
                 guildId = dotenv.getOrElseThrow("SERVER_GUID").toLong(),
                 mongoDbUri = dotenv.getOrElseThrow("MONGODB_URI"),
-                mongoDbName = dotenv.getOrElseThrow("MONGODB_DB_NAME")
+                mongoDbName = dotenv.getOrElseThrow("MONGODB_DB_NAME"),
+                rapidApiKey = dotenv.get("RAPID_API_KEY", "").takeIf { it.isNotBlank() }
             )
 
             config = loadedConfig

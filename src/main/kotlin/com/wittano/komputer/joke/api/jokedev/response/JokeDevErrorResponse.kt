@@ -1,4 +1,4 @@
-package com.wittano.komputer.joke.jokedev.response
+package com.wittano.komputer.joke.api.jokedev.response
 
 data class JokeDevErrorResponse(
     val additionalInfo: String,

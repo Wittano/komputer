@@ -1,7 +1,7 @@
 package com.wittano.komputer.config.dagger
 
 import com.wittano.komputer.joke.JokeRandomService
-import com.wittano.komputer.joke.jokedev.JokeDevClient
+import com.wittano.komputer.joke.api.jokedev.JokeDevClient
 import com.wittano.komputer.message.interaction.ApologiesButtonReaction
 import com.wittano.komputer.message.interaction.ButtonReaction
 import com.wittano.komputer.message.interaction.NextJokeButtonReaction

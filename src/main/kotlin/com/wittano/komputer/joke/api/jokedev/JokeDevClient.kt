@@ -1,21 +1,20 @@
-package com.wittano.komputer.joke.jokedev
+package com.wittano.komputer.joke.api.jokedev
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.wittano.komputer.joke.*
-import com.wittano.komputer.joke.jokedev.response.JokeDevErrorResponse
-import com.wittano.komputer.joke.jokedev.response.JokeDevSingleResponse
-import com.wittano.komputer.joke.jokedev.response.JokeDevTwoPartResponse
+import com.wittano.komputer.joke.api.jokedev.response.JokeDevErrorResponse
+import com.wittano.komputer.joke.api.jokedev.response.JokeDevSingleResponse
+import com.wittano.komputer.joke.api.jokedev.response.JokeDevTwoPartResponse
 import com.wittano.komputer.message.resource.ErrorMessage
+import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.slf4j.LoggerFactory
 import reactor.core.publisher.Mono
 import java.io.IOException
 import javax.inject.Inject
-import javax.inject.Named
 
 class JokeDevClient @Inject constructor(
-    @Named("jokeDevClient")
     private val client: OkHttpClient,
     private val objectMapper: ObjectMapper
 ) : JokeApiService, JokeRandomService {
@@ -24,7 +23,10 @@ class JokeDevClient @Inject constructor(
 
     override fun getRandom(category: JokeCategory?, type: JokeType): Mono<Joke> {
         val apiCategory = category?.category ?: JokeCategory.ANY.category
-        val requestUrl = "https://v2.jokeapi.dev/joke/${apiCategory}?type=${type.jokeDevValue}"
+        val requestUrl = "https://v2.jokeapi.dev/joke/${apiCategory}".toHttpUrl().newBuilder()
+            .addQueryParameter("type", type.jokeDevValue)
+            .build()
+
         val request = Request.Builder().url(requestUrl).build()
 
         val rawResponse = Mono.just(client.newCall(request).execute())
@@ -69,9 +71,6 @@ class JokeDevClient @Inject constructor(
             log.error("Failed get random joke from URL ${requestUrl}. Error message: ${errorResponse?.message}", it)
         }
     }
-
-    // Every type of joke is supported
-    override fun supports(type: JokeType): Boolean = true
 
     override fun supports(category: JokeCategory): Boolean = category != JokeCategory.YO_MAMA
 

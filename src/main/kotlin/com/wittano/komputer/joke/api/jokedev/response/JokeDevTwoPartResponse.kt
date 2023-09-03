@@ -1,9 +1,9 @@
-package com.wittano.komputer.joke.jokedev.response
+package com.wittano.komputer.joke.api.jokedev.response
 
 import com.wittano.komputer.joke.Joke
 import com.wittano.komputer.joke.JokeExtractor
 import com.wittano.komputer.joke.JokeType
-import com.wittano.komputer.joke.jokedev.toJokeCategory
+import com.wittano.komputer.joke.api.jokedev.toJokeCategory
 
 data class JokeDevTwoPartResponse(
     val category: String,

@@ -1,4 +1,4 @@
-package com.wittano.komputer.joke.jokedev.response
+package com.wittano.komputer.joke.api.jokedev.response
 
 import com.fasterxml.jackson.core.JsonParser
 import com.fasterxml.jackson.databind.DeserializationContext
