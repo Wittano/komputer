@@ -64,7 +64,7 @@ class JokeDatabaseService @Inject constructor(
     }
 
     override fun remove(id: String): Mono<Void> {
-        val jokeCollection = getJokeModelCollection()
+        val jokeCollection = getJokeCollection()
 
         return jokeCollection.flatMap {
             Mono.from(it.deleteOne(id.toBson()))
@@ -104,7 +104,7 @@ class JokeDatabaseService @Inject constructor(
     ): Mono<JokeModel> {
         val sampleObject = BasicDBObject().apply {
             this["\$sample"] = BasicDBObject().also { doc ->
-                doc["size"] = 1
+                doc["size"] = 10
             }
         }
 
@@ -157,7 +157,7 @@ class JokeDatabaseService @Inject constructor(
 
 }
 
-private fun Joke.toModel(): JokeModel = JokeModel(answer, type, category, question)
+private fun Joke.toModel(): JokeModel = JokeModel(answer, type, category).apply { this.question = question }
 
 private fun String.toBson(): Bson = BasicDBObject().apply {
     this["_id"] = ObjectId(this@toBson)

@@ -12,11 +12,12 @@ data class JokeModel(
     @BsonProperty("type")
     val type: JokeType,
     @BsonProperty("category")
-    val category: JokeCategory,
-    @BsonProperty("question")
-    var question: String? = null
+    val category: JokeCategory
 ) {
     @BsonId
     @BsonProperty("_id")
     lateinit var id: ObjectId
+
+    @BsonProperty("question")
+    var question: String? = null
 }
