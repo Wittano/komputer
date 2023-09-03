@@ -26,15 +26,6 @@ class JokeCommand @Inject constructor(
         val category = event.getJokeCategory() ?: JokeCategory.ANY
         val type = event.getJokeType() ?: JokeType.SINGLE
 
-        if (!jokeDevClient.supports(category)) {
-            return Mono.error(
-                JokeDevApiException(
-                    "Joke category '$category' isn't support",
-                    ErrorMessage.UNSUPPORTED_CATEGORY
-                )
-            )
-        }
-
         if (!jokeDevClient.supports(type)) {
             return Mono.error(JokeDevApiException("Joke type '$type' isn't support", ErrorMessage.UNSUPPORTED_TYPE))
         }

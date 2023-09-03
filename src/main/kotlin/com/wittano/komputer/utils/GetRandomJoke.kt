@@ -1,10 +1,8 @@
 package com.wittano.komputer.utils
 
-import com.wittano.komputer.joke.Joke
-import com.wittano.komputer.joke.JokeCategory
-import com.wittano.komputer.joke.JokeRandomService
-import com.wittano.komputer.joke.JokeType
+import com.wittano.komputer.joke.*
 import com.wittano.komputer.joke.api.rapidapi.RapidApiException
+import com.wittano.komputer.message.resource.ErrorMessage
 import reactor.core.publisher.Mono
 
 fun getRandomJoke(
@@ -17,8 +15,10 @@ fun getRandomJoke(
         .onErrorResume {
             if (it is RapidApiException) {
                 return@onErrorResume jokeRandomService.excludeRapidApiServices()
-                    .random()
-                    .getRandom(category, type)
+                    .takeIf { list -> list.isNotEmpty() }
+                    ?.random()
+                    ?.getRandom(category, type)
+                    ?: Mono.error(JokeException("Joke not found", ErrorMessage.JOKE_NOT_FOUND))
             }
 
             Mono.error(it)
