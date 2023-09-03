@@ -41,16 +41,26 @@ class JokeDatabaseService @Inject constructor(
 
     override fun add(joke: Joke): Mono<String> {
         val jokeCollection = getJokeModelCollection()
+        val isJokeAdded = jokeCollection.flatMap {
+            val contentFilter = BasicDBObject().apply {
+                this["answer"] = joke.answer
+            }
 
-        return jokeCollection.flatMap {
-            it.insertOne(joke.toModel()).toMono()
-        }.filter {
-            it.wasAcknowledged()
-        }.doOnError {
-            log.error("Failed to add new joke into database. Cause: ${it.message}", it)
-        }.mapNotNull {
-            it.insertedId?.asObjectId()?.value?.toString()
+            Mono.from(it.find(contentFilter))
+                .map { true }
         }
+
+        return jokeCollection
+            .filterWhen { isJokeAdded }
+            .flatMap {
+                it.insertOne(joke.toModel()).toMono()
+            }.filter {
+                it.wasAcknowledged()
+            }.doOnError {
+                log.error("Failed to add new joke into database. Cause: ${it.message}", it)
+            }.mapNotNull {
+                it.insertedId?.asObjectId()?.value?.toString()
+            }
     }
 
     override fun remove(id: String): Mono<Void> {

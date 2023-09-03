@@ -8,9 +8,9 @@ import com.wittano.komputer.joke.api.jokedev.JokeDevApiException
 import com.wittano.komputer.message.createJokeMessage
 import com.wittano.komputer.message.createJokeReactionButtons
 import com.wittano.komputer.message.resource.ErrorMessage
-import com.wittano.komputer.utils.filterService
 import com.wittano.komputer.utils.getJokeCategory
 import com.wittano.komputer.utils.getJokeType
+import com.wittano.komputer.utils.getRandomJoke
 import discord4j.core.event.domain.interaction.ChatInputInteractionEvent
 import discord4j.core.`object`.component.ActionRow
 import discord4j.core.spec.InteractionApplicationCommandCallbackSpec
@@ -39,9 +39,8 @@ class JokeCommand @Inject constructor(
             return Mono.error(JokeDevApiException("Joke type '$type' isn't support", ErrorMessage.UNSUPPORTED_TYPE))
         }
 
-        val joke = jokeRandomServices.filterService(type, category).random().getRandom(category, type)
-
-        return joke.publishOn(Schedulers.boundedElastic())
+        return getRandomJoke(type, category, jokeRandomServices)
+            .publishOn(Schedulers.boundedElastic())
             .flatMap {
                 val message = InteractionApplicationCommandCallbackSpec.builder()
                     .addEmbed(createJokeMessage(it))

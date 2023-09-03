@@ -13,12 +13,18 @@ import dagger.Provides
 import org.bson.Document
 import org.bson.codecs.configuration.CodecRegistries
 import org.bson.codecs.pojo.PojoCodecProvider
+import org.slf4j.LoggerFactory
 import reactor.core.publisher.Mono
 import java.time.Duration
+import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Singleton
+
+var isDatabaseReady = AtomicBoolean(false)
 
 @Module
 class MongoDbModule {
+
+    private val log = LoggerFactory.getLogger(this::class.qualifiedName)
 
     @Provides
     @Singleton
@@ -54,9 +60,10 @@ class MongoDbModule {
         Mono.from(client.getDatabase(config.mongoDbName).runCommand(Document("ping", 1)))
             .timeout(Duration.ofSeconds(2))
             .doOnError {
-                throw it
-            }
-            .block()
+                log.error("Failed to connect with MongoDB database", it)
+            }.doOnSuccess {
+                isDatabaseReady.set(true)
+            }.subscribe()
     }
 
 }
