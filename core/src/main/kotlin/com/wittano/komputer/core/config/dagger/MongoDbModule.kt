@@ -8,6 +8,7 @@ import com.mongodb.reactivestreams.client.MongoClient
 import com.mongodb.reactivestreams.client.MongoClients
 import com.wittano.komputer.core.config.Config
 import com.wittano.komputer.core.config.ConfigLoader
+import dagger.Module
 import dagger.Provides
 import org.bson.Document
 import org.bson.codecs.configuration.CodecRegistries

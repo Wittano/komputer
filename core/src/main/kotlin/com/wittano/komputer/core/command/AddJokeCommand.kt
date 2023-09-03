@@ -2,10 +2,10 @@ package com.wittano.komputer.core.command
 
 import com.wittano.komputer.core.joke.Joke
 import com.wittano.komputer.core.joke.JokeType
+import com.wittano.komputer.core.joke.mongodb.JokeDatabaseService
 import com.wittano.komputer.core.message.createErrorMessage
 import com.wittano.komputer.core.utils.getJokeCategory
 import com.wittano.komputer.core.utils.getJokeType
-import com.wittano.komputer.joke.mongodb.JokeDatabaseService
 import discord4j.core.event.domain.interaction.ChatInputInteractionEvent
 import discord4j.core.`object`.command.ApplicationCommandInteractionOption
 import discord4j.core.spec.InteractionApplicationCommandCallbackSpec

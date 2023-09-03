@@ -2,15 +2,12 @@ package com.wittano.komputer.core.joke.api.rapidapi.humorapi
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.wittano.komputer.core.config.ConfigLoader
-import com.wittano.komputer.core.joke.Joke
-import com.wittano.komputer.core.joke.JokeCategory
-import com.wittano.komputer.core.joke.JokeType
+import com.wittano.komputer.core.joke.*
 import com.wittano.komputer.core.joke.api.JokeApiException
 import com.wittano.komputer.core.joke.api.rapidapi.RapidAPIService
 import com.wittano.komputer.core.joke.api.rapidapi.RapidApiException
-import com.wittano.komputer.joke.*
-import com.wittano.komputer.joke.mongodb.JokeDatabaseService
-import com.wittano.komputer.message.resource.ErrorMessage
+import com.wittano.komputer.core.joke.mongodb.JokeDatabaseService
+import com.wittano.komputer.core.message.resource.ErrorMessage
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.OkHttpClient
 import okhttp3.Request

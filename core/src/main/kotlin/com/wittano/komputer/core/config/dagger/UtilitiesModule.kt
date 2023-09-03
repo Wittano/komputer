@@ -3,6 +3,7 @@ package com.wittano.komputer.core.config.dagger
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.KotlinFeature
 import com.fasterxml.jackson.module.kotlin.KotlinModule
+import dagger.Module
 import dagger.Provides
 import javax.inject.Singleton
 

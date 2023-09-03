@@ -1,6 +1,6 @@
 package com.wittano.komputer.core.command
 
-import com.wittano.komputer.joke.mongodb.JokeDatabaseService
+import com.wittano.komputer.core.joke.mongodb.JokeDatabaseService
 import discord4j.core.event.domain.interaction.ChatInputInteractionEvent
 import discord4j.core.`object`.command.ApplicationCommandInteractionOption
 import reactor.core.publisher.Mono

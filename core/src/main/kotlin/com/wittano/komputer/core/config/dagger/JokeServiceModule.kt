@@ -2,12 +2,13 @@ package com.wittano.komputer.core.config.dagger
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.mongodb.reactivestreams.client.MongoClient
-import com.wittano.komputer.joke.JokeApiService
-import com.wittano.komputer.joke.JokeRandomService
-import com.wittano.komputer.joke.JokeService
-import com.wittano.komputer.joke.api.jokedev.JokeDevClient
-import com.wittano.komputer.joke.api.rapidapi.humorapi.HumorAPIService
-import com.wittano.komputer.joke.mongodb.JokeDatabaseService
+import com.wittano.komputer.core.joke.JokeApiService
+import com.wittano.komputer.core.joke.JokeRandomService
+import com.wittano.komputer.core.joke.JokeService
+import com.wittano.komputer.core.joke.api.jokedev.JokeDevClient
+import com.wittano.komputer.core.joke.api.rapidapi.humorapi.HumorAPIService
+import com.wittano.komputer.core.joke.mongodb.JokeDatabaseService
+import dagger.Module
 import dagger.Provides
 import dagger.multibindings.IntoSet
 import okhttp3.OkHttpClient

@@ -5,12 +5,8 @@ import com.mongodb.reactivestreams.client.MongoClient
 import com.mongodb.reactivestreams.client.MongoCollection
 import com.mongodb.reactivestreams.client.MongoDatabase
 import com.wittano.komputer.core.config.ConfigLoader
-import com.wittano.komputer.core.joke.Joke
-import com.wittano.komputer.core.joke.JokeCategory
-import com.wittano.komputer.core.joke.JokeException
-import com.wittano.komputer.core.joke.JokeType
-import com.wittano.komputer.joke.*
-import com.wittano.komputer.message.resource.ErrorMessage
+import com.wittano.komputer.core.joke.*
+import com.wittano.komputer.core.message.resource.ErrorMessage
 import org.bson.Document
 import org.bson.conversions.Bson
 import org.bson.types.ObjectId

@@ -1,12 +1,12 @@
 package com.wittano.komputer.core.utils
 
 import com.wittano.komputer.core.config.dagger.isDatabaseReady
+import com.wittano.komputer.core.joke.JokeApiService
 import com.wittano.komputer.core.joke.JokeCategory
+import com.wittano.komputer.core.joke.JokeRandomService
 import com.wittano.komputer.core.joke.JokeType
 import com.wittano.komputer.core.joke.api.rapidapi.RapidAPIService
-import com.wittano.komputer.joke.JokeApiService
-import com.wittano.komputer.joke.JokeRandomService
-import com.wittano.komputer.joke.mongodb.JokeDatabaseService
+import com.wittano.komputer.core.joke.mongodb.JokeDatabaseService
 
 fun Set<JokeRandomService>.filterService(type: JokeType, category: JokeCategory): List<JokeRandomService> =
     this.filter {

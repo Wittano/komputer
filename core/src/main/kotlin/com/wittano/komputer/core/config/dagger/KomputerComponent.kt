@@ -1,7 +1,7 @@
 package com.wittano.komputer.core.config.dagger
 
-import com.wittano.komputer.command.SlashCommand
-import com.wittano.komputer.message.interaction.ButtonReaction
+import com.wittano.komputer.core.command.SlashCommand
+import com.wittano.komputer.core.message.interaction.ButtonReaction
 import dagger.Component
 import javax.inject.Singleton
 

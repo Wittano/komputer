@@ -1,10 +1,10 @@
 package com.wittano.komputer.core.config.dagger
 
-import com.wittano.komputer.command.*
-import com.wittano.komputer.core.command.WelcomeCommand
-import com.wittano.komputer.joke.JokeRandomService
-import com.wittano.komputer.joke.api.jokedev.JokeDevClient
-import com.wittano.komputer.joke.mongodb.JokeDatabaseService
+import com.wittano.komputer.core.command.*
+import com.wittano.komputer.core.joke.JokeRandomService
+import com.wittano.komputer.core.joke.api.jokedev.JokeDevClient
+import com.wittano.komputer.core.joke.mongodb.JokeDatabaseService
+import dagger.Module
 import dagger.Provides
 import dagger.multibindings.IntoMap
 import dagger.multibindings.StringKey

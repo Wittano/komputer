@@ -1,10 +1,11 @@
 package com.wittano.komputer.core.config.dagger
 
+import com.wittano.komputer.core.joke.JokeRandomService
+import com.wittano.komputer.core.joke.api.jokedev.JokeDevClient
 import com.wittano.komputer.core.message.interaction.ApologiesButtonReaction
-import com.wittano.komputer.joke.JokeRandomService
-import com.wittano.komputer.joke.api.jokedev.JokeDevClient
-import com.wittano.komputer.message.interaction.ButtonReaction
-import com.wittano.komputer.message.interaction.NextJokeButtonReaction
+import com.wittano.komputer.core.message.interaction.ButtonReaction
+import com.wittano.komputer.core.message.interaction.NextJokeButtonReaction
+import dagger.Module
 import dagger.Provides
 import dagger.multibindings.IntoMap
 import dagger.multibindings.StringKey

@@ -1,12 +1,12 @@
 package com.wittano.komputer.core.bot
 
-import com.wittano.komputer.config.dagger.DaggerKomputerComponent
 import com.wittano.komputer.core.command.exception.CommandException
 import com.wittano.komputer.core.command.registred.RegisteredCommandsUtils
 import com.wittano.komputer.core.config.ConfigLoader
+import com.wittano.komputer.core.config.dagger.DaggerKomputerComponent
 import com.wittano.komputer.core.joke.JokeException
 import com.wittano.komputer.core.message.createErrorMessage
-import com.wittano.komputer.message.resource.MessageResource
+import com.wittano.komputer.core.message.resource.MessageResource
 import discord4j.core.DiscordClientBuilder
 import discord4j.core.GatewayDiscordClient
 import discord4j.core.event.domain.interaction.ButtonInteractionEvent
@@ -14,15 +14,10 @@ import discord4j.core.event.domain.interaction.ChatInputInteractionEvent
 import discord4j.core.event.domain.interaction.DeferrableInteractionEvent
 import discord4j.core.spec.InteractionApplicationCommandCallbackSpec
 import org.slf4j.LoggerFactory
-import picocli.CommandLine.Command
 import reactor.core.publisher.Mono
 import java.util.*
 
 // TODO Export cli option into new submodule e.g. cli
-@Command(
-    name = "komputer",
-    description = ["Discord bot behave as like \"komputer\". One of character in Star Track parody series created by Dem3000"]
-)
 class KomputerBot : Runnable {
 
     private val log = LoggerFactory.getLogger(this::class.qualifiedName)

@@ -1,5 +1,6 @@
 package com.wittano.komputer.core.config.dagger
 
+import dagger.Module
 import dagger.Provides
 import okhttp3.OkHttpClient
 import java.time.Duration

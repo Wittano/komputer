@@ -1,8 +1,10 @@
 package com.wittano.komputer.message.resource
 
+import com.wittano.komputer.core.message.resource.ErrorMessage
+import com.wittano.komputer.core.message.resource.MessageResource
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import java.util.*
-import kotlin.test.assertEquals
 
 class MessageResourceTest {
 
