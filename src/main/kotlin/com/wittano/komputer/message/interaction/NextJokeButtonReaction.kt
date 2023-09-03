@@ -12,7 +12,6 @@ import com.wittano.komputer.utils.getRandomJoke
 import discord4j.core.event.domain.interaction.ButtonInteractionEvent
 import discord4j.core.`object`.component.ActionRow
 import discord4j.core.spec.InteractionApplicationCommandCallbackSpec
-import org.slf4j.LoggerFactory
 import reactor.core.publisher.Mono
 import javax.inject.Inject
 import kotlin.jvm.optionals.getOrNull
@@ -22,8 +21,6 @@ class NextJokeButtonReaction @Inject constructor(
     private val jokeDevClient: JokeApiService,
     private val jokeRandomServices: Set<@JvmSuppressWildcards JokeRandomService>
 ) : ButtonReaction {
-    private val log = LoggerFactory.getLogger(this::class.qualifiedName)
-
     override fun execute(event: ButtonInteractionEvent): Mono<Void> {
         val fields = event.interaction.message.getOrNull()?.embeds?.get(0)?.fields
         val category = fields?.get(fields.size - 1)

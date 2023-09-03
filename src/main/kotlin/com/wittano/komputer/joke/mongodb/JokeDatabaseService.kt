@@ -157,7 +157,8 @@ class JokeDatabaseService @Inject constructor(
 
 }
 
-private fun Joke.toModel(): JokeModel = JokeModel(answer, type, category).apply { this.question = question }
+private fun Joke.toModel(): JokeModel =
+    JokeModel(answer, type, category).apply { this.question = this@toModel.question }
 
 private fun String.toBson(): Bson = BasicDBObject().apply {
     this["_id"] = ObjectId(this@toBson)
