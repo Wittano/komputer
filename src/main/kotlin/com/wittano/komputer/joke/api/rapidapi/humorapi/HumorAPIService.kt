@@ -61,7 +61,11 @@ class HumorAPIService @Inject constructor(
                     return@mapNotNull null
                 }
 
-                objectMapper.readValue(it.body?.bytes(), HumorAPIJokeResponse::class.java)
+                val responseStream = it.body?.byteStream() ?: return@mapNotNull null
+                val response = objectMapper.readValue(responseStream, HumorAPIJokeResponse::class.java)
+                responseStream.close()
+
+                response
             }.map {
                 Joke(
                     answer = it.joke,
