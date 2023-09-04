@@ -1,0 +1,12 @@
+{
+  "name": "welcome",
+  "name_localizations": {
+    "pl": "witaj",
+    "en-US": "welcome"
+  },
+  "description": "Welcome command to greetings to you",
+  "description_localizations": {
+    "en-US": "Welcome command to greetings to you",
+    "pl": "Komputer przywita się z tobą"
+  }
+}

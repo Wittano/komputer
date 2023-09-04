@@ -1,13 +1,10 @@
 package com.wittano.komputer.core.bot
 
 import com.wittano.komputer.core.command.exception.CommandException
-import com.wittano.komputer.core.command.registred.RegisteredCommandsUtils
-import com.wittano.komputer.core.config.ConfigLoader
 import com.wittano.komputer.core.config.dagger.DaggerKomputerComponent
 import com.wittano.komputer.core.joke.JokeException
 import com.wittano.komputer.core.message.createErrorMessage
 import com.wittano.komputer.core.message.resource.MessageResource
-import discord4j.core.DiscordClientBuilder
 import discord4j.core.GatewayDiscordClient
 import discord4j.core.event.domain.interaction.ButtonInteractionEvent
 import discord4j.core.event.domain.interaction.ChatInputInteractionEvent
@@ -17,38 +14,16 @@ import org.slf4j.LoggerFactory
 import reactor.core.publisher.Mono
 import java.util.*
 
-// TODO Export cli option into new submodule e.g. cli
-class KomputerBot : Runnable {
+class KomputerBot {
 
     private val log = LoggerFactory.getLogger(this::class.qualifiedName)
     private val komputerComponents = DaggerKomputerComponent.create()
 
-    override fun run() {
-        val config = ConfigLoader.load()
-        val client = DiscordClientBuilder.create(config.token)
-            .build()
-            .login()
-            .doOnSuccess { log.info("Bot is ready!") }
-            .block() ?: throw IllegalStateException("Failed to start up discord bot")
+    fun start() {
+        handleChatInputEvents(discordClient)
+        handleButtonInteractionEvents(discordClient)
 
-        val commands = RegisteredCommandsUtils.getCommandsFromJsonFiles()
-        val registeredCommands =
-            client.restClient.applicationService
-                .getGuildApplicationCommands(config.applicationId, config.guildId)
-                .collectList()
-                .filter {
-                    it.isNotEmpty()
-                }
-
-        // TODO Export command registration management to separate subcommand
-        BotCommandCleaner.deleteUnusedGuildCommands(client.restClient, commands, registeredCommands)
-            .thenMany(BotCommandRegister.registerCommands(client.restClient, commands, registeredCommands))
-            .subscribe()
-
-        handleChatInputEvents(client)
-        handleButtonInteractionEvents(client)
-
-        client.onDisconnect().block()
+        discordClient.onDisconnect().block()
     }
 
     private fun handleButtonInteractionEvents(client: GatewayDiscordClient) {

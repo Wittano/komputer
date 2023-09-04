@@ -1,0 +1,28 @@
+{
+  "name": "remove-joke",
+  "name_localizations": {
+    "pl": "usuń-żart",
+    "en-US": "remove-joke"
+  },
+  "description": "Remove joke from database",
+  "description_localizations": {
+    "en-US": "Remove joke from database",
+    "pl": "Usuń żart z bazy danych"
+  },
+  "options": [
+    {
+      "type": 3,
+      "name": "id",
+      "name_localizations": {
+        "en-US": "id",
+        "pl": "id"
+      },
+      "description_localizations": {
+        "en-US": "Joke ID",
+        "pl": "Identyfikator żartu"
+      },
+      "description": "Joke ID",
+      "required": true
+    }
+  ]
+}

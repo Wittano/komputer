@@ -8,7 +8,7 @@ fun main() {
     val logger = LoggerFactory.getLogger(Thread.currentThread().name)
 
     try {
-        KomputerBot().run()
+        KomputerBot().start()
     } catch (ex: Exception) {
         logger.error("Unhandled exception: ${ex.message}", ex)
         exitProcess(-1)

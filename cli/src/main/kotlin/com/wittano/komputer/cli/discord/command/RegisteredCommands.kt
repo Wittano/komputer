@@ -1,4 +1,4 @@
-package com.wittano.komputer.core.command.registred
+package com.wittano.komputer.cli.discord.command
 
 import discord4j.common.JacksonResources
 import discord4j.discordjson.json.ApplicationCommandRequest
