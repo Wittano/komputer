@@ -1,14 +1,17 @@
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import org.apache.tools.ant.filters.Native2AsciiFilter
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     kotlin("jvm") version "1.9.10"
     kotlin("kapt") version "1.9.10"
+    id("com.github.johnrengelman.shadow") version "8.1.1"
 
     application
 }
 
 group = "com.wittano.komputer"
+version = rootProject.version
 
 repositories {
     mavenCentral()
@@ -51,19 +54,17 @@ kapt {
     }
 }
 
-tasks.withType<Jar> {
+application {
+    mainClass.set("com.wittano.komputer.cli.MainKt")
+}
+
+tasks.withType<ShadowJar> {
     manifest {
-        attributes["Main-Class"] = "com.wittano.komputer.MainKt"
+        attributes["Main-Class"] = application.mainClass
     }
 
-    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-
-    from(sourceSets.main.get().output)
-
-    dependsOn(configurations.runtimeClasspath)
-    from({
-        configurations.runtimeClasspath.get().filter { it.name.endsWith("jar") }.map { zipTree(it) }
-    })
+    archiveBaseName.set("komputer-cli")
+    archiveClassifier.set("")
 }
 
 val native2Ascii = Native2AsciiFilter()
