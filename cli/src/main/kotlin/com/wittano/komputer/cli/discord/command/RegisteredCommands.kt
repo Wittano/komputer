@@ -9,7 +9,7 @@ import java.nio.file.Paths
 
 class RegisteredCommandsUtils private constructor() {
     companion object {
-        fun getCommandsFromJsonFiles(): MutableList<ApplicationCommandRequest> {
+        internal fun getCommandsFromJsonFiles(): MutableList<ApplicationCommandRequest> {
             val jacksonResources = JacksonResources.create()
             val commands = mutableListOf<ApplicationCommandRequest>()
 
