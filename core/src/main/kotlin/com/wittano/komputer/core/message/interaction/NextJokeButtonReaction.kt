@@ -7,7 +7,10 @@ import com.wittano.komputer.core.joke.JokeType
 import com.wittano.komputer.core.joke.api.jokedev.JokeDevApiException
 import com.wittano.komputer.core.message.createJokeMessage
 import com.wittano.komputer.core.message.createJokeReactionButtons
+import com.wittano.komputer.core.message.resource.ButtonLabel
 import com.wittano.komputer.core.message.resource.ErrorMessage
+import com.wittano.komputer.core.message.resource.getButtonLabel
+import com.wittano.komputer.core.message.resource.toLocale
 import com.wittano.komputer.core.utils.getRandomJoke
 import discord4j.core.event.domain.interaction.ButtonInteractionEvent
 import discord4j.core.`object`.component.ActionRow
@@ -44,14 +47,17 @@ class NextJokeButtonReaction @Inject constructor(
             )
         }
 
-        val apologies = "Przepraszam".takeIf { Random.nextInt().mod(7) == 0 } ?: ""
+        val apologies = getButtonLabel(ButtonLabel.APOLOGIES, event.interaction.userLocale.toLocale())
+            .takeIf {
+                Random.nextInt().mod(7) == 0
+            } ?: ""
 
         return getRandomJoke(type, category, jokeRandomServices).flatMap {
             event.reply(
                 InteractionApplicationCommandCallbackSpec.builder()
                     .content(apologies)
                     .addEmbed(createJokeMessage(it))
-                    .addComponent(ActionRow.of(createJokeReactionButtons()))
+                    .addComponent(ActionRow.of(createJokeReactionButtons(event.interaction.userLocale.toLocale())))
                     .build()
             )
         }

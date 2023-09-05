@@ -8,6 +8,7 @@ import com.wittano.komputer.core.joke.api.jokedev.JokeDevApiException
 import com.wittano.komputer.core.message.createJokeMessage
 import com.wittano.komputer.core.message.createJokeReactionButtons
 import com.wittano.komputer.core.message.resource.ErrorMessage
+import com.wittano.komputer.core.message.resource.toLocale
 import com.wittano.komputer.core.utils.getJokeCategory
 import com.wittano.komputer.core.utils.getJokeType
 import com.wittano.komputer.core.utils.getRandomJoke
@@ -35,7 +36,7 @@ class JokeCommand @Inject constructor(
             .flatMap {
                 val message = InteractionApplicationCommandCallbackSpec.builder()
                     .addEmbed(createJokeMessage(it))
-                    .addComponent(ActionRow.of(createJokeReactionButtons()))
+                    .addComponent(ActionRow.of(createJokeReactionButtons(event.interaction.userLocale.toLocale())))
                     .build()
 
                 event.reply(message)

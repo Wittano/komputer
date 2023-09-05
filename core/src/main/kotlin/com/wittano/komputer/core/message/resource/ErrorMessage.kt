@@ -1,6 +1,6 @@
 package com.wittano.komputer.core.message.resource
 
-internal enum class ErrorMessage(val code: String) {
+enum class ErrorMessage(val code: String) {
     MISSING_QUESTION_FILED("validation.missing-question"),
     JOKE_NOT_FOUND("joke.not-found"),
     UNSUPPORTED_TYPE("joke.unsupported-type"),
