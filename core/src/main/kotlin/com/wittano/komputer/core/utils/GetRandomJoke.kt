@@ -5,7 +5,7 @@ import com.wittano.komputer.core.joke.api.rapidapi.RapidApiException
 import com.wittano.komputer.core.message.resource.ErrorMessage
 import reactor.core.publisher.Mono
 
-fun getRandomJoke(
+internal fun getRandomJoke(
     type: JokeType,
     category: JokeCategory,
     jokeRandomServices: Set<JokeRandomService>

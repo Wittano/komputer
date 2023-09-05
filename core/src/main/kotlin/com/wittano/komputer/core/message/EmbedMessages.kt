@@ -7,7 +7,7 @@ import discord4j.core.spec.EmbedCreateFields
 import discord4j.core.spec.EmbedCreateSpec
 import discord4j.rest.util.Color
 
-fun createJokeMessage(joke: Joke): EmbedCreateSpec {
+internal fun createJokeMessage(joke: Joke): EmbedCreateSpec {
     val builder = EmbedCreateSpec.builder()
         .color(Color.of(0x02f5f5))
         .title("Joke")

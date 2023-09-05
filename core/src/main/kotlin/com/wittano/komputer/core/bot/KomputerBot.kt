@@ -4,7 +4,7 @@ import com.wittano.komputer.core.command.exception.CommandException
 import com.wittano.komputer.core.config.dagger.DaggerKomputerComponent
 import com.wittano.komputer.core.joke.JokeException
 import com.wittano.komputer.core.message.createErrorMessage
-import com.wittano.komputer.core.message.resource.MessageResource
+import com.wittano.komputer.core.message.resource.getErrorMessage
 import discord4j.core.GatewayDiscordClient
 import discord4j.core.event.domain.interaction.ButtonInteractionEvent
 import discord4j.core.event.domain.interaction.ChatInputInteractionEvent
@@ -82,7 +82,7 @@ class KomputerBot {
                     ?.let { (language, country) ->
                         Locale(language, country)
                     } ?: Locale("pl")
-                val msg = MessageResource.get(it.code, locale)
+                val msg = getErrorMessage(it.code, locale)
 
                 InteractionApplicationCommandCallbackSpec.builder()
                     .content(msg)

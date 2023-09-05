@@ -8,7 +8,7 @@ import com.wittano.komputer.core.joke.JokeType
 import com.wittano.komputer.core.joke.api.rapidapi.RapidAPIService
 import com.wittano.komputer.core.joke.mongodb.JokeDatabaseService
 
-fun Set<JokeRandomService>.filterService(type: JokeType, category: JokeCategory): List<JokeRandomService> =
+internal fun Set<JokeRandomService>.filterService(type: JokeType, category: JokeCategory): List<JokeRandomService> =
     this.filter {
         if (it is JokeApiService) {
             return@filter it.supports(type) && it.supports(category)
@@ -32,4 +32,4 @@ private fun excludeRapidApiService(it: JokeRandomService): Boolean {
     return true
 }
 
-fun List<JokeRandomService>.excludeRapidApiServices() = this.filter { excludeRapidApiService(it) }
+internal fun List<JokeRandomService>.excludeRapidApiServices() = this.filter { excludeRapidApiService(it) }

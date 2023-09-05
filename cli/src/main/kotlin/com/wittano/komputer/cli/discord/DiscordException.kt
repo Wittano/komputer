@@ -1,3 +1,3 @@
 package com.wittano.komputer.cli.discord
 
-class DiscordException(msg: String) : RuntimeException(msg)
+internal class DiscordException(msg: String) : RuntimeException(msg)

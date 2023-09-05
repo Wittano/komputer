@@ -8,7 +8,7 @@ import discord4j.discordjson.possible.Possible
 import java.util.*
 import kotlin.jvm.optionals.getOrNull
 
-fun ApplicationCommandRequest.equalsCommand(command: ApplicationCommandData): Boolean {
+internal fun ApplicationCommandRequest.equalsCommand(command: ApplicationCommandData): Boolean {
     val requestOptions = this.options()
         .toOptional()
         .getOrNull()
@@ -58,8 +58,7 @@ private fun ApplicationCommandOptionData.compareApplicationCommandOptions(anothe
 
 private fun <T> Possible<out T>.getOrNull() = this.takeIf { !it.isAbsent }?.toOptional()?.get()
 
-private
-fun Possible<Boolean>.toBoolean(): Boolean = this.toOptional().getOrNull() == true
+private fun Possible<Boolean>.toBoolean(): Boolean = this.toOptional().getOrNull() == true
 
 private fun ApplicationCommandOptionChoiceData.compareApplicationCommandOptionChoiceData(another: ApplicationCommandOptionChoiceData): Boolean {
     return this.name() == another.name() && this.value() == another.value()
