@@ -21,19 +21,18 @@ class BotCommandsUpdater : Runnable {
 
     private val log = LoggerFactory.getLogger(this::class.qualifiedName)
 
-    @Parameters(index = "*", description = ["List of command's names, which will be updated"])
-    var commandName: Array<String> = arrayOf()
+    @Parameters(description = ["List of command's names, which will be updated"])
+    lateinit var commandName: Array<String>
 
     override fun run() {
+        if (commandName.isEmpty()) {
+            log.warn("Command's names list is empty")
+            return
+        }
+
         val commands = RegisteredCommandsUtils.getCommandsFromJsonFiles()
-            .let {
-                if (commandName.isNotEmpty()) {
-                    return@let it.filter { request ->
-                        commandName.contains(request.name())
-                    }
-                } else {
-                    it
-                }
+            .filter {
+                commandName.contains(it.name())
             }
 
         updateCommands(commands).toIterable().forEach { command ->
