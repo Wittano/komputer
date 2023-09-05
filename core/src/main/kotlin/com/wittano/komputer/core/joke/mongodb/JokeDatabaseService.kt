@@ -4,7 +4,7 @@ import com.mongodb.BasicDBObject
 import com.mongodb.reactivestreams.client.MongoClient
 import com.mongodb.reactivestreams.client.MongoCollection
 import com.mongodb.reactivestreams.client.MongoDatabase
-import com.wittano.komputer.core.config.ConfigLoader
+import com.wittano.komputer.core.config.config
 import com.wittano.komputer.core.joke.*
 import com.wittano.komputer.core.message.resource.ErrorMessage
 import org.bson.Document
@@ -23,7 +23,7 @@ class JokeDatabaseService @Inject constructor(
 ) : JokeService, JokeRandomService {
     private val log = LoggerFactory.getLogger(this::class.qualifiedName)
     private val database by lazy {
-        val dbName = ConfigLoader.load().mongoDbName
+        val dbName = config.mongoDbName
 
         Mono.just(this.client)
             .map {

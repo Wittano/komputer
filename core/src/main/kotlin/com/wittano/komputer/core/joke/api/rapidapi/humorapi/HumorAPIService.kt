@@ -1,7 +1,7 @@
 package com.wittano.komputer.core.joke.api.rapidapi.humorapi
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.wittano.komputer.core.config.ConfigLoader
+import com.wittano.komputer.core.config.config
 import com.wittano.komputer.core.joke.*
 import com.wittano.komputer.core.joke.api.JokeApiException
 import com.wittano.komputer.core.joke.api.rapidapi.RapidAPIService
@@ -27,7 +27,7 @@ class HumorAPIService @Inject constructor(
     private val log = LoggerFactory.getLogger(this::class.qualifiedName)
     private var isLimitExceeded = AtomicBoolean(false)
 
-    override fun isEnable(): Boolean = !isLimitExceeded.get()
+    override fun isEnable(): Boolean = super.isEnable() && !isLimitExceeded.get()
 
     override fun supports(category: JokeCategory): Boolean =
         category != JokeCategory.MISC && category != JokeCategory.SPOOKY
@@ -42,7 +42,7 @@ class HumorAPIService @Inject constructor(
 
         val request = Request.Builder()
             .url(url)
-            .header("X-RapidAPI-Key", ConfigLoader.load().rapidApiKey!!)
+            .header("X-RapidAPI-Key", config.rapidApiKey!!)
             .header("X-RapidAPI-Host", "humor-jokes-and-memes.p.rapidapi.com")
             .get()
             .build()
@@ -56,6 +56,7 @@ class HumorAPIService @Inject constructor(
 
                 Mono.just(it)
             }
+            .publishOn(Schedulers.boundedElastic())
             .mapNotNull<HumorAPIJokeResponse> {
                 if (it.body == null) {
                     return@mapNotNull null

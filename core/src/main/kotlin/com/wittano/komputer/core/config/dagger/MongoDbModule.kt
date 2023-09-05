@@ -7,7 +7,7 @@ import com.mongodb.ServerApiVersion
 import com.mongodb.reactivestreams.client.MongoClient
 import com.mongodb.reactivestreams.client.MongoClients
 import com.wittano.komputer.core.config.Config
-import com.wittano.komputer.core.config.ConfigLoader
+import com.wittano.komputer.core.config.config
 import dagger.Module
 import dagger.Provides
 import org.bson.Document
@@ -29,8 +29,6 @@ class MongoDbModule {
     @Provides
     @Singleton
     fun client(): MongoClient {
-        val config = ConfigLoader.load()
-
         val serverApi = ServerApi.builder()
             .version(ServerApiVersion.V1)
             .build()

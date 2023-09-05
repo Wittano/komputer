@@ -4,8 +4,7 @@ import com.wittano.komputer.cli.discord.DiscordException
 import com.wittano.komputer.cli.discord.command.RegisteredCommandsUtils
 import com.wittano.komputer.cli.discord.command.equalsCommand
 import com.wittano.komputer.core.bot.discordClient
-import com.wittano.komputer.core.config.Config
-import com.wittano.komputer.core.config.ConfigLoader
+import com.wittano.komputer.core.config.config
 import discord4j.discordjson.json.ApplicationCommandData
 import discord4j.discordjson.json.ApplicationCommandRequest
 import org.slf4j.LoggerFactory
@@ -22,10 +21,9 @@ class BotCommandsUpdater : Runnable {
     private val log = LoggerFactory.getLogger(this::class.qualifiedName)
 
     override fun run() {
-        val config = ConfigLoader.load()
         val commands = RegisteredCommandsUtils.getCommandsFromJsonFiles()
 
-        updateCommands(config, commands).toIterable().forEach { command ->
+        updateCommands(commands).toIterable().forEach { command ->
             val isCommandEqual = commands.any {
                 it.equalsCommand(command)
             }
@@ -40,10 +38,7 @@ class BotCommandsUpdater : Runnable {
         discordClient.logout().block()
     }
 
-    private fun updateCommands(
-        config: Config,
-        commands: MutableList<ApplicationCommandRequest>
-    ): Flux<ApplicationCommandData> {
+    private fun updateCommands(commands: MutableList<ApplicationCommandRequest>): Flux<ApplicationCommandData> {
         return discordClient.restClient.applicationService.bulkOverwriteGuildApplicationCommand(
             config.applicationId,
             config.guildId,
