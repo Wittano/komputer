@@ -55,6 +55,6 @@ class BotCommandsUpdater : Runnable {
             config.applicationId,
             config.guildId,
             commands
-        ).switchIfEmpty { Mono.error<ApplicationCommandData>(DiscordException("Failed update command")) }
+        ).switchIfEmpty(Mono.error(DiscordException("Failed update command")))
     }
 }
