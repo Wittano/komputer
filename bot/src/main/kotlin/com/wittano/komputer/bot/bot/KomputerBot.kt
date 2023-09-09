@@ -5,7 +5,6 @@ import com.wittano.komputer.bot.dagger.DaggerKomputerComponent
 import com.wittano.komputer.bot.joke.JokeException
 import com.wittano.komputer.bot.message.createErrorMessage
 import com.wittano.komputer.commons.transtation.getErrorMessage
-import discord4j.core.GatewayDiscordClient
 import discord4j.core.event.domain.interaction.ButtonInteractionEvent
 import discord4j.core.event.domain.interaction.ChatInputInteractionEvent
 import discord4j.core.event.domain.interaction.DeferrableInteractionEvent
@@ -20,14 +19,14 @@ class KomputerBot {
     private val komputerComponents = DaggerKomputerComponent.create()
 
     fun start() {
-        handleChatInputEvents(discordClient)
-        handleButtonInteractionEvents(discordClient)
+        handleChatInputEvents()
+        handleButtonInteractionEvents()
 
         discordClient.onDisconnect().block()
     }
 
-    private fun handleButtonInteractionEvents(client: GatewayDiscordClient) {
-        client.on(ButtonInteractionEvent::class.java) { event ->
+    private fun handleButtonInteractionEvents() {
+        discordClient.on(ButtonInteractionEvent::class.java) { event ->
             val customId = event.customId.replace("-", "")
             val buttonReaction = komputerComponents.getButtonReaction()[customId]
 
@@ -47,8 +46,8 @@ class KomputerBot {
         }.subscribe()
     }
 
-    private fun handleChatInputEvents(client: GatewayDiscordClient) {
-        client.on(ChatInputInteractionEvent::class.java) { event ->
+    private fun handleChatInputEvents() {
+        discordClient.on(ChatInputInteractionEvent::class.java) { event ->
             val commandName = event.commandName.replace("-", "")
             val slashCommand = komputerComponents.getSlashCommand()[commandName]
 
