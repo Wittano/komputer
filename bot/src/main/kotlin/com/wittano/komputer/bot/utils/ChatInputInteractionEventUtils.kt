@@ -1,5 +1,7 @@
 package com.wittano.komputer.bot.utils
 
+import com.wittano.komputer.bot.joke.JokeCategory
+import com.wittano.komputer.bot.joke.JokeType
 import discord4j.core.event.domain.interaction.ChatInputInteractionEvent
 import discord4j.core.`object`.command.ApplicationCommandInteractionOption
 import kotlin.jvm.optionals.getOrNull
@@ -9,11 +11,11 @@ internal fun ChatInputInteractionEvent.getJokeCategory() =
         .flatMap(ApplicationCommandInteractionOption::getValue)
         .getOrNull()
         ?.asString()
-        ?.let { category -> com.wittano.komputer.bot.joke.JokeCategory.entries.find { it.category == category } }
+        ?.let { category -> JokeCategory.entries.find { it.category == category } }
 
 internal fun ChatInputInteractionEvent.getJokeType() =
     this.getOption("type")
         .flatMap(ApplicationCommandInteractionOption::getValue)
         .getOrNull()
         ?.asString()
-        ?.let { type -> com.wittano.komputer.bot.joke.JokeType.entries.find { it.jokeDevValue == type } }
+        ?.let { type -> JokeType.entries.find { it.type == type } }

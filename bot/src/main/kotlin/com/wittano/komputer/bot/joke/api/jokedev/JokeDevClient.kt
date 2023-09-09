@@ -23,8 +23,9 @@ class JokeDevClient @Inject constructor(
 
     override fun getRandom(category: JokeCategory?, type: JokeType): Mono<Joke> {
         val apiCategory = category?.category ?: JokeCategory.ANY.category
+        val typeValue = (type.toJokeDevType() ?: JokeDevType.SINGLE).value
         val requestUrl = "https://v2.jokeapi.dev/joke/${apiCategory}".toHttpUrl().newBuilder()
-            .addQueryParameter("type", type.jokeDevValue)
+            .addQueryParameter("type", typeValue)
             .build()
 
         val request = Request.Builder().url(requestUrl).build()
@@ -75,3 +76,9 @@ class JokeDevClient @Inject constructor(
     override fun supports(category: JokeCategory): Boolean = category != JokeCategory.YO_MAMA
 
 }
+
+private enum class JokeDevType(val value: String, val type: JokeType) {
+    SINGLE("single", JokeType.SINGLE), TWO_PART("twopart", JokeType.TWO_PART)
+}
+
+private fun JokeType.toJokeDevType() = JokeDevType.entries.find { it.type == this }

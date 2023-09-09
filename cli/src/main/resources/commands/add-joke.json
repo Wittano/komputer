@@ -94,7 +94,7 @@
             "pl": "Jednoczęściowy",
             "en-US": "Single"
           },
-          "value": "single"
+          "value": "Single"
         },
         {
           "name": "Two-Part",
@@ -102,7 +102,7 @@
             "pl": "Dwuczęściowe",
             "en-US": "Two-Part"
           },
-          "value": "twopart"
+          "value": "Two-Part"
         }
       ]
     },
