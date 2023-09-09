@@ -25,9 +25,11 @@ class HumorAPIService @Inject constructor(
 ) : JokeApiService, JokeRandomService, RapidAPIService {
 
     private val log = LoggerFactory.getLogger(this::class.qualifiedName)
-    private var isLimitExceeded = AtomicBoolean(false)
+    private val isLimitExceeded = AtomicBoolean(false)
 
     override fun isEnable(): Boolean = super.isEnable() && !isLimitExceeded.get()
+
+    override fun supports(type: JokeType): Boolean = type == JokeType.SINGLE
 
     override fun supports(category: JokeCategory): Boolean =
         category != JokeCategory.MISC && category != JokeCategory.SPOOKY
