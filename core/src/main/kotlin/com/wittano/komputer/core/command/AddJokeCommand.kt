@@ -24,9 +24,8 @@ class AddJokeCommand @Inject constructor(
         val joke = try {
             val content = event.getOption("content")
                 .flatMap(ApplicationCommandInteractionOption::getValue)
-                .filter {
-                    it.asString().isNotBlank()
-                }.getOrNull()
+                .filter { it.asString().isNotBlank() }
+                .getOrNull()
                 ?.asString()
 
             val question = event.getOption("question")
@@ -54,11 +53,11 @@ class AddJokeCommand @Inject constructor(
         return databaseService.add(joke)
             .timeout(Duration.ofSeconds(1))
             .flatMap { sendPositiveFeedback(it, event) }
-            .switchIfEmpty(event.reply("BEEP BOOP. Coś poszło nie tak"))
     }
 
     private fun sendPositiveFeedback(jokeId: String, event: ChatInputInteractionEvent): Mono<Void> {
         val messageResponse = InteractionApplicationCommandCallbackSpec.builder()
+            // TODO Add english translate
             .content("BEEP BOOP. Udało się dodać żart. Twój żart ma id: $jokeId")
             .build()
             .withEphemeral(true)

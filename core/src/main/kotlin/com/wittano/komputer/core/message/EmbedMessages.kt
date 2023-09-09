@@ -11,10 +11,11 @@ internal fun createJokeMessage(joke: Joke): EmbedCreateSpec {
     val builder = EmbedCreateSpec.builder()
         .color(Color.of(0x02f5f5))
         .title("Joke")
-        .author("komputer", null, null)
+        .author("komputer", null, null) // TODO Add icon
 
 
     if (joke.type == JokeType.TWO_PART) {
+        // TODO Fix missing question part in jokes
         val question = EmbedCreateFields.Field.of("Question", joke.question!!, false)
         val answer = EmbedCreateFields.Field.of("Answer", joke.answer, false)
 
