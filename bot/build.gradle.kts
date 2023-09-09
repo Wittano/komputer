@@ -1,53 +1,61 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+import org.apache.tools.ant.filters.Native2AsciiFilter
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     kotlin("jvm") version "1.9.10"
+    // TODO Replace kapt by ksp
     kotlin("kapt") version "1.9.10"
     id("com.github.johnrengelman.shadow") version "8.1.1"
 
     application
 }
 
-group = "com.wittano.komputer.cli"
+group = "com.wittano.komputer"
 version = rootProject.version
 
 repositories {
     mavenCentral()
 }
 
-val picocliVersion = "4.7.4"
+val jacksonVersion = "2.15.2"
+val daggerVersion = "2.48"
 
 dependencies {
     // Internal dependencies
-    implementation(project(":bot"))
     implementation(project(":commons"))
 
-    // Kotlin
-    implementation(kotlin("stdlib"))
-
     // Discord4j
-    // TODO Set global version on used dependencies
     implementation("com.discord4j:discord4j-core:3.2.5")
     implementation("io.projectreactor.kotlin:reactor-kotlin-extensions:1.2.2")
-
-    // Picocli
-    implementation("info.picocli:picocli:$picocliVersion")
-    kapt("info.picocli:picocli-codegen:$picocliVersion")
 
     // Logger
     implementation("ch.qos.logback:logback-classic:1.4.11")
     implementation("org.codehaus.janino:janino:3.1.10")
 
+    // Dagger
+    implementation("com.google.dagger:dagger:$daggerVersion")
+    kapt("com.google.dagger:dagger-compiler:$daggerVersion")
+
+    // MongoDB
+    implementation("org.mongodb:mongodb-driver-reactivestreams:4.10.0")
+
+    // Utils
+    implementation("io.github.cdimascio:dotenv-kotlin:6.4.1")
+    implementation("com.squareup.okhttp3:okhttp:4.11.0")
+
+    // Jackson object mapper
+    implementation("com.fasterxml.jackson.core:jackson-core:$jacksonVersion")
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion")
+
     testImplementation(platform("org.junit:junit-bom:5.9.1"))
     testImplementation("org.junit.jupiter:junit-jupiter")
 }
 
-// TODO Create optional native image with GrallVM
-// TODO Generate script to run CLI
-
-tasks.test {
-    useJUnitPlatform()
+kapt {
+    arguments {
+        arg("project", "${project.group}/${project.name}")
+    }
 }
 
 application {
@@ -61,6 +69,20 @@ tasks.withType<ShadowJar> {
 
     archiveBaseName.set("komputer-cli")
     archiveClassifier.set("")
+}
+
+val native2Ascii = Native2AsciiFilter()
+
+tasks.withType<ProcessResources>().configureEach {
+    filesMatching("**/i18n/*.properties") {
+        filter {
+            native2Ascii.filter(it)
+        }
+    }
+}
+
+tasks.test {
+    useJUnitPlatform()
 }
 
 tasks.withType<KotlinCompile> {

@@ -1,3 +1,4 @@
 rootProject.name = "komputer"
 include("cli")
-include("core")
+include("bot")
+include("commons")

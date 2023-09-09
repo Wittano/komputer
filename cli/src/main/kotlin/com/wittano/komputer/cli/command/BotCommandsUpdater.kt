@@ -1,10 +1,10 @@
 package com.wittano.komputer.cli.command
 
+import com.wittano.komputer.bot.bot.discordClient
 import com.wittano.komputer.cli.discord.DiscordException
 import com.wittano.komputer.cli.discord.command.RegisteredCommandsUtils
 import com.wittano.komputer.cli.discord.command.equalsCommand
-import com.wittano.komputer.core.bot.discordClient
-import com.wittano.komputer.core.config.config
+import com.wittano.komputer.commons.config.config
 import discord4j.discordjson.json.ApplicationCommandData
 import discord4j.discordjson.json.ApplicationCommandRequest
 import org.slf4j.LoggerFactory

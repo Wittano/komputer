@@ -1,7 +1,7 @@
 package com.wittano.komputer.cli.command
 
-import com.wittano.komputer.core.bot.discordClient
-import com.wittano.komputer.core.config.config
+import com.wittano.komputer.bot.bot.discordClient
+import com.wittano.komputer.commons.config.config
 import org.slf4j.LoggerFactory
 import picocli.CommandLine.Command
 import picocli.CommandLine.Parameters
