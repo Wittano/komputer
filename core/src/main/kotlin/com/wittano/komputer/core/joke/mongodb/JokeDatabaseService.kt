@@ -26,17 +26,13 @@ class JokeDatabaseService @Inject constructor(
         val dbName = config.mongoDbName
 
         Mono.just(this.client)
-            .map {
-                it.getDatabase(dbName)
-            }.doOnError {
-                log.error("Failed to find '${dbName}' database", it)
-            }
+            .map { it.getDatabase(dbName) }
+            .doOnError { log.error("Failed to find '${dbName}' database", it) }
     }
 
     init {
-        database.flatMap {
-            createJokesCollectionIfDontExist(it)
-        }.subscribe()
+        database.flatMap { createJokesCollectionIfDontExist(it) }
+            .subscribe()
     }
 
     override fun add(joke: Joke): Mono<String> {
@@ -48,10 +44,11 @@ class JokeDatabaseService @Inject constructor(
 
             Mono.from(it.find(contentFilter))
                 .map { true }
+                .switchIfEmpty(Mono.just(false))
         }
 
         return jokeCollection
-            .filterWhen { isJokeAdded }
+            .filterWhen { !isJokeAdded }
             .flatMap {
                 it.insertOne(joke.toModel()).toMono()
             }.filter {
@@ -142,6 +139,8 @@ class JokeDatabaseService @Inject constructor(
             log.error("Failed get '$JOKES_DATABASE_NAME' collection", it)
         }
 
+    // TODO Change function to pass collections names.
+    // In the future, Komputer's database will have many collections e.g. config, jokes etc.
     private fun createJokesCollectionIfDontExist(database: MongoDatabase): Mono<Void> {
         val collectionsNames = Flux.from(database.listCollectionNames())
 
@@ -156,6 +155,8 @@ class JokeDatabaseService @Inject constructor(
     }
 
 }
+
+private operator fun Mono<Boolean>.not(): Mono<Boolean> = this.map { !it }
 
 private fun Joke.toModel(): JokeModel =
     JokeModel(answer, type, category).apply { this.question = this@toModel.question }
