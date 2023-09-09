@@ -48,6 +48,7 @@ dependencies {
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion")
 
     testImplementation("org.junit.jupiter:junit-jupiter")
+    testImplementation("org.junit:junit-bom:5.10.0")
 }
 
 kapt {
