@@ -6,6 +6,8 @@ import com.wittano.komputer.bot.joke.mongodb.JokeDatabaseService
 import com.wittano.komputer.bot.message.createErrorMessage
 import com.wittano.komputer.bot.utils.getJokeCategory
 import com.wittano.komputer.bot.utils.getJokeType
+import com.wittano.komputer.commons.transtation.SuccessfulMessage
+import com.wittano.komputer.commons.transtation.getSuccessfulMessage
 import discord4j.core.event.domain.interaction.ChatInputInteractionEvent
 import discord4j.core.`object`.command.ApplicationCommandInteractionOption
 import discord4j.core.spec.InteractionApplicationCommandCallbackSpec
@@ -33,17 +35,13 @@ class AddJokeCommand @Inject constructor(
                 .getOrNull()
                 ?.asString()
 
-            val jokeType = event.getJokeType()
+            val jokeType = event.getJokeType() ?: JokeType.SINGLE
 
             Joke(
                 category = event.getJokeCategory()!!,
-                type = jokeType!!,
+                type = jokeType,
                 answer = content!!,
-                question = if (jokeType == JokeType.TWO_PART) {
-                    question!!
-                } else {
-                    null
-                }
+                question = question
             )
         } catch (_: NullPointerException) {
             log.warn("During getting joke data throw unexpected error. Some required field is missing")
@@ -57,8 +55,7 @@ class AddJokeCommand @Inject constructor(
 
     private fun sendPositiveFeedback(jokeId: String, event: ChatInputInteractionEvent): Mono<Void> {
         val messageResponse = InteractionApplicationCommandCallbackSpec.builder()
-            // TODO Add english translate
-            .content("BEEP BOOP. Udało się dodać żart. Twój żart ma id: $jokeId")
+            .content(getSuccessfulMessage(SuccessfulMessage.ADD_JOKE).format(jokeId))
             .build()
             .withEphemeral(true)
 

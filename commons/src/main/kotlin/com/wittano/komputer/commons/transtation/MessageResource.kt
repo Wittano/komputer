@@ -3,14 +3,13 @@ package com.wittano.komputer.commons.transtation
 import com.wittano.komputer.commons.extensions.POLISH_LOCALE
 import java.util.*
 
-fun getErrorMessage(code: ErrorMessage, locale: Locale = POLISH_LOCALE): String {
-    val resourceBundle = ResourceBundle.getBundle("i18n.error-message", locale)
+fun getErrorMessage(errorMessage: ErrorMessage, locale: Locale = POLISH_LOCALE): String =
+    getResourceBundle("i18n.error-message", locale).getString(errorMessage.code)
 
-    return resourceBundle.getString(code.code)
-}
+fun getButtonLabel(buttonLabel: ButtonLabel, locale: Locale = POLISH_LOCALE): String =
+    getResourceBundle("i18n.reaction-button", locale).getString(buttonLabel.code)
 
-fun getButtonLabel(name: ButtonLabel, locale: Locale = POLISH_LOCALE): String {
-    val resource = ResourceBundle.getBundle("i18n.reaction-button", locale)
+fun getSuccessfulMessage(successfulMessage: SuccessfulMessage, locale: Locale = POLISH_LOCALE): String =
+    getResourceBundle("i18n.successful-message", locale).getString(successfulMessage.code)
 
-    return resource.getString(name.code)
-}
+private fun getResourceBundle(path: String, locale: Locale) = ResourceBundle.getBundle(path, locale)
