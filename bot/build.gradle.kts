@@ -4,7 +4,6 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     kotlin("jvm") version "1.9.10"
-    // TODO Replace kapt by ksp
     kotlin("kapt") version "1.9.10"
     id("com.github.johnrengelman.shadow") version "8.1.1"
 
@@ -26,12 +25,12 @@ dependencies {
     implementation(project(":commons"))
 
     // Discord4j
-    implementation("com.discord4j:discord4j-core:3.2.5")
+    implementation("com.discord4j:discord4j-core:${findProperty("discord4j.version")}")
     implementation("io.projectreactor.kotlin:reactor-kotlin-extensions:1.2.2")
 
     // Logger
-    implementation("ch.qos.logback:logback-classic:1.4.11")
-    implementation("org.codehaus.janino:janino:3.1.10")
+    implementation("ch.qos.logback:logback-classic:${findProperty("logback-classic.version")}")
+    implementation("org.codehaus.janino:janino:${findProperty("janino.version")}")
 
     // Dagger
     implementation("com.google.dagger:dagger:$daggerVersion")
@@ -48,7 +47,6 @@ dependencies {
     implementation("com.fasterxml.jackson.core:jackson-core:$jacksonVersion")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion")
 
-    testImplementation(platform("org.junit:junit-bom:5.9.1"))
     testImplementation("org.junit.jupiter:junit-jupiter")
 }
 

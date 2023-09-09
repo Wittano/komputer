@@ -16,7 +16,7 @@ repositories {
     mavenCentral()
 }
 
-val picocliVersion = "4.7.4"
+val picocliVersion = findProperty("picocli.version") as? String
 
 dependencies {
     // Internal dependencies
@@ -27,8 +27,7 @@ dependencies {
     implementation(kotlin("stdlib"))
 
     // Discord4j
-    // TODO Set global version on used dependencies
-    implementation("com.discord4j:discord4j-core:3.2.5")
+    implementation("com.discord4j:discord4j-core:${findProperty("discord4j.version")}")
     implementation("io.projectreactor.kotlin:reactor-kotlin-extensions:1.2.2")
 
     // Picocli
@@ -36,10 +35,9 @@ dependencies {
     kapt("info.picocli:picocli-codegen:$picocliVersion")
 
     // Logger
-    implementation("ch.qos.logback:logback-classic:1.4.11")
-    implementation("org.codehaus.janino:janino:3.1.10")
+    implementation("ch.qos.logback:logback-classic:${findProperty("logback-classic.version")}")
+    implementation("org.codehaus.janino:janino:${findProperty("janino.version")}")
 
-    testImplementation(platform("org.junit:junit-bom:5.9.1"))
     testImplementation("org.junit.jupiter:junit-jupiter")
 }
 
