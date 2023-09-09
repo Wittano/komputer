@@ -1,8 +1,7 @@
 package com.wittano.komputer.commons.transtation
 
+import com.wittano.komputer.commons.extensions.POLISH_LOCALE
 import java.util.*
-
-private val POLISH_LOCALE = Locale("pl")
 
 fun getErrorMessage(code: ErrorMessage, locale: Locale = POLISH_LOCALE): String {
     val resourceBundle = ResourceBundle.getBundle("i18n.error-message", locale)

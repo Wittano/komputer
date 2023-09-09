@@ -4,11 +4,9 @@ import com.wittano.komputer.bot.command.exception.CommandException
 import com.wittano.komputer.bot.dagger.DaggerKomputerComponent
 import com.wittano.komputer.bot.joke.JokeException
 import com.wittano.komputer.bot.message.createErrorMessage
-import com.wittano.komputer.commons.transtation.getErrorMessage
 import discord4j.core.event.domain.interaction.ButtonInteractionEvent
 import discord4j.core.event.domain.interaction.ChatInputInteractionEvent
 import discord4j.core.event.domain.interaction.DeferrableInteractionEvent
-import discord4j.core.spec.InteractionApplicationCommandCallbackSpec
 import org.slf4j.LoggerFactory
 import reactor.core.publisher.Mono
 import java.util.*
@@ -71,22 +69,17 @@ class KomputerBot {
     private fun sendErrorMessage(
         event: DeferrableInteractionEvent,
         exception: Throwable,
-        isUserOnlyVisible: Boolean = false
     ): Mono<Void> {
         val errorMessage = exception.takeIf { it is JokeException }
             ?.let { it as JokeException }
             ?.let {
+                // TODO Add global language in configuration
                 val locale = event.interaction.userLocale.split("-")
-                    .takeIf { isUserOnlyVisible }
-                    ?.let { (language, country) ->
+                    .let { (language, country) ->
                         Locale(language, country)
-                    } ?: Locale("pl")
-                val msg = getErrorMessage(it.code, locale)
+                    }
 
-                InteractionApplicationCommandCallbackSpec.builder()
-                    .content(msg)
-                    .build()
-                    .withEphemeral(isUserOnlyVisible)
+                createErrorMessage(locale)
             }
 
         log.error("During execute command, was thrown unexpected error", exception)

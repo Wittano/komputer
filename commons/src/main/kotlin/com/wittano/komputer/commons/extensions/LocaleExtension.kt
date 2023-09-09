@@ -2,6 +2,8 @@ package com.wittano.komputer.commons.extensions
 
 import java.util.*
 
+val POLISH_LOCALE = Locale("pl")
+
 fun String.toLocale(): Locale {
     val localeString = this.split("-")
 
