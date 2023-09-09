@@ -9,6 +9,7 @@ import com.wittano.komputer.bot.message.createJokeMessage
 import com.wittano.komputer.bot.message.createJokeReactionButtons
 import com.wittano.komputer.bot.utils.getJokeCategory
 import com.wittano.komputer.bot.utils.getJokeType
+import com.wittano.komputer.bot.utils.getLanguage
 import com.wittano.komputer.bot.utils.getRandomJoke
 import com.wittano.komputer.commons.extensions.toLocale
 import com.wittano.komputer.commons.transtation.ErrorMessage
@@ -26,12 +27,13 @@ class JokeCommand @Inject constructor(
     override fun execute(event: ChatInputInteractionEvent): Mono<Void> {
         val category = event.getJokeCategory() ?: JokeCategory.ANY
         val type = event.getJokeType() ?: JokeType.SINGLE
+        val language = event.getLanguage()
 
         if (!jokeDevClient.supports(type)) {
             return Mono.error(JokeDevApiException("Joke type '$type' isn't support", ErrorMessage.UNSUPPORTED_TYPE))
         }
 
-        return getRandomJoke(type, category, jokeRandomServices)
+        return getRandomJoke(type, category, jokeRandomServices, language)
             .publishOn(Schedulers.boundedElastic())
             .flatMap {
                 val message = InteractionApplicationCommandCallbackSpec.builder()

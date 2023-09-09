@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory
 import reactor.core.publisher.Mono
 import reactor.core.scheduler.Schedulers
 import reactor.kotlin.core.publisher.switchIfEmpty
+import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Inject
 
@@ -34,7 +35,7 @@ class HumorAPIService @Inject constructor(
     override fun supports(category: JokeCategory): Boolean =
         category != JokeCategory.MISC && category != JokeCategory.SPOOKY
 
-    override fun getRandom(category: JokeCategory?, type: JokeType): Mono<Joke> {
+    override fun getRandom(category: JokeCategory?, type: JokeType, language: Locale?): Mono<Joke> {
         val humorCategory = category?.toHumorAPICategory() ?: HumorAPICategory.ONE_LINER
         val url = "https://humor-jokes-and-memes.p.rapidapi.com/jokes/random".toHttpUrl()
             .newBuilder()

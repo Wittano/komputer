@@ -48,10 +48,10 @@ class NextJokeButtonReaction @Inject constructor(
         }
 
         val apologies = getButtonLabel(ButtonLabel.APOLOGIES, event.interaction.userLocale.toLocale())
-            .takeIf {
-                Random.nextInt().mod(7) == 0
-            } ?: ""
+            .takeIf { Random.nextInt() % 7 == 0 }
+            .orEmpty()
 
+        // TODO Get language from server configuration
         return getRandomJoke(type, category, jokeRandomServices).flatMap {
             event.reply(
                 InteractionApplicationCommandCallbackSpec.builder()

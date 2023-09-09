@@ -12,6 +12,7 @@ import okhttp3.Request
 import org.slf4j.LoggerFactory
 import reactor.core.publisher.Mono
 import java.io.IOException
+import java.util.*
 import javax.inject.Inject
 
 class JokeDevClient @Inject constructor(
@@ -21,7 +22,7 @@ class JokeDevClient @Inject constructor(
 
     private val log = LoggerFactory.getLogger(this::class.qualifiedName)
 
-    override fun getRandom(category: JokeCategory?, type: JokeType): Mono<Joke> {
+    override fun getRandom(category: JokeCategory?, type: JokeType, language: Locale?): Mono<Joke> {
         val apiCategory = category?.category ?: JokeCategory.ANY.category
         val typeValue = (type.toJokeDevType() ?: JokeDevType.SINGLE).value
         val requestUrl = "https://v2.jokeapi.dev/joke/${apiCategory}".toHttpUrl().newBuilder()

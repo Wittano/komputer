@@ -79,7 +79,7 @@ class KomputerBot {
                         Locale(language, country)
                     }
 
-                createErrorMessage(locale)
+                createErrorMessage(it.code, locale)
             }
 
         log.error("During execute command, was thrown unexpected error", exception)

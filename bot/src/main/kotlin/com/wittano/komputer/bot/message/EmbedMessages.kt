@@ -15,7 +15,7 @@ internal fun createJokeMessage(joke: Joke): EmbedCreateSpec {
 
 
     if (joke.type == JokeType.TWO_PART) {
-        val question = EmbedCreateFields.Field.of("Question", joke.question.orEmpty(), false)
+        val question = EmbedCreateFields.Field.of("Question", joke.question!!, false)
         val answer = EmbedCreateFields.Field.of("Answer", joke.answer, false)
 
         builder.addFields(question, answer)

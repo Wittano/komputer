@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import reactor.kotlin.core.publisher.toMono
+import java.util.*
 import javax.inject.Inject
 
 private const val JOKES_DATABASE_NAME = "jokes"
@@ -84,11 +85,12 @@ class JokeDatabaseService @Inject constructor(
         }
     }
 
-    override fun getRandom(category: JokeCategory?, type: JokeType): Mono<Joke> {
+    override fun getRandom(category: JokeCategory?, type: JokeType, language: Locale?): Mono<Joke> {
         val jokeCollection = getJokeCollection()
+        val languageCode = (language ?: Locale.ENGLISH).language
 
         return jokeCollection.flatMap {
-            findRandomJoke(it, category, type)
+            findRandomJoke(it, category, type, languageCode)
         }.map {
             it.toJoke()
         }
@@ -97,7 +99,8 @@ class JokeDatabaseService @Inject constructor(
     private fun findRandomJoke(
         collection: MongoCollection<Document>,
         category: JokeCategory?,
-        type: JokeType
+        type: JokeType,
+        language: String = Locale.ENGLISH.language
     ): Mono<JokeModel> {
         val sampleObject = BasicDBObject().apply {
             this["\$sample"] = BasicDBObject().also { doc ->
@@ -110,6 +113,7 @@ class JokeDatabaseService @Inject constructor(
                 category?.takeIf { it != JokeCategory.ANY }
                     ?.also { c -> this["category"] = c }
 
+                this["language"] = language
                 this["type"] = type.toString()
             }
         }
@@ -118,7 +122,7 @@ class JokeDatabaseService @Inject constructor(
             .switchIfEmpty(
                 Mono.error(
                     JokeException(
-                        "Joke with type '${type}' and category '${category}' wasn't found",
+                        "Joke with type '${type}', category '${category}' and language '$language' wasn't found",
                         ErrorMessage.JOKE_NOT_FOUND
                     )
                 )
@@ -158,11 +162,8 @@ class JokeDatabaseService @Inject constructor(
 
 private operator fun Mono<Boolean>.not(): Mono<Boolean> = this.map { !it }
 
-private fun Joke.toModel(): JokeModel =
-    JokeModel(answer, type, category).apply { this.question = this@toModel.question }
+private fun Joke.toModel(): JokeModel = JokeModel(answer, type, category, language.language, question)
 
 private fun String.toBson(): Bson = BasicDBObject().apply {
     this["_id"] = ObjectId(this@toBson)
 }
-
-private fun JokeModel.toJoke(): Joke = Joke(answer, category, type, question)

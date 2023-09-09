@@ -7,11 +7,16 @@ import com.wittano.komputer.bot.joke.JokeRandomService
 import com.wittano.komputer.bot.joke.JokeType
 import com.wittano.komputer.bot.joke.api.rapidapi.RapidAPIService
 import com.wittano.komputer.bot.joke.mongodb.JokeDatabaseService
+import java.util.*
 
-internal fun Set<JokeRandomService>.filterService(type: JokeType, category: JokeCategory): List<JokeRandomService> =
+internal fun Set<JokeRandomService>.filterService(
+    type: JokeType,
+    category: JokeCategory,
+    language: Locale = Locale.ENGLISH
+): List<JokeRandomService> =
     this.filter {
         if (it is JokeApiService) {
-            return@filter it.supports(type) && it.supports(category)
+            return@filter it.supports(type) && it.supports(category) && it.supports(language)
         }
 
         true
