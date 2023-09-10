@@ -2,6 +2,7 @@ package com.wittano.komputer.bot.joke.mongodb
 
 import com.mongodb.BasicDBObject
 import com.mongodb.reactivestreams.client.MongoCollection
+import com.wittano.komputer.bot.command.exception.CommandException
 import com.wittano.komputer.bot.joke.*
 import com.wittano.komputer.bot.utils.mongodb.MongoCollectionManager
 import com.wittano.komputer.bot.utils.mongodb.database

@@ -9,11 +9,13 @@ data class ServerConfigModel(
     @BsonProperty("guid")
     val guid: String,
     @BsonProperty("language")
-    val language: String
+    val language: String,
+    @BsonProperty("role")
+    val roleId: String?
 ) {
     @BsonId
     @BsonProperty("_id")
     lateinit var id: ObjectId
 
-    fun toServerConfig() = ServerConfig(Locale(language))
+    fun toServerConfig() = ServerConfig(Locale(language), roleId)
 }

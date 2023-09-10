@@ -1,8 +1,8 @@
 package com.wittano.komputer.bot
 
+import com.wittano.komputer.bot.command.exception.CommandException
 import com.wittano.komputer.bot.command.exception.CommandMissingException
 import com.wittano.komputer.bot.dagger.DaggerKomputerComponent
-import com.wittano.komputer.bot.joke.CommandException
 import com.wittano.komputer.bot.message.createErrorMessage
 import com.wittano.komputer.bot.utils.joke.getGuid
 import com.wittano.komputer.bot.utils.mongodb.getGlobalLanguage
@@ -77,7 +77,7 @@ class KomputerBot {
             ?.let {
                 val locale = getGlobalLanguage(event.getGuid())
 
-                createErrorMessage(it.code, locale)
+                createErrorMessage(it.code, locale, it.isUserOnlyVisible)
             }
 
         log.error("During execute command, was thrown unexpected error", exception)

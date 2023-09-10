@@ -7,5 +7,6 @@ enum class ErrorMessage(val code: String) {
     UNSUPPORTED_CATEGORY("joke.unsupported-category"),
     JOKE_ID_INVALID("joke.invalid-joke-id"),
     GENERAL_ERROR("general.error"),
+    ACCESS_DENIED("general.access-denied"),
     CONFIG_UPDATE_FAILED("config.update-failed"),
 }

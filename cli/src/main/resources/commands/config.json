@@ -33,6 +33,20 @@
           "value": "en"
         }
       ]
+    },
+    {
+      "type": 8,
+      "required": false,
+      "name": "role",
+      "name_localizations": {
+        "pl": "rola",
+        "en-US": "role"
+      },
+      "description": "Set role who can manage the bot",
+      "description_localizations": {
+        "pl": "Ustaw rolę kto może zarządzać botem",
+        "en-US": "Set role who can manage the bot"
+      }
     }
   ]
 }

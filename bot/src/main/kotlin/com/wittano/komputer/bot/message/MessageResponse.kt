@@ -10,16 +10,20 @@ import java.util.*
 
 internal fun createErrorMessage(
     errorMessage: ErrorMessage = ErrorMessage.GENERAL_ERROR,
-    locale: Locale = POLISH_LOCALE
+    locale: Locale = POLISH_LOCALE,
+    isUserOnlyVisible: Boolean = false
 ): InteractionApplicationCommandCallbackSpec =
     InteractionApplicationCommandCallbackSpec.builder()
         .content(getErrorMessage(errorMessage, locale))
         .build()
+        .withEphemeral(isUserOnlyVisible)
 
 internal fun createSuccessfulMessage(
     successfulMessage: SuccessfulMessage,
-    locale: Locale = POLISH_LOCALE
+    locale: Locale = POLISH_LOCALE,
+    isUserOnlyVisible: Boolean = false
 ): InteractionApplicationCommandCallbackSpec =
     InteractionApplicationCommandCallbackSpec.builder()
         .content(getSuccessfulMessage(successfulMessage, locale))
         .build()
+        .withEphemeral(isUserOnlyVisible)

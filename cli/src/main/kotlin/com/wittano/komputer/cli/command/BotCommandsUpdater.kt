@@ -9,7 +9,6 @@ import discord4j.discordjson.json.ApplicationCommandData
 import discord4j.discordjson.json.ApplicationCommandRequest
 import org.slf4j.LoggerFactory
 import picocli.CommandLine.Command
-import picocli.CommandLine.Parameters
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 

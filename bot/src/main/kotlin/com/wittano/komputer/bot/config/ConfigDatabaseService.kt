@@ -1,7 +1,6 @@
 package com.wittano.komputer.bot.config
 
 import com.mongodb.BasicDBObject
-import com.wittano.komputer.bot.joke.mongodb.toMonoVoid
 import com.wittano.komputer.bot.utils.mongodb.MongoCollectionManager
 import com.wittano.komputer.bot.utils.mongodb.database
 import com.wittano.komputer.bot.utils.mongodb.getModelCollection
@@ -40,20 +39,18 @@ class ConfigDatabaseService {
         }
     }
 
-    fun update(guid: String, config: ServerConfig): Mono<Void> {
+    fun update(guid: String, config: ServerConfig): Mono<ServerConfig> {
         return configCollection.flatMap { collection ->
-            val configFilter = BasicDBObject().apply {
-                this["guid"] = guid
-            }
+            val configFilter = getConfigFilter(guid)
 
-            Mono.from(collection.find(configFilter))
-                .flatMap {
-                    val diff = it.createDiff(config)
+            collection.find(configFilter)
+                .toMono()
+                .flatMap { model ->
+                    val diff = model.createDiff(config)
 
-                    collection.updateOne(configFilter, diff).toMono().toMonoVoid()
+                    collection.updateOne(configFilter, diff).toMono().map { config }
                 }
-                .switchIfEmpty(collection.insertOne(config.toModel(guid)).toMono().toMonoVoid())
-                .toMonoVoid()
+                .switchIfEmpty(collection.insertOne(config.toModel(guid)).toMono().map { config })
         }
     }
 
@@ -67,7 +64,11 @@ private fun ServerConfigModel.createDiff(update: ServerConfig): BsonDocument {
     val document = BsonDocument()
 
     this.language.takeIf { it != update.language.language }?.also {
-        document["language"] = BsonString(it)
+        document["\$set"] = BsonDocument("language", BsonString(it))
+    }
+
+    update.roleId?.takeIf { it != this.roleId }?.also {
+        document["\$set"] = BsonDocument("role", BsonString(it))
     }
 
     return document
