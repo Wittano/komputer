@@ -14,20 +14,4 @@
 
     <logger name="com.wittano.komputer.tests" level="DEBUG"/>
 
-    <if condition='isDefined("DEBUG_MODE")'>
-        <then>
-            <root level="DEBUG">
-                <appender-ref ref="STDOUT"/>
-            </root>
-        </then>
-        <else>
-            <root level="INFO">
-                <appender-ref ref="STDOUT"/>
-            </root>
-        </else>
-    </if>
-
-    <!-- TODO Create production log configuration -->
-    <!-- TODO Create log rolling file log for production -->
-
 </configuration>

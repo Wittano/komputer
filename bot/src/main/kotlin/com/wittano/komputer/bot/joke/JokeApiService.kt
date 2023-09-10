@@ -1,8 +1,7 @@
 package com.wittano.komputer.bot.joke
 
-import java.util.Locale
+import java.util.*
 
-// TODO Add more external API integration
 interface JokeApiService {
 
     fun supports(type: JokeType): Boolean = true

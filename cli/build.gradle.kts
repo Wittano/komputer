@@ -41,9 +41,6 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter")
 }
 
-// TODO Create optional native image with GrallVM
-// TODO Generate script to run CLI
-
 tasks.test {
     useJUnitPlatform()
 }
