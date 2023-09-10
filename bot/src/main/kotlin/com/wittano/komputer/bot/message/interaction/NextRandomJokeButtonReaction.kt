@@ -1,6 +1,5 @@
 package com.wittano.komputer.bot.message.interaction
 
-import com.wittano.komputer.bot.joke.JokeCategory
 import com.wittano.komputer.bot.joke.JokeRandomService
 import com.wittano.komputer.bot.message.createJokeMessage
 import com.wittano.komputer.bot.message.createJokeReactionButtons
@@ -14,19 +13,12 @@ import discord4j.core.`object`.component.ActionRow
 import discord4j.core.spec.InteractionApplicationCommandCallbackSpec
 import reactor.core.publisher.Mono
 import javax.inject.Inject
-import kotlin.jvm.optionals.getOrNull
 import kotlin.random.Random
 
-class NextJokeButtonReaction @Inject constructor(
+class NextRandomJokeButtonReaction @Inject constructor(
     private val jokeRandomServices: Set<@JvmSuppressWildcards JokeRandomService>
 ) : ButtonReaction {
     override fun execute(event: ButtonInteractionEvent): Mono<Void> {
-        val fields = event.interaction.message.getOrNull()?.embeds?.get(0)?.fields
-        val category = fields?.get(fields.size - 1)
-            ?.value
-            ?.let { value -> JokeCategory.entries.find { it.polishTranslate == value } }
-            ?.takeIf { it != JokeCategory.YO_MAMA }
-
         val language = getGlobalLanguage(event.getGuid())
         val apologies = getButtonLabel(ButtonLabel.APOLOGIES, language)
             .takeIf { Random.nextInt() % 7 == 0 }
@@ -34,7 +26,7 @@ class NextJokeButtonReaction @Inject constructor(
 
         return getRandomJoke(
             null,
-            category,
+            null,
             jokeRandomServices,
             null
         ).flatMap {

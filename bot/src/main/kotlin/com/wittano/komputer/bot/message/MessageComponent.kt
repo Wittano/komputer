@@ -9,11 +9,14 @@ import java.util.*
 const val APOLOGIES_BUTTON_ID = "apologies"
 
 const val NEXT_JOKE_BUTTON_ID = "next-joke"
+const val NEXT_RANDOM_JOKE_BUTTON_ID = "next-random-joke"
 
 internal fun createJokeReactionButtons(locale: Locale = POLISH_LOCALE): List<Button> {
     val apologiesButton = Button.primary(APOLOGIES_BUTTON_ID, getButtonLabel(ButtonLabel.APOLOGIES, locale))
     val nextJoke = Button.secondary(NEXT_JOKE_BUTTON_ID, getButtonLabel(ButtonLabel.NEXT_JOKE, locale))
+    val nextRandomJoke =
+        Button.secondary(NEXT_RANDOM_JOKE_BUTTON_ID, getButtonLabel(ButtonLabel.NEXT_RANDOM_JOKE, locale))
 
-    return listOf(apologiesButton, nextJoke)
+    return listOf(apologiesButton, nextJoke, nextRandomJoke)
 }
 

@@ -1,7 +1,6 @@
 package com.wittano.komputer.bot.dagger
 
 import com.wittano.komputer.bot.joke.JokeRandomService
-import com.wittano.komputer.bot.joke.api.jokedev.JokeDevClient
 import com.wittano.komputer.bot.message.interaction.ApologiesButtonReaction
 import com.wittano.komputer.bot.message.interaction.ButtonReaction
 import com.wittano.komputer.bot.message.interaction.NextJokeButtonReaction
@@ -19,17 +18,24 @@ class ButtonReactionModule {
     @IntoMap
     @StringKey("apologies")
     @Singleton
-    fun apologiesButton(): ButtonReaction = ApologiesButtonReaction()
+    fun createApologiesButton(): ButtonReaction = ApologiesButtonReaction()
 
     @Inject
     @Provides
     @StringKey("nextjoke")
     @IntoMap
     @Singleton
-    fun nextJokeButton(
-        jokeDevClient: JokeDevClient,
+    fun createNextJokeButton(
         jokeRandomServices: Set<@JvmSuppressWildcards JokeRandomService>
-    ): ButtonReaction =
-        NextJokeButtonReaction(jokeDevClient, jokeRandomServices)
+    ): ButtonReaction = NextJokeButtonReaction(jokeRandomServices)
+
+    @Inject
+    @Provides
+    @StringKey("nextrandomjoke")
+    @IntoMap
+    @Singleton
+    fun createNextRandomJokeButton(
+        jokeRandomServices: Set<@JvmSuppressWildcards JokeRandomService>
+    ): ButtonReaction = NextJokeButtonReaction(jokeRandomServices)
 
 }
