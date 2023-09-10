@@ -9,6 +9,7 @@ import discord4j.discordjson.json.ApplicationCommandData
 import discord4j.discordjson.json.ApplicationCommandRequest
 import org.slf4j.LoggerFactory
 import picocli.CommandLine.Command
+import picocli.CommandLine.Option
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 
@@ -19,6 +20,12 @@ import reactor.core.publisher.Mono
 class BotCommandsUpdater : Runnable {
 
     private val log = LoggerFactory.getLogger(this::class.qualifiedName)
+
+    @Option(
+        names = ["--enable-global"],
+        description = ["Flag if program should register command as global"]
+    )
+    private var isSingInGlobal: Boolean = false
 
     override fun run() {
         val commands = RegisteredCommandsUtils.getCommandsFromJsonFiles()
@@ -39,10 +46,19 @@ class BotCommandsUpdater : Runnable {
     }
 
     private fun updateCommands(commands: List<ApplicationCommandRequest>): Flux<ApplicationCommandData> {
-        return discordClient.restClient.applicationService.bulkOverwriteGuildApplicationCommand(
-            config.applicationId,
-            config.guildId,
-            commands
-        ).switchIfEmpty(Mono.error(DiscordException("Failed update command")))
+        val updateApplicationCommands = if (isSingInGlobal) {
+            discordClient.restClient.applicationService.bulkOverwriteGlobalApplicationCommand(
+                config.applicationId,
+                commands
+            )
+        } else {
+            discordClient.restClient.applicationService.bulkOverwriteGuildApplicationCommand(
+                config.applicationId,
+                config.guildId,
+                commands
+            )
+        }
+
+        return updateApplicationCommands.switchIfEmpty(Mono.error(DiscordException("Failed update command")))
     }
 }
