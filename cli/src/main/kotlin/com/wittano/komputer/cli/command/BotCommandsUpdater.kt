@@ -21,21 +21,9 @@ class BotCommandsUpdater : Runnable {
 
     private val log = LoggerFactory.getLogger(this::class.qualifiedName)
 
-    @Parameters(description = ["List of command's names, which will be updated"])
-    lateinit var commandName: Array<String>
-
     override fun run() {
-        if (commandName.isEmpty()) {
-            log.warn("Command's names list is empty")
-            return
-        }
-
         val commands = RegisteredCommandsUtils.getCommandsFromJsonFiles()
-            .filter {
-                commandName.contains(it.name())
-            }
 
-        // TODO Fix removing commands after update
         updateCommands(commands).toIterable().forEach { command ->
             val isCommandEqual = commands.any {
                 it.equalsCommand(command)
