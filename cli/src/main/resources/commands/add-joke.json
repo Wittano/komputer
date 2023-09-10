@@ -122,20 +122,6 @@
     },
     {
       "type": 3,
-      "name": "question",
-      "name_localizations": {
-        "pl": "pytanie",
-        "en-US": "question"
-      },
-      "description": "Question part of joke",
-      "description_localizations": {
-        "pl": "Częśc pytania w żarcie",
-        "en-US": "Question part of joke"
-      },
-      "required": false
-    },
-    {
-      "type": 3,
       "name": "language",
       "name_localizations": {
         "pl": "język",
@@ -164,6 +150,20 @@
           "value": "en"
         }
       ],
+      "required": true
+    },
+    {
+      "type": 3,
+      "name": "question",
+      "name_localizations": {
+        "pl": "pytanie",
+        "en-US": "question"
+      },
+      "description": "Question part of joke",
+      "description_localizations": {
+        "pl": "Częśc pytania w żarcie",
+        "en-US": "Question part of joke"
+      },
       "required": false
     }
   ]

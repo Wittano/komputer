@@ -1,0 +1,38 @@
+{
+  "name": "config",
+  "description": "Set configuration for your server",
+  "options": [
+    {
+      "type": 3,
+      "required": false,
+      "name": "language",
+      "name_localizations": {
+        "pl": "język",
+        "en-US": "language"
+      },
+      "description": "Change default komputer's language",
+      "description_localizations": {
+        "pl": "Zmień język używany przez komputera",
+        "en-US": "Change default komputer's langauge"
+      },
+      "choices": [
+        {
+          "name": "Polish",
+          "name_localizations": {
+            "pl": "Polski",
+            "en-US": "Polish"
+          },
+          "value": "pl"
+        },
+        {
+          "name": "English",
+          "name_localizations": {
+            "pl": "Angielski",
+            "en-US": "English"
+          },
+          "value": "en"
+        }
+      ]
+    }
+  ]
+}

@@ -22,9 +22,9 @@ class JokeDevClient @Inject constructor(
 
     private val log = LoggerFactory.getLogger(this::class.qualifiedName)
 
-    override fun getRandom(category: JokeCategory?, type: JokeType, language: Locale?): Mono<Joke> {
-        val apiCategory = category?.category ?: JokeCategory.ANY.category
-        val typeValue = (type.toJokeDevType() ?: JokeDevType.SINGLE).value
+    override fun getRandom(category: JokeCategory?, type: JokeType?, language: Locale?): Mono<Joke> {
+        val apiCategory = (category ?: JokeCategory.ANY).category
+        val typeValue = (type?.toJokeDevType() ?: JokeDevType.SINGLE).value
         val requestUrl = "https://v2.jokeapi.dev/joke/${apiCategory}".toHttpUrl().newBuilder()
             .addQueryParameter("type", typeValue)
             .build()
@@ -45,6 +45,7 @@ class JokeDevClient @Inject constructor(
                 Mono.just(it)
             }
 
+        val type = type ?: JokeType.SINGLE
         val responseType: Class<out JokeExtractor> = if (type == JokeType.SINGLE) {
             JokeDevSingleResponse::class.java
         } else {

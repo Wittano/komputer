@@ -7,12 +7,12 @@ import reactor.core.publisher.Mono
 import java.util.*
 
 internal fun getRandomJoke(
-    type: JokeType,
-    category: JokeCategory,
+    type: JokeType?,
+    category: JokeCategory?,
     jokeRandomServices: Set<JokeRandomService>,
-    language: Locale = Locale.ENGLISH
+    language: Locale?
 ): Mono<Joke> {
-    val jokeNotFoundError = Mono.error<Joke>(JokeException("Joke not found", ErrorMessage.JOKE_NOT_FOUND))
+    val jokeNotFoundError = Mono.error<Joke>(CommandException("Joke not found", ErrorMessage.JOKE_NOT_FOUND))
     val jokeRandomService = jokeRandomServices.filterService(type, category, language)
 
     return jokeRandomService.takeIf { it.isNotEmpty() }

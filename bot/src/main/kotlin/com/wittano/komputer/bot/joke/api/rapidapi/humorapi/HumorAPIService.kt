@@ -35,7 +35,7 @@ class HumorAPIService @Inject constructor(
     override fun supports(category: JokeCategory): Boolean =
         category != JokeCategory.MISC && category != JokeCategory.SPOOKY
 
-    override fun getRandom(category: JokeCategory?, type: JokeType, language: Locale?): Mono<Joke> {
+    override fun getRandom(category: JokeCategory?, type: JokeType?, language: Locale?): Mono<Joke> {
         val humorCategory = category?.toHumorAPICategory() ?: HumorAPICategory.ONE_LINER
         val url = "https://humor-jokes-and-memes.p.rapidapi.com/jokes/random".toHttpUrl()
             .newBuilder()
@@ -74,7 +74,7 @@ class HumorAPIService @Inject constructor(
                 Joke(
                     answer = it.joke,
                     category = humorCategory.category,
-                    type = type
+                    type = type ?: JokeType.SINGLE
                 )
             }.switchIfEmpty(
                 Mono.error(

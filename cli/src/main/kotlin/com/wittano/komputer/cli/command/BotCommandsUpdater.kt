@@ -1,6 +1,6 @@
 package com.wittano.komputer.cli.command
 
-import com.wittano.komputer.bot.bot.discordClient
+import com.wittano.komputer.bot.discordClient
 import com.wittano.komputer.cli.discord.DiscordException
 import com.wittano.komputer.cli.discord.command.RegisteredCommandsUtils
 import com.wittano.komputer.cli.discord.command.equalsCommand
@@ -35,6 +35,7 @@ class BotCommandsUpdater : Runnable {
                 commandName.contains(it.name())
             }
 
+        // TODO Fix removing commands after update
         updateCommands(commands).toIterable().forEach { command ->
             val isCommandEqual = commands.any {
                 it.equalsCommand(command)

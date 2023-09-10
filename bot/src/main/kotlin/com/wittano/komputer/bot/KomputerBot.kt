@@ -1,15 +1,16 @@
-package com.wittano.komputer.bot.bot
+package com.wittano.komputer.bot
 
-import com.wittano.komputer.bot.command.exception.CommandException
+import com.wittano.komputer.bot.command.exception.CommandMissingException
 import com.wittano.komputer.bot.dagger.DaggerKomputerComponent
-import com.wittano.komputer.bot.joke.JokeException
+import com.wittano.komputer.bot.joke.CommandException
 import com.wittano.komputer.bot.message.createErrorMessage
+import com.wittano.komputer.bot.utils.joke.getGuid
+import com.wittano.komputer.bot.utils.mongodb.getGlobalLanguage
 import discord4j.core.event.domain.interaction.ButtonInteractionEvent
 import discord4j.core.event.domain.interaction.ChatInputInteractionEvent
 import discord4j.core.event.domain.interaction.DeferrableInteractionEvent
 import org.slf4j.LoggerFactory
 import reactor.core.publisher.Mono
-import java.util.*
 
 class KomputerBot {
 
@@ -28,15 +29,16 @@ class KomputerBot {
             val customId = event.customId.replace("-", "")
             val buttonReaction = komputerComponents.getButtonReaction()[customId]
 
-            val errorResponse = Mono.error<Void>(CommandException("Button with id $customId wasn't found", customId))
-                .doOnError { exception ->
-                    val buttonIdError = exception.takeIf { it is CommandException }
-                        ?.let { it as CommandException }
-                        ?.let { "'${it.commandId}'" }
-                        .orEmpty()
+            val errorResponse =
+                Mono.error<Void>(CommandMissingException("Button with id $customId wasn't found", customId))
+                    .doOnError { exception ->
+                        val buttonIdError = exception.takeIf { it is CommandMissingException }
+                            ?.let { it as CommandMissingException }
+                            ?.let { "'${it.commandId}'" }
+                            .orEmpty()
 
-                    log.error("Unexpected error during handling $buttonIdError button interaction", exception)
-                }.transform { event.reply(createErrorMessage()) }
+                        log.error("Unexpected error during handling $buttonIdError button interaction", exception)
+                    }.transform { event.reply(createErrorMessage()) }
 
             buttonReaction?.execute(event)
                 ?.onErrorResume { exception -> sendErrorMessage(event, exception) }
@@ -50,10 +52,10 @@ class KomputerBot {
             val slashCommand = komputerComponents.getSlashCommand()[commandName]
 
             val errorResponse =
-                Mono.error<Void>(CommandException("Slash command '$commandName' wasn't found", commandName))
+                Mono.error<Void>(CommandMissingException("Slash command '$commandName' wasn't found", commandName))
                     .doOnError { exception ->
-                        val commandIdError = exception.takeIf { it is CommandException }
-                            ?.let { it as CommandException }
+                        val commandIdError = exception.takeIf { it is CommandMissingException }
+                            ?.let { it as CommandMissingException }
                             ?.let { "'${it.commandId}'" }
                             .orEmpty()
 
@@ -70,14 +72,10 @@ class KomputerBot {
         event: DeferrableInteractionEvent,
         exception: Throwable,
     ): Mono<Void> {
-        val errorMessage = exception.takeIf { it is JokeException }
-            ?.let { it as JokeException }
+        val errorMessage = exception.takeIf { it is CommandException }
+            ?.let { it as CommandException }
             ?.let {
-                // TODO Add global language in configuration
-                val locale = event.interaction.userLocale.split("-")
-                    .let { (language, country) ->
-                        Locale(language, country)
-                    }
+                val locale = getGlobalLanguage(event.getGuid())
 
                 createErrorMessage(it.code, locale)
             }

@@ -8,7 +8,8 @@ import com.wittano.komputer.bot.joke.api.jokedev.JokeDevApiException
 import com.wittano.komputer.bot.message.createJokeMessage
 import com.wittano.komputer.bot.message.createJokeReactionButtons
 import com.wittano.komputer.bot.utils.getRandomJoke
-import com.wittano.komputer.commons.extensions.toLocale
+import com.wittano.komputer.bot.utils.joke.getGuid
+import com.wittano.komputer.bot.utils.mongodb.getGlobalLanguage
 import com.wittano.komputer.commons.transtation.ButtonLabel
 import com.wittano.komputer.commons.transtation.ErrorMessage
 import com.wittano.komputer.commons.transtation.getButtonLabel
@@ -47,17 +48,22 @@ class NextJokeButtonReaction @Inject constructor(
             )
         }
 
-        val apologies = getButtonLabel(ButtonLabel.APOLOGIES, event.interaction.userLocale.toLocale())
+        val language = getGlobalLanguage(event.getGuid())
+        val apologies = getButtonLabel(ButtonLabel.APOLOGIES, language)
             .takeIf { Random.nextInt() % 7 == 0 }
             .orEmpty()
 
-        // TODO Get language from server configuration
-        return getRandomJoke(type, category, jokeRandomServices).flatMap {
+        return getRandomJoke(
+            type,
+            category,
+            jokeRandomServices,
+            language
+        ).flatMap {
             event.reply(
                 InteractionApplicationCommandCallbackSpec.builder()
                     .content(apologies)
-                    .addEmbed(createJokeMessage(it))
-                    .addComponent(ActionRow.of(createJokeReactionButtons(event.interaction.userLocale.toLocale())))
+                    .addEmbed(createJokeMessage(it, getGlobalLanguage(event.getGuid())))
+                    .addComponent(ActionRow.of(createJokeReactionButtons(language)))
                     .build()
             )
         }

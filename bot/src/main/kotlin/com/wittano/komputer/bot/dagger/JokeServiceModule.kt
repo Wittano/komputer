@@ -1,7 +1,6 @@
 package com.wittano.komputer.bot.dagger
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.mongodb.reactivestreams.client.MongoClient
 import com.wittano.komputer.bot.joke.JokeApiService
 import com.wittano.komputer.bot.joke.JokeRandomService
 import com.wittano.komputer.bot.joke.JokeService
@@ -21,7 +20,7 @@ class JokeServiceModule {
     @Provides
     @Inject
     @Singleton
-    fun createJokeDatabaseService(client: MongoClient): JokeService = createJokeDatabase(client)
+    fun createJokeDatabaseService(): JokeService = createJokeDatabase()
 
     @Provides
     @Singleton
@@ -35,7 +34,7 @@ class JokeServiceModule {
     @Inject
     @IntoSet
     @Singleton
-    fun createJokeRandomDatabaseService(client: MongoClient): JokeRandomService = createJokeDatabase(client)
+    fun createJokeRandomDatabaseService(): JokeRandomService = createJokeDatabase()
 
     @Provides
     @Singleton
@@ -68,7 +67,7 @@ class JokeServiceModule {
 
     private fun createJokeDev(objectMapper: ObjectMapper, client: OkHttpClient) = JokeDevClient(client, objectMapper)
 
-    private fun createJokeDatabase(client: MongoClient) = JokeDatabaseService(client)
+    private fun createJokeDatabase() = JokeDatabaseService()
 
     private fun createHumorAPIService(
         client: OkHttpClient,

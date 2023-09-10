@@ -6,7 +6,7 @@ import java.util.*
 fun interface JokeRandomService {
     fun getRandom(
         category: JokeCategory?,
-        type: JokeType,
+        type: JokeType?,
         language: Locale?
     ): Mono<Joke>
 }

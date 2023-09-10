@@ -1,6 +1,7 @@
 package com.wittano.komputer.bot.dagger
 
 import com.wittano.komputer.bot.command.*
+import com.wittano.komputer.bot.config.ConfigDatabaseService
 import com.wittano.komputer.bot.joke.JokeRandomService
 import com.wittano.komputer.bot.joke.api.jokedev.JokeDevClient
 import com.wittano.komputer.bot.joke.mongodb.JokeDatabaseService
@@ -44,4 +45,19 @@ class SlashCommandsModule {
     @Singleton
     fun createRemoveJokeCommand(service: JokeDatabaseService): SlashCommand = RemoveJokeCommand(service)
 
+    @Inject
+    @Provides
+    @Singleton
+    @IntoMap
+    @StringKey("showconfig")
+    fun createShowConfigCommand(configDatabaseService: ConfigDatabaseService): SlashCommand =
+        ShowConfigCommand(configDatabaseService)
+
+    @Inject
+    @Provides
+    @Singleton
+    @IntoMap
+    @StringKey("config")
+    fun createUpdateConfigCommand(configDatabaseService: ConfigDatabaseService): SlashCommand =
+        UpdateConfigCommand(configDatabaseService)
 }

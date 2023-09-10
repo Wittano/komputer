@@ -1,43 +1,34 @@
 package com.wittano.komputer.bot.joke.mongodb
 
 import com.mongodb.BasicDBObject
-import com.mongodb.reactivestreams.client.MongoClient
 import com.mongodb.reactivestreams.client.MongoCollection
-import com.mongodb.reactivestreams.client.MongoDatabase
 import com.wittano.komputer.bot.joke.*
-import com.wittano.komputer.commons.config.config
+import com.wittano.komputer.bot.utils.mongodb.MongoCollectionManager
+import com.wittano.komputer.bot.utils.mongodb.database
+import com.wittano.komputer.bot.utils.mongodb.getCollection
+import com.wittano.komputer.bot.utils.mongodb.getModelCollection
 import com.wittano.komputer.commons.transtation.ErrorMessage
 import org.bson.Document
 import org.bson.conversions.Bson
 import org.bson.types.ObjectId
 import org.slf4j.LoggerFactory
-import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import reactor.kotlin.core.publisher.toMono
 import java.util.*
-import javax.inject.Inject
 
-private const val JOKES_DATABASE_NAME = "jokes"
+private const val JOKES_COLLECTION_NAME = "jokes"
 
-class JokeDatabaseService @Inject constructor(
-    private val client: MongoClient
-) : JokeService, JokeRandomService {
+class JokeDatabaseService : JokeService, JokeRandomService {
     private val log = LoggerFactory.getLogger(this::class.qualifiedName)
-    private val database by lazy {
-        val dbName = config.mongoDbName
-
-        Mono.just(this.client)
-            .map { it.getDatabase(dbName) }
-            .doOnError { log.error("Failed to find '${dbName}' database", it) }
-    }
 
     init {
-        database.flatMap { createJokesCollectionIfDontExist(it) }
-            .subscribe()
+        database.flatMapMany {
+            MongoCollectionManager.createCollectionIfDontExist(it, "jokes")
+        }.subscribe()
     }
 
     override fun add(joke: Joke): Mono<String> {
-        val jokeCollection = getJokeModelCollection()
+        val jokeCollection = getModelCollection<JokeModel>(JOKES_COLLECTION_NAME)
         val isJokeAdded = jokeCollection.flatMap {
             val contentFilter = BasicDBObject().apply {
                 this["answer"] = joke.answer
@@ -62,7 +53,7 @@ class JokeDatabaseService @Inject constructor(
     }
 
     override fun remove(id: String): Mono<Void> {
-        val jokeCollection = getJokeCollection()
+        val jokeCollection = getCollection(JOKES_COLLECTION_NAME)
 
         return jokeCollection.flatMap {
             Mono.from(it.deleteOne(id.toBson()))
@@ -72,7 +63,7 @@ class JokeDatabaseService @Inject constructor(
     }
 
     override fun get(id: String): Mono<Joke> {
-        val jokeCollection = getJokeModelCollection()
+        val jokeCollection = getModelCollection<JokeModel>("")
 
         return jokeCollection.flatMap {
             try {
@@ -85,12 +76,11 @@ class JokeDatabaseService @Inject constructor(
         }
     }
 
-    override fun getRandom(category: JokeCategory?, type: JokeType, language: Locale?): Mono<Joke> {
-        val jokeCollection = getJokeCollection()
-        val languageCode = (language ?: Locale.ENGLISH).language
+    override fun getRandom(category: JokeCategory?, type: JokeType?, language: Locale?): Mono<Joke> {
+        val jokeCollection = getCollection(JOKES_COLLECTION_NAME)
 
         return jokeCollection.flatMap {
-            findRandomJoke(it, category, type, languageCode)
+            findRandomJoke(it, category, type, language?.language)
         }.map {
             it.toJoke()
         }
@@ -99,8 +89,8 @@ class JokeDatabaseService @Inject constructor(
     private fun findRandomJoke(
         collection: MongoCollection<Document>,
         category: JokeCategory?,
-        type: JokeType,
-        language: String = Locale.ENGLISH.language
+        type: JokeType?,
+        language: String?
     ): Mono<JokeModel> {
         val sampleObject = BasicDBObject().apply {
             this["\$sample"] = BasicDBObject().also { doc ->
@@ -113,51 +103,26 @@ class JokeDatabaseService @Inject constructor(
                 category?.takeIf { it != JokeCategory.ANY }
                     ?.also { c -> this["category"] = c }
 
-                this["language"] = language
-                this["type"] = type.toString()
+                language?.also {
+                    this["language"] = it
+                }
+
+                type?.also {
+                    this["type"] = it.toString()
+                }
             }
         }
 
         return Mono.from(collection.aggregate(mutableListOf(sampleObject, matcherObject), JokeModel::class.java))
             .switchIfEmpty(
                 Mono.error(
-                    JokeException(
+                    CommandException(
                         "Joke with type '${type}', category '${category}' and language '$language' wasn't found",
                         ErrorMessage.JOKE_NOT_FOUND
                     )
                 )
             )
     }
-
-    private fun getJokeCollection() =
-        database.map {
-            it.getCollection(JOKES_DATABASE_NAME)
-        }.doOnError {
-            log.error("Failed get '$JOKES_DATABASE_NAME' collection", it)
-        }
-
-    private fun getJokeModelCollection() =
-        database.map {
-            it.getCollection(JOKES_DATABASE_NAME, JokeModel::class.java)
-        }.doOnError {
-            log.error("Failed get '$JOKES_DATABASE_NAME' collection", it)
-        }
-
-    // TODO Change function to pass collections names.
-    // In the future, Komputer's database will have many collections e.g. config, jokes etc.
-    private fun createJokesCollectionIfDontExist(database: MongoDatabase): Mono<Void> {
-        val collectionsNames = Flux.from(database.listCollectionNames())
-
-        return collectionsNames.collectList()
-            .filter {
-                !it.contains(JOKES_DATABASE_NAME)
-            }.flatMap {
-                Mono.from(database.createCollection(JOKES_DATABASE_NAME))
-            }.doOnError {
-                log.error("Failed to create '$JOKES_DATABASE_NAME' collection", it)
-            }
-    }
-
 }
 
 private operator fun Mono<Boolean>.not(): Mono<Boolean> = this.map { !it }

@@ -1,6 +1,6 @@
 package com.wittano.komputer.cli.command
 
-import com.wittano.komputer.bot.bot.KomputerBot
+import com.wittano.komputer.bot.KomputerBot
 import picocli.CommandLine.Command
 
 @Command(

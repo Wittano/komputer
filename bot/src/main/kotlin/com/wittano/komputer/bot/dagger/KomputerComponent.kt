@@ -12,7 +12,7 @@ import javax.inject.Singleton
         SlashCommandsModule::class,
         UtilitiesModule::class,
         JokeServiceModule::class,
-        MongoDbModule::class,
+        DatabaseModule::class
     ]
 )
 @Singleton

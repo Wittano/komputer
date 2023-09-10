@@ -1,4 +1,4 @@
-package com.wittano.komputer.bot.bot
+package com.wittano.komputer.bot
 
 import com.wittano.komputer.commons.config.config
 import discord4j.core.DiscordClientBuilder

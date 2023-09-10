@@ -1,13 +1,13 @@
 package com.wittano.komputer.bot.command
 
+import com.wittano.komputer.bot.joke.CommandException
 import com.wittano.komputer.bot.joke.Joke
 import com.wittano.komputer.bot.joke.JokeCategory
-import com.wittano.komputer.bot.joke.JokeException
 import com.wittano.komputer.bot.joke.JokeType
 import com.wittano.komputer.bot.joke.mongodb.JokeDatabaseService
-import com.wittano.komputer.bot.utils.getJokeCategory
-import com.wittano.komputer.bot.utils.getJokeType
-import com.wittano.komputer.bot.utils.getLanguage
+import com.wittano.komputer.bot.utils.joke.getJokeCategory
+import com.wittano.komputer.bot.utils.joke.getJokeType
+import com.wittano.komputer.bot.utils.joke.getLanguage
 import com.wittano.komputer.commons.transtation.ErrorMessage
 import com.wittano.komputer.commons.transtation.SuccessfulMessage
 import com.wittano.komputer.commons.transtation.getSuccessfulMessage
@@ -37,7 +37,7 @@ class AddJokeCommand @Inject constructor(
             ?.asString()
             ?.takeIf { jokeType != JokeType.SINGLE }
             ?: return Mono.error(
-                JokeException(
+                CommandException(
                     "Question part in Two-Part joke is required!",
                     ErrorMessage.MISSING_QUESTION_FILED
                 )
