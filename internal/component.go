@@ -3,7 +3,8 @@ package internal
 import (
 	"context"
 	"github.com/bwmarrin/discordgo"
-	"github.com/wittano/komputer/pkg/joke/jokedev"
+	"github.com/wittano/komputer/internal/joke"
+	"github.com/wittano/komputer/internal/log"
 )
 
 type messageComponentHandler func(ctx context.Context, s *discordgo.Session, i *discordgo.InteractionCreate)
@@ -29,15 +30,33 @@ var (
 
 func nextJoke(ctx context.Context, s *discordgo.Session, i *discordgo.InteractionCreate) {
 	embedFields := i.Message.Embeds[0].Fields
-	joke := jokedev.New(ctx, jokedev.JokeType(embedFields[len(embedFields)-1].Value))
+	category := joke.JokeType(embedFields[len(embedFields)-1].Value)
 
 	var msg *discordgo.InteractionResponseData
 
 	switch jokeType(len(embedFields)) {
 	case singleType:
-		msg = CreateJokeMessage(ctx, i.Member.User.Username, joke)
+		j, err := joke.GetSingleJokeFromJokeDev(category)
+		if err != nil {
+			log.Error(ctx, "Failed during getting single joke from JokeDev", err)
+
+			CreateErrorMsg()
+
+			return
+		}
+
+		msg = CreateJokeMessage(i.Member.User.Username, category, j)
 	case twoPartType:
-		msg = CreateTwoPartJokeMessage(ctx, i.Member.User.Username, joke)
+		j, err := joke.GetTwoPartJokeFromJokeDev(category)
+		if err != nil {
+			log.Error(ctx, "Failed during getting two-part joke from JokeDev", err)
+
+			CreateErrorMsg()
+
+			return
+		}
+
+		msg = CreateTwoPartJokeMessage(i.Member.User.Username, category, j)
 	}
 
 	err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
@@ -46,7 +65,9 @@ func nextJoke(ctx context.Context, s *discordgo.Session, i *discordgo.Interactio
 	})
 
 	if err != nil {
-		CreateErrorMsg(ctx, err)
+		log.Error(ctx, "Failed create Discord interaction response", err)
+
+		CreateErrorMsg()
 	}
 }
 
@@ -63,6 +84,8 @@ func sendMessage(ctx context.Context, msg string, s *discordgo.Session, i *disco
 	})
 
 	if err != nil {
-		CreateErrorMsg(ctx, err)
+		log.Error(ctx, "Failed create Discord interaction response", err)
+
+		CreateErrorMsg()
 	}
 }

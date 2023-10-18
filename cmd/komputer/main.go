@@ -8,9 +8,9 @@ import (
 	"github.com/joho/godotenv"
 	zerolog "github.com/rs/zerolog/log"
 	"github.com/wittano/komputer/internal"
+	"github.com/wittano/komputer/internal/command"
 	"github.com/wittano/komputer/internal/log"
 	"github.com/wittano/komputer/internal/mongo"
-	"github.com/wittano/komputer/pkg/command"
 	"os"
 	"os/signal"
 )

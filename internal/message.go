@@ -1,18 +1,13 @@
 package internal
 
 import (
-	"context"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
-	"github.com/rs/zerolog/log"
-	"github.com/wittano/komputer/pkg/joke"
+	"github.com/wittano/komputer/internal/joke"
 )
 
-func CreateJokeMessage(ctx context.Context, username string, joke joke.Joke) *discordgo.InteractionResponseData {
-	content, err := joke.Content()
-	if err != nil {
-		return CreateErrorMsg(ctx, err)
-	}
+func CreateJokeMessage(username string, category joke.JokeType, joke joke.Joke) *discordgo.InteractionResponseData {
+	content := joke.Content()
 
 	return &discordgo.InteractionResponseData{
 		Content:    fmt.Sprintf("BEEP BOOP, Yes my captin %s!", username),
@@ -29,7 +24,7 @@ func CreateJokeMessage(ctx context.Context, username string, joke joke.Joke) *di
 				Fields: []*discordgo.MessageEmbedField{
 					{
 						Name:  "category",
-						Value: joke.Category(),
+						Value: string(category),
 					},
 				},
 			},
@@ -37,11 +32,8 @@ func CreateJokeMessage(ctx context.Context, username string, joke joke.Joke) *di
 	}
 }
 
-func CreateTwoPartJokeMessage(ctx context.Context, username string, joke joke.JokeTwoParts) *discordgo.InteractionResponseData {
-	question, answer, err := joke.ContentTwoPart()
-	if err != nil {
-		return CreateErrorMsg(ctx, err)
-	}
+func CreateTwoPartJokeMessage(username string, category joke.JokeType, joke joke.JokeTwoParts) *discordgo.InteractionResponseData {
+	question, answer := joke.ContentTwoPart()
 
 	return &discordgo.InteractionResponseData{
 		Content:    fmt.Sprintf("BEEP BOOP, Yes my captin %s!", username),
@@ -67,7 +59,7 @@ func CreateTwoPartJokeMessage(ctx context.Context, username string, joke joke.Jo
 					},
 					{
 						Name:  "Category",
-						Value: joke.Category(),
+						Value: string(category),
 					},
 				},
 			},
@@ -75,10 +67,8 @@ func CreateTwoPartJokeMessage(ctx context.Context, username string, joke joke.Jo
 	}
 }
 
-func CreateErrorMsg(ctx context.Context, err error) *discordgo.InteractionResponseData {
-	log.Err(err).Str("traceID", ctx.Value("traceID").(string)).Msg("Failed to send message!")
-
-	return &discordgo.InteractionResponseData{Content: fmt.Sprintf("BEEP BOOM. Something went wrong :(")}
+func CreateErrorMsg() *discordgo.InteractionResponseData {
+	return &discordgo.InteractionResponseData{Content: fmt.Sprintf("BEEP BOOP. Coś poszło nie tak :(")}
 }
 
 func createButtonReactions() []discordgo.MessageComponent {

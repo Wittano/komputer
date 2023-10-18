@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"github.com/wittano/komputer/internal"
+	"github.com/wittano/komputer/internal/joke"
 	"github.com/wittano/komputer/internal/log"
-	"github.com/wittano/komputer/pkg/joke/jokedev"
 	"os"
 )
 
@@ -70,29 +70,43 @@ var JokeCommand = DiscordCommand{
 }
 
 func executeJokeCommand(ctx context.Context, s *discordgo.Session, i *discordgo.InteractionCreate) {
-	category := jokedev.ANY
-	jokeType := jokedev.Single
+	category := joke.ANY
+	jokeType := joke.Single
 
 	for _, o := range i.Data.(discordgo.ApplicationCommandInteractionData).Options {
 		switch o.Name {
 		case "category":
-			category = jokedev.JokeType(o.Value.(string))
+			category = joke.JokeType(o.Value.(string))
 		case "type":
-			jokeType = jokedev.JokeStructureType(o.Value.(string))
+			jokeType = joke.JokeStructureType(o.Value.(string))
 		default:
 			log.Warn(ctx, fmt.Sprintf("Invalid option for %s", o.Name))
 		}
 	}
 
-	joke := jokedev.New(ctx, category)
-
 	var msg *discordgo.InteractionResponseData
 
 	switch jokeType {
-	case jokedev.Single:
-		msg = internal.CreateJokeMessage(ctx, i.Member.User.Username, joke)
-	case jokedev.TwoPart:
-		msg = internal.CreateTwoPartJokeMessage(ctx, i.Member.User.Username, joke)
+	case joke.Single:
+		j, err := joke.GetSingleJokeFromJokeDev(category)
+		if err != nil {
+			log.Error(ctx, "Failed during single j from JokeDev", err)
+
+			internal.CreateErrorMsg()
+			return
+		}
+
+		msg = internal.CreateJokeMessage(i.Member.User.Username, category, j)
+	case joke.TwoPart:
+		j, err := joke.GetTwoPartJokeFromJokeDev(category)
+		if err != nil {
+			log.Error(ctx, "Failed during two-part j from JokeDev", err)
+
+			internal.CreateErrorMsg()
+			return
+		}
+
+		msg = internal.CreateTwoPartJokeMessage(i.Member.User.Username, category, j)
 	}
 
 	err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{

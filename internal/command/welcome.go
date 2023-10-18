@@ -28,6 +28,6 @@ func executeWelcomeCommand(ctx context.Context, s *discordgo.Session, i *discord
 	})
 
 	if err != nil {
-		internal.CreateErrorMsg(ctx, err)
+		internal.CreateErrorMsg()
 	}
 }
