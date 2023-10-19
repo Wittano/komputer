@@ -39,18 +39,18 @@ type jokeApiTwoPartResponse struct {
 }
 
 const (
-	Single  JokeStructureType = "single"
-	TwoPart JokeStructureType = "twopart"
+	Single  JokeType = "single"
+	TwoPart JokeType = "twopart"
 )
 
 const (
-	PROGRAMMING JokeType = "Programming"
-	MISC        JokeType = "Misc"
-	DARK        JokeType = "Dark"
-	PUN         JokeType = "Pun"
-	SPOOKY      JokeType = "Spooky"
-	CHRISTMAS   JokeType = "Christmas"
-	ANY         JokeType = "Any"
+	PROGRAMMING JokeCategory = "Programming"
+	MISC        JokeCategory = "Misc"
+	DARK        JokeCategory = "Dark"
+	PUN         JokeCategory = "Pun"
+	SPOOKY      JokeCategory = "Spooky"
+	CHRISTMAS   JokeCategory = "Christmas"
+	ANY         JokeCategory = "Any"
 )
 
 func (j jokeApiSingleResponse) Content() string {
@@ -61,7 +61,7 @@ func (j jokeApiTwoPartResponse) ContentTwoPart() (string, string) {
 	return j.Setup, j.Delivery
 }
 
-func GetSingleJokeFromJokeDev(category JokeType) (joke Joke, err error) {
+func GetSingleJokeFromJokeDev(category JokeCategory) (joke Joke, err error) {
 	res, err := Client.Get(fmt.Sprintf("https://v2.jokeapi.dev/joke/%s?type=%s", category, Single))
 	if err != nil {
 		return
@@ -79,7 +79,7 @@ func GetSingleJokeFromJokeDev(category JokeType) (joke Joke, err error) {
 	return jokeRes, err
 }
 
-func GetTwoPartJokeFromJokeDev(category JokeType) (joke JokeTwoParts, err error) {
+func GetTwoPartJokeFromJokeDev(category JokeCategory) (joke JokeTwoParts, err error) {
 	res, err := Client.Get(fmt.Sprintf("https://v2.jokeapi.dev/joke/%s?type=%s", category, TwoPart))
 	if err != nil {
 		return

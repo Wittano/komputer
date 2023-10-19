@@ -1,12 +1,14 @@
 package internal
 
 import (
+	"context"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"github.com/wittano/komputer/internal/joke"
+	"github.com/wittano/komputer/internal/log"
 )
 
-func CreateJokeMessage(username string, category joke.JokeType, joke joke.Joke) *discordgo.InteractionResponseData {
+func CreateJokeMessage(username string, category joke.JokeCategory, joke joke.Joke) *discordgo.InteractionResponseData {
 	content := joke.Content()
 
 	return &discordgo.InteractionResponseData{
@@ -32,7 +34,7 @@ func CreateJokeMessage(username string, category joke.JokeType, joke joke.Joke) 
 	}
 }
 
-func CreateTwoPartJokeMessage(username string, category joke.JokeType, joke joke.JokeTwoParts) *discordgo.InteractionResponseData {
+func CreateTwoPartJokeMessage(username string, category joke.JokeCategory, joke joke.JokeTwoParts) *discordgo.InteractionResponseData {
 	question, answer := joke.ContentTwoPart()
 
 	return &discordgo.InteractionResponseData{
@@ -68,7 +70,11 @@ func CreateTwoPartJokeMessage(username string, category joke.JokeType, joke joke
 }
 
 func CreateErrorMsg() *discordgo.InteractionResponseData {
-	return &discordgo.InteractionResponseData{Content: fmt.Sprintf("BEEP BOOP. Coś poszło nie tak :(")}
+	return CreateDiscordMsg("BEEP BOOP. Coś poszło nie tak :(")
+}
+
+func CreateDiscordMsg(msg string) *discordgo.InteractionResponseData {
+	return &discordgo.InteractionResponseData{Content: msg}
 }
 
 func createButtonReactions() []discordgo.MessageComponent {
@@ -87,5 +93,14 @@ func createButtonReactions() []discordgo.MessageComponent {
 				},
 			},
 		},
+	}
+}
+
+func CreateDisacordInteractionResponse(ctx context.Context, i *discordgo.InteractionCreate, s *discordgo.Session, msg *discordgo.InteractionResponseData) {
+	if err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseChannelMessageWithSource,
+		Data: msg,
+	}); err != nil {
+		log.Error(ctx, "Failed send response to discord user", err)
 	}
 }

@@ -22,6 +22,10 @@ func Error(ctx context.Context, msg string, err error) {
 	log.Err(err).Ctx(ctx).Str("traceID", ctx.Value("traceID").(string)).Msg(msg)
 }
 
+func Fatal(ctx context.Context, msg string, err error) {
+	log.Fatal().Err(err).Ctx(ctx).Str("traceID", ctx.Value("traceID").(string)).Msg(msg)
+}
+
 func logRequest(ctx context.Context, e *zerolog.Event, msg string) {
 	e.Ctx(ctx).Str("traceID", ctx.Value("traceID").(string)).Msg(msg)
 }

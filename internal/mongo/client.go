@@ -2,7 +2,6 @@ package mongo
 
 import (
 	"context"
-	"fmt"
 	"github.com/joho/godotenv"
 	"github.com/wittano/komputer/internal/log"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -21,12 +20,21 @@ func init() {
 
 	uri := os.Getenv("MONGODB_URI")
 	if uri == "" {
-		log.Error(context.Background(), "You must set your 'MONGODB_URI' environment variable. See\n\t https://www.mongodb.com/docs/drivers/go/current/usage-examples/#environment-variable", nil)
+		log.Fatal(context.Background(), "You must set your 'MONGODB_URI' environment variable. See\n\t https://www.mongodb.com/docs/drivers/go/current/usage-examples/#environment-variable", nil)
 	}
 
-	client, err = mongo.Connect(context.Background(), options.Client().ApplyURI(fmt.Sprintf(uri)))
+	serverAPI := options.ServerAPI(options.ServerAPIVersion1)
+
+	client, err = mongo.Connect(context.Background(), options.Client().
+		ApplyURI(uri).
+		SetServerAPIOptions(serverAPI))
 	if err != nil {
-		log.Error(context.Background(), "Failed to connect MongoDB database. Check error message", err)
+		log.Fatal(context.Background(), "Failed to connect MongoDB database. Check error message", err)
+	}
+
+	err = client.Ping(context.Background(), nil)
+	if err != nil {
+		log.Fatal(context.Background(), "Failed connect to MongoDB", err)
 	}
 }
 

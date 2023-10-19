@@ -20,6 +20,7 @@ var (
 	commands = map[string]command.DiscordCommand{
 		command.WelcomeCommand.Command.Name: command.WelcomeCommand,
 		command.JokeCommand.Command.Name:    command.JokeCommand,
+		command.AddJokeCommand.Command.Name: command.AddJokeCommand,
 	}
 )
 

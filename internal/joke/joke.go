@@ -1,8 +1,8 @@
 package joke
 
 type (
-	JokeStructureType string
-	JokeType          string
+	JokeType     string
+	JokeCategory string
 )
 
 type Joke interface {

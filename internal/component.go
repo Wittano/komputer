@@ -30,7 +30,7 @@ var (
 
 func nextJoke(ctx context.Context, s *discordgo.Session, i *discordgo.InteractionCreate) {
 	embedFields := i.Message.Embeds[0].Fields
-	category := joke.JokeType(embedFields[len(embedFields)-1].Value)
+	category := joke.JokeCategory(embedFields[len(embedFields)-1].Value)
 
 	var msg *discordgo.InteractionResponseData
 
