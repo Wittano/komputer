@@ -63,7 +63,7 @@ func executeAddJokeCommand(ctx context.Context, s *discordgo.Session, i *discord
 		case "type":
 			j.Type = joke.JokeType(o.Value.(string))
 		case "content":
-			j.Content = o.Value.(string)
+			j.ContentRes = o.Value.(string)
 		case "question":
 			j.Question = o.Value.(string)
 		default:
@@ -81,7 +81,7 @@ func executeAddJokeCommand(ctx context.Context, s *discordgo.Session, i *discord
 		return
 	}
 
-	if j.Content == "" {
+	if j.ContentRes == "" {
 		internal.CreateDisacordInteractionResponse(ctx, i, s, internal.CreateDiscordMsg("BEEP BOOP. Gdzie jest żart panie Kapitanie!"))
 		return
 	}
@@ -120,7 +120,7 @@ func executeJokeCommand(ctx context.Context, s *discordgo.Session, i *discordgo.
 		if err != nil {
 			log.Error(ctx, "Failed during single j from JokeDev", err)
 
-			internal.CreateErrorMsg()
+			internal.CreateDisacordInteractionResponse(ctx, i, s, internal.CreateErrorMsg())
 			return
 		}
 
@@ -130,19 +130,12 @@ func executeJokeCommand(ctx context.Context, s *discordgo.Session, i *discordgo.
 		if err != nil {
 			log.Error(ctx, "Failed during two-part j from JokeDev", err)
 
-			internal.CreateErrorMsg()
+			internal.CreateDisacordInteractionResponse(ctx, i, s, internal.CreateErrorMsg())
 			return
 		}
 
 		msg = internal.CreateTwoPartJokeMessage(i.Member.User.Username, category, j)
 	}
 
-	err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-		Type: discordgo.InteractionResponseChannelMessageWithSource,
-		Data: msg,
-	})
-
-	if err != nil {
-		log.Error(ctx, "Failed to send response", err)
-	}
+	internal.CreateDisacordInteractionResponse(ctx, i, s, msg)
 }
