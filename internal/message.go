@@ -12,7 +12,7 @@ func CreateJokeMessage(username string, category types.JokeCategory, joke types.
 	content := joke.Content()
 
 	return &discordgo.InteractionResponseData{
-		Content:    fmt.Sprintf("BEEP BOOP, Yes my captin %s!", username),
+		Content:    fmt.Sprintf("BEEP BOOP, Tak jest kapitanie %s!", username),
 		Components: createButtonReactions(),
 		Embeds: []*discordgo.MessageEmbed{
 			{
@@ -38,7 +38,7 @@ func CreateTwoPartJokeMessage(username string, category types.JokeCategory, joke
 	question, answer := joke.ContentTwoPart()
 
 	return &discordgo.InteractionResponseData{
-		Content:    fmt.Sprintf("BEEP BOOP, Yes my captin %s!", username),
+		Content:    fmt.Sprintf("BEEP BOOP, Tak jest Panie kapitanie %s!", username),
 		Components: createButtonReactions(),
 		Embeds: []*discordgo.MessageEmbed{
 			{
@@ -96,7 +96,7 @@ func createButtonReactions() []discordgo.MessageComponent {
 	}
 }
 
-func CreateDisacordInteractionResponse(ctx context.Context, i *discordgo.InteractionCreate, s *discordgo.Session, msg *discordgo.InteractionResponseData) {
+func CreateDiscordInteractionResponse(ctx context.Context, i *discordgo.InteractionCreate, s *discordgo.Session, msg *discordgo.InteractionResponseData) {
 	if err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: msg,

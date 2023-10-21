@@ -2,14 +2,23 @@ package types
 
 type (
 	JokeType     string
-	JokeCategory string // TODO Add yoMama category
+	JokeCategory string
 )
+
+type Joke interface {
+	Content() string
+}
+
+type JokeTwoParts interface {
+	ContentTwoPart() (string, string)
+}
 
 const (
 	Single  JokeType = "single"
 	TwoPart JokeType = "twopart"
 )
 
+// TODO Add yoMama category
 const (
 	PROGRAMMING JokeCategory = "Programming"
 	MISC        JokeCategory = "Misc"
@@ -32,12 +41,4 @@ func (j JokeCategory) ToHumorAPICategory() string {
 	}
 
 	return c
-}
-
-type Joke interface {
-	Content() string
-}
-
-type JokeTwoParts interface {
-	ContentTwoPart() (string, string)
 }

@@ -89,29 +89,29 @@ func executeAddJokeCommand(ctx context.Context, s *discordgo.Session, i *discord
 	}
 
 	if j.Category == "" {
-		internal.CreateDisacordInteractionResponse(ctx, i, s, internal.CreateDiscordMsg("BEEP BOOP. Brakuje kategori!"))
+		internal.CreateDiscordInteractionResponse(ctx, i, s, internal.CreateDiscordMsg("BEEP BOOP. Brakuje kategori!"))
 		return
 	}
 
 	if j.Type == "" {
-		internal.CreateDisacordInteractionResponse(ctx, i, s, internal.CreateDiscordMsg("BEEP BOOP. Brakuje typu żartu!"))
+		internal.CreateDiscordInteractionResponse(ctx, i, s, internal.CreateDiscordMsg("BEEP BOOP. Brakuje typu żartu!"))
 		return
 	}
 
 	if j.ContentRes == "" {
-		internal.CreateDisacordInteractionResponse(ctx, i, s, internal.CreateDiscordMsg("BEEP BOOP. Gdzie jest żart panie Kapitanie!"))
+		internal.CreateDiscordInteractionResponse(ctx, i, s, internal.CreateDiscordMsg("BEEP BOOP. Gdzie jest żart panie Kapitanie!"))
 		return
 	}
 
 	id, err := mongo.AddJoke(ctx, j)
 	if err != nil {
 		log.Error(ctx, "Failed add new joke into database", err)
-		internal.CreateDisacordInteractionResponse(ctx, i, s, internal.CreateDiscordMsg("BEEP BOOP. Coś poszło nie tak z dodanie twego żartu Kapitanie"))
+		internal.CreateDiscordInteractionResponse(ctx, i, s, internal.CreateDiscordMsg("BEEP BOOP. Coś poszło nie tak z dodanie twego żartu Kapitanie"))
 		return
 	}
 
 	// TODO Add only-user show this message
-	internal.CreateDisacordInteractionResponse(ctx, i, s, internal.CreateDiscordMsg(fmt.Sprintf("BEEP BOOP. Dodałem twój żart panie Kapitanie. Jego ID to %s", id.Hex())))
+	internal.CreateDiscordInteractionResponse(ctx, i, s, internal.CreateDiscordMsg(fmt.Sprintf("BEEP BOOP. Dodałem twój żart panie Kapitanie. Jego ID to %s", id.Hex())))
 }
 
 func executeJokeCommand(ctx context.Context, s *discordgo.Session, i *discordgo.InteractionCreate) {
@@ -137,7 +137,7 @@ func executeJokeCommand(ctx context.Context, s *discordgo.Session, i *discordgo.
 		if err != nil {
 			log.Error(ctx, "Failed during single j from JokeDev", err)
 
-			internal.CreateDisacordInteractionResponse(ctx, i, s, internal.CreateErrorMsg())
+			internal.CreateDiscordInteractionResponse(ctx, i, s, internal.CreateErrorMsg())
 			return
 		}
 
@@ -147,12 +147,12 @@ func executeJokeCommand(ctx context.Context, s *discordgo.Session, i *discordgo.
 		if err != nil {
 			log.Error(ctx, "Failed during two-part j from JokeDev", err)
 
-			internal.CreateDisacordInteractionResponse(ctx, i, s, internal.CreateErrorMsg())
+			internal.CreateDiscordInteractionResponse(ctx, i, s, internal.CreateErrorMsg())
 			return
 		}
 
 		msg = internal.CreateTwoPartJokeMessage(i.Member.User.Username, category, j)
 	}
 
-	internal.CreateDisacordInteractionResponse(ctx, i, s, msg)
+	internal.CreateDiscordInteractionResponse(ctx, i, s, msg)
 }

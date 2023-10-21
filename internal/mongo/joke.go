@@ -7,6 +7,7 @@ import (
 	"github.com/wittano/komputer/internal/types"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 	"math/rand"
 	"os"
 )
@@ -86,19 +87,21 @@ func findRandomJoke(ctx context.Context, j JokeSearch) (JokeDB, error) {
 		jokeType = types.Single
 	}
 
-	pipelines := bson.D{
-		{
-			"type", jokeType,
-		},
-	}
+	pipelines := mongo.Pipeline{{{
+		"$sample", bson.D{{
+			"size", 10,
+		}},
+	}}}
 
 	if category != "" && category != types.ANY {
-		pipelines = append(pipelines, bson.E{
-			Key: "category", Value: category,
-		})
+		pipelines = append(pipelines, bson.D{{
+			"$match", bson.D{{
+				"category", category,
+			}},
+		}})
 	}
 
-	c, err := client.Database(name).Collection(jokeCollectionName).Find(ctx, pipelines)
+	c, err := client.Database(name).Collection(jokeCollectionName).Aggregate(ctx, pipelines)
 	if err != nil {
 		return JokeDB{}, err
 	}
@@ -112,6 +115,5 @@ func findRandomJoke(ctx context.Context, j JokeSearch) (JokeDB, error) {
 		return JokeDB{}, JokeNotFoundErr{category, jokeType}
 	}
 
-	// TODO Get random joke from DB
 	return res[rand.Int()%len(res)], nil
 }

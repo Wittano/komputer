@@ -27,6 +27,9 @@ func AddNewJokesFromHumorAPI(ctx context.Context) {
 		if err != nil && errors.Is(err, joke.HumorAPILimitExceededErr{}) {
 			log.Warn(ctx, "Limit of getting jokes from HumorAPI was exceeded")
 			return
+		} else if err != nil && errors.Is(err, joke.HumorAPIKeyMissingErr{}) {
+			log.Warn(ctx, err.Error())
+			return
 		} else if err != nil {
 			log.Error(ctx, "Failed get joke from HumorAPI", err)
 			continue

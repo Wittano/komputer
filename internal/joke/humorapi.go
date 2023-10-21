@@ -25,6 +25,13 @@ func (h HumorAPIRes) Content() string {
 type HumorAPILimitExceededErr struct {
 }
 
+type HumorAPIKeyMissingErr struct {
+}
+
+func (h HumorAPIKeyMissingErr) Error() string {
+	return "RAPID_API_KEY is missing"
+}
+
 func (h HumorAPILimitExceededErr) Error() string {
 	return "Humor API limit exceeded"
 }
@@ -32,7 +39,7 @@ func (h HumorAPILimitExceededErr) Error() string {
 func GetRandomJokeFromHumorAPI(ctx context.Context, category types.JokeCategory) (HumorAPIRes, error) {
 	key, ok := os.LookupEnv("RAPID_API_KEY")
 	if !ok {
-		return HumorAPIRes{}, errors.New("RAPID_API_KEY is missing")
+		return HumorAPIRes{}, HumorAPIKeyMissingErr{}
 	}
 
 	u, err := url.Parse("https://humor-jokes-and-memes.p.rapidapi.com/jokes/random?exclude-tags=nsfw&include-tags=" + category.ToHumorAPICategory())
