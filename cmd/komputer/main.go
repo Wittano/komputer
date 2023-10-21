@@ -85,6 +85,8 @@ func main() {
 	defer bot.Close()
 	defer mongo.CloseDb()
 
+	go mongo.AddNewJokesFromHumorAPI(context.Background())
+
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt)
 	zerolog.Info().Msg("Bot is ready!. Press Ctrl+C to exit")

@@ -1,8 +1,10 @@
 package joke
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/wittano/komputer/internal/types"
 	"io"
 )
 
@@ -38,21 +40,6 @@ type jokeApiTwoPartResponse struct {
 	Delivery string       `json:"delivery"`
 }
 
-const (
-	Single  JokeType = "single"
-	TwoPart JokeType = "twopart"
-)
-
-const (
-	PROGRAMMING JokeCategory = "Programming"
-	MISC        JokeCategory = "Misc"
-	DARK        JokeCategory = "Dark"
-	PUN         JokeCategory = "Pun"
-	SPOOKY      JokeCategory = "Spooky"
-	CHRISTMAS   JokeCategory = "Christmas"
-	ANY         JokeCategory = "Any"
-)
-
 func (j jokeApiSingleResponse) Content() string {
 	return j.Joke
 }
@@ -61,8 +48,8 @@ func (j jokeApiTwoPartResponse) ContentTwoPart() (string, string) {
 	return j.Setup, j.Delivery
 }
 
-func GetSingleJokeFromJokeDev(category JokeCategory) (joke Joke, err error) {
-	res, err := Client.Get(fmt.Sprintf("https://v2.jokeapi.dev/joke/%s?type=%s", category, Single))
+func GetSingleJokeFromJokeDev(_ context.Context, category types.JokeCategory) (joke types.Joke, err error) {
+	res, err := client.Get(fmt.Sprintf("https://v2.jokeapi.dev/joke/%s?type=%s", category, types.Single))
 	if err != nil {
 		return
 	}
@@ -79,8 +66,8 @@ func GetSingleJokeFromJokeDev(category JokeCategory) (joke Joke, err error) {
 	return jokeRes, err
 }
 
-func GetTwoPartJokeFromJokeDev(category JokeCategory) (joke JokeTwoParts, err error) {
-	res, err := Client.Get(fmt.Sprintf("https://v2.jokeapi.dev/joke/%s?type=%s", category, TwoPart))
+func GetTwoPartJokeFromJokeDev(_ context.Context, category types.JokeCategory) (joke types.JokeTwoParts, err error) {
+	res, err := client.Get(fmt.Sprintf("https://v2.jokeapi.dev/joke/%s?type=%s", category, types.TwoPart))
 	if err != nil {
 		return
 	}

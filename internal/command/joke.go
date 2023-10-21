@@ -8,7 +8,24 @@ import (
 	"github.com/wittano/komputer/internal/joke"
 	"github.com/wittano/komputer/internal/log"
 	"github.com/wittano/komputer/internal/mongo"
+	"github.com/wittano/komputer/internal/types"
+	"math/rand"
 	"os"
+)
+
+type jokeSingleTypeGeneratorFunc func(ctx context.Context, category types.JokeCategory) (types.Joke, error)
+type jokeTwoPartGeneratorFunc func(ctx context.Context, category types.JokeCategory) (types.JokeTwoParts, error)
+
+var (
+	jokeSingleTypeGenerator = []jokeSingleTypeGeneratorFunc{
+		joke.GetSingleJokeFromJokeDev,
+		mongo.GetSingleTypeJoke,
+	}
+
+	jokeTwoPartsTypeGenerator = []jokeTwoPartGeneratorFunc{
+		joke.GetTwoPartJokeFromJokeDev,
+		mongo.GetTwoPartsTypeJoke,
+	}
 )
 
 var (
@@ -54,14 +71,14 @@ var (
 )
 
 func executeAddJokeCommand(ctx context.Context, s *discordgo.Session, i *discordgo.InteractionCreate) {
-	var j mongo.JokeDb
+	var j mongo.JokeDB
 
 	for _, o := range i.Data.(discordgo.ApplicationCommandInteractionData).Options {
 		switch o.Name {
 		case "category":
-			j.Category = joke.JokeCategory(o.Value.(string))
+			j.Category = types.JokeCategory(o.Value.(string))
 		case "type":
-			j.Type = joke.JokeType(o.Value.(string))
+			j.Type = types.JokeType(o.Value.(string))
 		case "content":
 			j.ContentRes = o.Value.(string)
 		case "question":
@@ -98,15 +115,15 @@ func executeAddJokeCommand(ctx context.Context, s *discordgo.Session, i *discord
 }
 
 func executeJokeCommand(ctx context.Context, s *discordgo.Session, i *discordgo.InteractionCreate) {
-	category := joke.ANY
-	jokeType := joke.Single
+	category := types.ANY
+	jokeType := types.Single
 
 	for _, o := range i.Data.(discordgo.ApplicationCommandInteractionData).Options {
 		switch o.Name {
 		case "category":
-			category = joke.JokeCategory(o.Value.(string))
+			category = types.JokeCategory(o.Value.(string))
 		case "type":
-			jokeType = joke.JokeType(o.Value.(string))
+			jokeType = types.JokeType(o.Value.(string))
 		default:
 			log.Warn(ctx, fmt.Sprintf("Invalid option for %s", o.Name))
 		}
@@ -115,8 +132,8 @@ func executeJokeCommand(ctx context.Context, s *discordgo.Session, i *discordgo.
 	var msg *discordgo.InteractionResponseData
 
 	switch jokeType {
-	case joke.Single:
-		j, err := joke.GetSingleJokeFromJokeDev(category)
+	case types.Single:
+		j, err := jokeSingleTypeGenerator[rand.Int()%len(jokeSingleTypeGenerator)](ctx, category)
 		if err != nil {
 			log.Error(ctx, "Failed during single j from JokeDev", err)
 
@@ -125,8 +142,8 @@ func executeJokeCommand(ctx context.Context, s *discordgo.Session, i *discordgo.
 		}
 
 		msg = internal.CreateJokeMessage(i.Member.User.Username, category, j)
-	case joke.TwoPart:
-		j, err := joke.GetTwoPartJokeFromJokeDev(category)
+	case types.TwoPart:
+		j, err := jokeTwoPartsTypeGenerator[rand.Int()%len(jokeTwoPartsTypeGenerator)](ctx, category)
 		if err != nil {
 			log.Error(ctx, "Failed during two-part j from JokeDev", err)
 

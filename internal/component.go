@@ -5,6 +5,7 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/wittano/komputer/internal/joke"
 	"github.com/wittano/komputer/internal/log"
+	"github.com/wittano/komputer/internal/types"
 )
 
 type messageComponentHandler func(ctx context.Context, s *discordgo.Session, i *discordgo.InteractionCreate)
@@ -30,13 +31,13 @@ var (
 
 func nextJoke(ctx context.Context, s *discordgo.Session, i *discordgo.InteractionCreate) {
 	embedFields := i.Message.Embeds[0].Fields
-	category := joke.JokeCategory(embedFields[len(embedFields)-1].Value)
+	category := types.JokeCategory(embedFields[len(embedFields)-1].Value)
 
 	var msg *discordgo.InteractionResponseData
 
 	switch jokeType(len(embedFields)) {
 	case singleType:
-		j, err := joke.GetSingleJokeFromJokeDev(category)
+		j, err := joke.GetSingleJokeFromJokeDev(ctx, category)
 		if err != nil {
 			log.Error(ctx, "Failed during getting single joke from JokeDev", err)
 
@@ -47,7 +48,7 @@ func nextJoke(ctx context.Context, s *discordgo.Session, i *discordgo.Interactio
 
 		msg = CreateJokeMessage(i.Member.User.Username, category, j)
 	case twoPartType:
-		j, err := joke.GetTwoPartJokeFromJokeDev(category)
+		j, err := joke.GetTwoPartJokeFromJokeDev(ctx, category)
 		if err != nil {
 			log.Error(ctx, "Failed during getting two-part joke from JokeDev", err)
 

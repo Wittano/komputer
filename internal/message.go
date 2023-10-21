@@ -4,11 +4,11 @@ import (
 	"context"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
-	"github.com/wittano/komputer/internal/joke"
 	"github.com/wittano/komputer/internal/log"
+	"github.com/wittano/komputer/internal/types"
 )
 
-func CreateJokeMessage(username string, category joke.JokeCategory, joke joke.Joke) *discordgo.InteractionResponseData {
+func CreateJokeMessage(username string, category types.JokeCategory, joke types.Joke) *discordgo.InteractionResponseData {
 	content := joke.Content()
 
 	return &discordgo.InteractionResponseData{
@@ -34,7 +34,7 @@ func CreateJokeMessage(username string, category joke.JokeCategory, joke joke.Jo
 	}
 }
 
-func CreateTwoPartJokeMessage(username string, category joke.JokeCategory, joke joke.JokeTwoParts) *discordgo.InteractionResponseData {
+func CreateTwoPartJokeMessage(username string, category types.JokeCategory, joke types.JokeTwoParts) *discordgo.InteractionResponseData {
 	question, answer := joke.ContentTwoPart()
 
 	return &discordgo.InteractionResponseData{

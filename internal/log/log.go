@@ -19,13 +19,23 @@ func Warn(ctx context.Context, msg string) {
 }
 
 func Error(ctx context.Context, msg string, err error) {
-	log.Err(err).Ctx(ctx).Str("traceID", ctx.Value("traceID").(string)).Msg(msg)
+	log.Err(err).Ctx(ctx).Str("traceID", getTraceID(ctx)).Msg(msg)
 }
 
 func Fatal(ctx context.Context, msg string, err error) {
-	log.Fatal().Err(err).Ctx(ctx).Str("traceID", ctx.Value("traceID").(string)).Msg(msg)
+	log.Fatal().Err(err).Ctx(ctx).Str("traceID", getTraceID(ctx)).Msg(msg)
 }
 
 func logRequest(ctx context.Context, e *zerolog.Event, msg string) {
-	e.Ctx(ctx).Str("traceID", ctx.Value("traceID").(string)).Msg(msg)
+	e.Ctx(ctx).Str("traceID", getTraceID(ctx)).Msg(msg)
+}
+
+func getTraceID(ctx context.Context) string {
+	v := ctx.Value("traceID")
+
+	if v != nil {
+		return v.(string)
+	}
+
+	return ""
 }

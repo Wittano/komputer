@@ -11,6 +11,8 @@ import (
 
 var client *mongo.Client
 
+const jokeCollectionName = "jokes"
+
 func init() {
 	var err error
 
