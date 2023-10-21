@@ -66,18 +66,19 @@ func GetSingleJokeFromJokeDev(_ context.Context, category types.JokeCategory) (j
 	return jokeRes, err
 }
 
-func GetTwoPartJokeFromJokeDev(_ context.Context, category types.JokeCategory) (joke types.JokeTwoParts, err error) {
+func GetTwoPartJokeFromJokeDev(_ context.Context, category types.JokeCategory) (types.JokeTwoParts, error) {
 	res, err := client.Get(fmt.Sprintf("https://v2.jokeapi.dev/joke/%s?type=%s", category, types.TwoPart))
 	if err != nil {
-		return
+		return nil, err
 	}
 	defer res.Body.Close()
 
 	resBody, err := io.ReadAll(res.Body)
 	if err != nil {
-		return
+		return nil, err
 	}
 
+	var joke jokeApiTwoPartResponse
 	err = json.Unmarshal(resBody, &joke)
 
 	return joke, err

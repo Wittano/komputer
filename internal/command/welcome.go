@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
-	"github.com/wittano/komputer/internal"
+	"github.com/wittano/komputer/internal/interaction"
 	"os"
 	"strings"
 )
@@ -28,6 +28,6 @@ func executeWelcomeCommand(ctx context.Context, s *discordgo.Session, i *discord
 	})
 
 	if err != nil {
-		internal.CreateErrorMsg()
+		interaction.CreateErrorMsg()
 	}
 }

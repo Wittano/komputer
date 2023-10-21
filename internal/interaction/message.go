@@ -1,4 +1,4 @@
-package internal
+package interaction
 
 import (
 	"context"
@@ -6,6 +6,7 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/wittano/komputer/internal/log"
 	"github.com/wittano/komputer/internal/types"
+	"strings"
 )
 
 func CreateJokeMessage(username string, category types.JokeCategory, joke types.Joke) *discordgo.InteractionResponseData {
@@ -73,6 +74,10 @@ func CreateErrorMsg() *discordgo.InteractionResponseData {
 	return CreateDiscordMsg("BEEP BOOP. Coś poszło nie tak :(")
 }
 
+func CreateJokeNotFoundMsg(t types.JokeType, c types.JokeCategory) *discordgo.InteractionResponseData {
+	return CreateDiscordMsg(fmt.Sprintf("BEEP BOOP. Nie udało mi się znaleść, żartu w kategori %s o typie %s", strings.ToUpper(string(t)), strings.ToUpper(string(c))))
+}
+
 func CreateDiscordMsg(msg string) *discordgo.InteractionResponseData {
 	return &discordgo.InteractionResponseData{Content: msg}
 }
@@ -84,12 +89,17 @@ func createButtonReactions() []discordgo.MessageComponent {
 				discordgo.Button{
 					Style:    discordgo.PrimaryButton,
 					Label:    "Przeproś",
-					CustomID: pleaseButtonId,
+					CustomID: "apologiesButtonId",
+				},
+				discordgo.Button{
+					Style:    discordgo.SecondaryButton,
+					Label:    "Zabawne powiedz coś podobnego",
+					CustomID: "sameJokeButtonId",
 				},
 				discordgo.Button{
 					Style:    discordgo.SecondaryButton,
 					Label:    "Zabawne powiedz więcej",
-					CustomID: jokeButtonId,
+					CustomID: "nextJokeButtonId",
 				},
 			},
 		},

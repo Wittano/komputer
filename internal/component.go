@@ -3,90 +3,55 @@ package internal
 import (
 	"context"
 	"github.com/bwmarrin/discordgo"
-	"github.com/wittano/komputer/internal/joke"
-	"github.com/wittano/komputer/internal/log"
+	"github.com/wittano/komputer/internal/interaction"
 	"github.com/wittano/komputer/internal/types"
+	"math/rand"
 )
 
 type messageComponentHandler func(ctx context.Context, s *discordgo.Session, i *discordgo.InteractionCreate)
-
 type jokeType uint8
 
-const (
-	singleType  jokeType = 1
-	twoPartType jokeType = 3
-)
+const singleType jokeType = 1
 
 const (
-	pleaseButtonId = "ApologiesButtonId"
-	jokeButtonId   = "jokeButtonId"
+	PleaseButtonId   = "apologiesButtonId"
+	SameJokeButtonId = "sameJokeButtonId"
+	NextJokeButtonId = "nextJokeButtonId"
 )
 
-var (
-	JokeMessageComponentHandler = map[string]messageComponentHandler{
-		pleaseButtonId: apologiseMe,
-		jokeButtonId:   nextJoke,
+var JokeMessageComponentHandler = map[string]messageComponentHandler{
+	PleaseButtonId:   apologiseMe,
+	SameJokeButtonId: nextJokeWithSameCategory,
+	NextJokeButtonId: nextJoke,
+}
+
+func nextJokeWithSameCategory(ctx context.Context, s *discordgo.Session, i *discordgo.InteractionCreate) {
+	embedFields := i.Message.Embeds[0].Fields
+	c := types.JokeCategory(embedFields[len(embedFields)-1].Value)
+
+	var t types.JokeType
+	if len(embedFields) == int(singleType) {
+		t = types.Single
+	} else {
+		t = types.TwoPart
 	}
-)
+
+	interaction.SendJoke(ctx, s, i, t, c)
+}
 
 func nextJoke(ctx context.Context, s *discordgo.Session, i *discordgo.InteractionCreate) {
-	embedFields := i.Message.Embeds[0].Fields
-	category := types.JokeCategory(embedFields[len(embedFields)-1].Value)
-
-	var msg *discordgo.InteractionResponseData
-
-	switch jokeType(len(embedFields)) {
-	case singleType:
-		j, err := joke.GetSingleJokeFromJokeDev(ctx, category)
-		if err != nil {
-			log.Error(ctx, "Failed during getting single joke from JokeDev", err)
-
-			CreateErrorMsg()
-
-			return
-		}
-
-		msg = CreateJokeMessage(i.Member.User.Username, category, j)
-	case twoPartType:
-		j, err := joke.GetTwoPartJokeFromJokeDev(ctx, category)
-		if err != nil {
-			log.Error(ctx, "Failed during getting two-part joke from JokeDev", err)
-
-			CreateErrorMsg()
-
-			return
-		}
-
-		msg = CreateTwoPartJokeMessage(i.Member.User.Username, category, j)
+	var t types.JokeType
+	if rand.Int()%2 == 0 {
+		t = types.Single
+	} else {
+		t = types.TwoPart
 	}
 
-	err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-		Type: discordgo.InteractionResponseChannelMessageWithSource,
-		Data: msg,
-	})
+	c := types.GetRandomCategory()
 
-	if err != nil {
-		log.Error(ctx, "Failed create Discord interaction response", err)
-
-		CreateErrorMsg()
-	}
+	interaction.SendJoke(ctx, s, i, t, c)
 }
 
 func apologiseMe(ctx context.Context, s *discordgo.Session, i *discordgo.InteractionCreate) {
-	sendMessage(ctx, "Przepraszam", s, i)
-}
-
-func sendMessage(ctx context.Context, msg string, s *discordgo.Session, i *discordgo.InteractionCreate) {
-	err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-		Type: discordgo.InteractionResponseChannelMessageWithSource,
-		Data: &discordgo.InteractionResponseData{
-			Content: msg,
-		},
-	})
-
-	if err != nil {
-		log.Error(ctx, "Failed create Discord interaction response", err)
-
-		CreateErrorMsg()
-	}
+	interaction.CreateDiscordInteractionResponse(ctx, i, s, interaction.CreateDiscordMsg("Przepraszam"))
 }

@@ -4,28 +4,11 @@ import (
 	"context"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
-	"github.com/wittano/komputer/internal"
-	"github.com/wittano/komputer/internal/joke"
+	"github.com/wittano/komputer/internal/interaction"
 	"github.com/wittano/komputer/internal/log"
 	"github.com/wittano/komputer/internal/mongo"
 	"github.com/wittano/komputer/internal/types"
-	"math/rand"
 	"os"
-)
-
-type jokeSingleTypeGeneratorFunc func(ctx context.Context, category types.JokeCategory) (types.Joke, error)
-type jokeTwoPartGeneratorFunc func(ctx context.Context, category types.JokeCategory) (types.JokeTwoParts, error)
-
-var (
-	jokeSingleTypeGenerator = []jokeSingleTypeGeneratorFunc{
-		joke.GetSingleJokeFromJokeDev,
-		mongo.GetSingleTypeJoke,
-	}
-
-	jokeTwoPartsTypeGenerator = []jokeTwoPartGeneratorFunc{
-		joke.GetTwoPartJokeFromJokeDev,
-		mongo.GetTwoPartsTypeJoke,
-	}
 )
 
 var (
@@ -89,29 +72,33 @@ func executeAddJokeCommand(ctx context.Context, s *discordgo.Session, i *discord
 	}
 
 	if j.Category == "" {
-		internal.CreateDiscordInteractionResponse(ctx, i, s, internal.CreateDiscordMsg("BEEP BOOP. Brakuje kategori!"))
+		interaction.CreateDiscordInteractionResponse(ctx, i, s, interaction.CreateDiscordMsg("BEEP BOOP. Brakuje kategori!"))
 		return
 	}
 
 	if j.Type == "" {
-		internal.CreateDiscordInteractionResponse(ctx, i, s, internal.CreateDiscordMsg("BEEP BOOP. Brakuje typu żartu!"))
+		interaction.CreateDiscordInteractionResponse(ctx, i, s, interaction.CreateDiscordMsg("BEEP BOOP. Brakuje typu żartu!"))
 		return
 	}
 
 	if j.ContentRes == "" {
-		internal.CreateDiscordInteractionResponse(ctx, i, s, internal.CreateDiscordMsg("BEEP BOOP. Gdzie jest żart panie Kapitanie!"))
+		interaction.CreateDiscordInteractionResponse(ctx, i, s, interaction.CreateDiscordMsg("BEEP BOOP. Gdzie jest żart panie Kapitanie!"))
 		return
 	}
 
 	id, err := mongo.AddJoke(ctx, j)
 	if err != nil {
 		log.Error(ctx, "Failed add new joke into database", err)
-		internal.CreateDiscordInteractionResponse(ctx, i, s, internal.CreateDiscordMsg("BEEP BOOP. Coś poszło nie tak z dodanie twego żartu Kapitanie"))
+		interaction.CreateDiscordInteractionResponse(ctx, i, s, interaction.CreateDiscordMsg("BEEP BOOP. Coś poszło nie tak z dodanie twego żartu Kapitanie"))
 		return
 	}
 
-	// TODO Add only-user show this message
-	internal.CreateDiscordInteractionResponse(ctx, i, s, internal.CreateDiscordMsg(fmt.Sprintf("BEEP BOOP. Dodałem twój żart panie Kapitanie. Jego ID to %s", id.Hex())))
+	msg := &discordgo.InteractionResponseData{
+		Flags:   discordgo.MessageFlagsEphemeral,
+		Content: fmt.Sprintf("BEEP BOOP. Dodałem twój żart panie Kapitanie. Jego ID to %s", id.Hex()),
+	}
+
+	interaction.CreateDiscordInteractionResponse(ctx, i, s, msg)
 }
 
 func executeJokeCommand(ctx context.Context, s *discordgo.Session, i *discordgo.InteractionCreate) {
@@ -129,30 +116,5 @@ func executeJokeCommand(ctx context.Context, s *discordgo.Session, i *discordgo.
 		}
 	}
 
-	var msg *discordgo.InteractionResponseData
-
-	switch jokeType {
-	case types.Single:
-		j, err := jokeSingleTypeGenerator[rand.Int()%len(jokeSingleTypeGenerator)](ctx, category)
-		if err != nil {
-			log.Error(ctx, "Failed during single j from JokeDev", err)
-
-			internal.CreateDiscordInteractionResponse(ctx, i, s, internal.CreateErrorMsg())
-			return
-		}
-
-		msg = internal.CreateJokeMessage(i.Member.User.Username, category, j)
-	case types.TwoPart:
-		j, err := jokeTwoPartsTypeGenerator[rand.Int()%len(jokeTwoPartsTypeGenerator)](ctx, category)
-		if err != nil {
-			log.Error(ctx, "Failed during two-part j from JokeDev", err)
-
-			internal.CreateDiscordInteractionResponse(ctx, i, s, internal.CreateErrorMsg())
-			return
-		}
-
-		msg = internal.CreateTwoPartJokeMessage(i.Member.User.Username, category, j)
-	}
-
-	internal.CreateDiscordInteractionResponse(ctx, i, s, msg)
+	interaction.SendJoke(ctx, s, i, jokeType, category)
 }

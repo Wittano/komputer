@@ -3,7 +3,6 @@ package mongo
 import (
 	"context"
 	"errors"
-	"fmt"
 	"github.com/wittano/komputer/internal/types"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -39,15 +38,6 @@ func (j JokeDB) toJokeSearch() JokeSearch {
 type JokeSearch struct {
 	Type     types.JokeType
 	Category types.JokeCategory
-}
-
-type JokeNotFoundErr struct {
-	category types.JokeCategory
-	jokeType types.JokeType
-}
-
-func (j JokeNotFoundErr) Error() string {
-	return fmt.Sprintf("Joke \"%s\" from category \"%s\" wasn't found", j.jokeType, j.category)
 }
 
 func AddJoke(ctx context.Context, joke JokeDB) (id primitive.ObjectID, err error) {
@@ -91,7 +81,13 @@ func findRandomJoke(ctx context.Context, j JokeSearch) (JokeDB, error) {
 		"$sample", bson.D{{
 			"size", 10,
 		}},
-	}}}
+	}},
+		{{
+			"$match", bson.D{{
+				"type", jokeType,
+			}},
+		}},
+	}
 
 	if category != "" && category != types.ANY {
 		pipelines = append(pipelines, bson.D{{
@@ -112,7 +108,7 @@ func findRandomJoke(ctx context.Context, j JokeSearch) (JokeDB, error) {
 	}
 
 	if len(res) == 0 {
-		return JokeDB{}, JokeNotFoundErr{category, jokeType}
+		return JokeDB{}, types.JokeNotFoundErr{Category: category, JokeType: jokeType}
 	}
 
 	return res[rand.Int()%len(res)], nil

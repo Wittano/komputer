@@ -1,5 +1,10 @@
 package types
 
+import (
+	"fmt"
+	"math/rand"
+)
+
 type (
 	JokeType     string
 	JokeCategory string
@@ -11,6 +16,15 @@ type Joke interface {
 
 type JokeTwoParts interface {
 	ContentTwoPart() (string, string)
+}
+
+type JokeNotFoundErr struct {
+	Category JokeCategory
+	JokeType JokeType
+}
+
+func (j JokeNotFoundErr) Error() string {
+	return fmt.Sprintf("Joke \"%s\" from category \"%s\" wasn't found", j.JokeType, j.Category)
 }
 
 const (
@@ -41,4 +55,10 @@ func (j JokeCategory) ToHumorAPICategory() string {
 	}
 
 	return c
+}
+
+func GetRandomCategory() JokeCategory {
+	c := []JokeCategory{PROGRAMMING, MISC, DARK, ANY}
+
+	return c[rand.Int()%len(c)]
 }
