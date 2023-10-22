@@ -13,6 +13,8 @@ import (
 	"os"
 )
 
+var SpockMusicStopCh = map[string]chan bool{}
+
 var SpockCommand = DiscordCommand{
 	Command: discordgo.ApplicationCommand{
 		Name:        "spock",
@@ -29,8 +31,8 @@ func execSpookSpeak(ctx context.Context, s *discordgo.Session, i *discordgo.Inte
 		return
 	}
 
-	chID, ok := voice.UsersOnVoiceChat[i.Member.User.ID]
-	if !ok {
+	userVoiceChat, ok := voice.UserVoiceChatMap[i.Member.User.ID]
+	if !ok || userVoiceChat.GuildID != i.GuildID {
 		log.Error(ctx, fmt.Sprintf("Failed find user on voice channels on %s server", i.Member.GuildID), errors.New(fmt.Sprintf("user with ID %s wasn't found on any voice chat on %s server", i.Member.User.ID, i.GuildID)))
 		interaction.CreateDiscordInteractionResponse(ctx, i, s, interaction.CreateDiscordMsg("BEEP BOOP. Kapitanie gdzie jesteś? Wejdź na kanał głosowy a ja dołącze"))
 		return
@@ -39,7 +41,7 @@ func execSpookSpeak(ctx context.Context, s *discordgo.Session, i *discordgo.Inte
 	go func() {
 		s.Identify.Intents = discordgo.MakeIntent(discordgo.IntentsGuildVoiceStates)
 
-		voiceJoin, err := s.ChannelVoiceJoin(i.GuildID, chID, false, true)
+		voiceJoin, err := s.ChannelVoiceJoin(i.GuildID, userVoiceChat.ChannelID, false, true)
 		if err != nil {
 			log.Error(ctx, "Failed join to voice channel", err)
 			return
@@ -52,8 +54,12 @@ func execSpookSpeak(ctx context.Context, s *discordgo.Session, i *discordgo.Inte
 			return
 		}
 
+		ch := make(chan bool)
+		SpockMusicStopCh[i.GuildID] = ch
+
 		// TODO Rewrite this function cause ffmpeg generate zombie process
-		dgvoice.PlayAudioFile(voiceJoin, path, make(<-chan bool))
+		// TODO Add multi-server playing same song
+		dgvoice.PlayAudioFile(voiceJoin, path, ch)
 
 		voiceJoin.Disconnect()
 	}()

@@ -19,10 +19,11 @@ import (
 var (
 	bot      *discordgo.Session
 	commands = map[string]command.DiscordCommand{
-		command.WelcomeCommand.Command.Name: command.WelcomeCommand,
-		command.JokeCommand.Command.Name:    command.JokeCommand,
-		command.AddJokeCommand.Command.Name: command.AddJokeCommand,
-		command.SpockCommand.Command.Name:   command.SpockCommand,
+		command.WelcomeCommand.Command.Name:   command.WelcomeCommand,
+		command.JokeCommand.Command.Name:      command.JokeCommand,
+		command.AddJokeCommand.Command.Name:   command.AddJokeCommand,
+		command.SpockCommand.Command.Name:     command.SpockCommand,
+		command.SpockStopCommand.Command.Name: command.SpockStopCommand,
 	}
 )
 
@@ -60,6 +61,7 @@ func init() {
 	})
 }
 
+// TODO Export registration commends to CLI tool
 func init() {
 	checkEnvVariables("APPLICATION_ID", "SERVER_GUID")
 

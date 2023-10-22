@@ -1,11 +1,25 @@
 package voice
 
-import "github.com/bwmarrin/discordgo"
+import (
+	"github.com/bwmarrin/discordgo"
+)
 
-var UsersOnVoiceChat = map[string]string{}
+type UserVoiceChat struct {
+	ChannelID string
+	GuildID   string
+}
+
+var UserVoiceChatMap = map[string]UserVoiceChat{}
 
 func HandleVoiceChannelUpdate(_ *discordgo.Session, vc *discordgo.VoiceStateUpdate) {
+	uvc := UserVoiceChat{
+		ChannelID: vc.ChannelID,
+		GuildID:   vc.GuildID,
+	}
+
 	if vc.UserID != "" && vc.ChannelID != "" {
-		UsersOnVoiceChat[vc.UserID] = vc.ChannelID
+		UserVoiceChatMap[vc.UserID] = uvc
+	} else if vc.UserID != "" && vc.ChannelID == "" {
+		delete(UserVoiceChatMap, vc.UserID)
 	}
 }
