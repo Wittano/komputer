@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/wittano/komputer/internal/types"
 	"io"
+	"strings"
 )
 
 type jokeApiFlags struct {
@@ -19,7 +20,7 @@ type jokeApiFlags struct {
 
 type jokeApiSingleResponse struct {
 	Error    bool         `json:"error"`
-	Category string       `json:"category"`
+	category string       `json:"category"`
 	Type     string       `json:"type"`
 	Flags    jokeApiFlags `json:"flags"`
 	Id       int          `json:"id"`
@@ -30,7 +31,7 @@ type jokeApiSingleResponse struct {
 
 type jokeApiTwoPartResponse struct {
 	Error    bool         `json:"error"`
-	Category string       `json:"category"`
+	category string       `json:"category"`
 	Type     string       `json:"type"`
 	Flags    jokeApiFlags `json:"flags"`
 	Id       int          `json:"id"`
@@ -44,12 +45,28 @@ func (j jokeApiSingleResponse) Content() string {
 	return j.Joke
 }
 
+func (j jokeApiSingleResponse) Category() types.JokeCategory {
+	if strings.Contains(strings.ToLower(j.Joke), "mama") {
+		return types.YOMAMA
+	}
+
+	return types.JokeCategory(j.category)
+}
+
 func (j jokeApiTwoPartResponse) ContentTwoPart() (string, string) {
 	return j.Setup, j.Delivery
 }
 
-func GetSingleJokeFromJokeDev(_ context.Context, category types.JokeCategory) (joke types.Joke, err error) {
-	res, err := client.Get(fmt.Sprintf("https://v2.jokeapi.dev/joke/%s?type=%s", category, types.Single))
+func (j jokeApiTwoPartResponse) Category() types.JokeCategory {
+	if strings.Contains(strings.ToLower(j.Setup), "mama") || strings.Contains(strings.ToLower(j.Delivery), "mama") {
+		return types.YOMAMA
+	}
+
+	return types.JokeCategory(j.category)
+}
+
+func GetSingleJokeFromJokeDev(_ context.Context, category types.JokeCategory) (joke types.JokeContainer, err error) {
+	res, err := client.Get(fmt.Sprintf("https://v2.jokeapi.dev/joke/%s?type=%s", category.ToJokeDevCategory(), types.Single))
 	if err != nil {
 		return
 	}
@@ -66,8 +83,8 @@ func GetSingleJokeFromJokeDev(_ context.Context, category types.JokeCategory) (j
 	return jokeRes, err
 }
 
-func GetTwoPartJokeFromJokeDev(_ context.Context, category types.JokeCategory) (types.JokeTwoParts, error) {
-	res, err := client.Get(fmt.Sprintf("https://v2.jokeapi.dev/joke/%s?type=%s", category, types.TwoPart))
+func GetTwoPartJokeFromJokeDev(_ context.Context, category types.JokeCategory) (types.JokeTwoPartsContainer, error) {
+	res, err := client.Get(fmt.Sprintf("https://v2.jokeapi.dev/joke/%s?type=%s", category.ToJokeDevCategory(), types.TwoPart))
 	if err != nil {
 		return nil, err
 	}

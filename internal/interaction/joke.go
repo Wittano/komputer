@@ -11,8 +11,8 @@ import (
 	"math/rand"
 )
 
-type jokeSingleTypeGeneratorFunc func(ctx context.Context, category types.JokeCategory) (types.Joke, error)
-type jokeTwoPartGeneratorFunc func(ctx context.Context, category types.JokeCategory) (types.JokeTwoParts, error)
+type jokeSingleTypeGeneratorFunc func(ctx context.Context, category types.JokeCategory) (types.JokeContainer, error)
+type jokeTwoPartGeneratorFunc func(ctx context.Context, category types.JokeCategory) (types.JokeTwoPartsContainer, error)
 
 var (
 	jokeSingleTypeGenerator = []jokeSingleTypeGeneratorFunc{
@@ -35,7 +35,7 @@ func SendJoke(ctx context.Context, s *discordgo.Session, i *discordgo.Interactio
 		if err != nil {
 			log.Error(ctx, "Failed during getting single joke from JokeDev", err)
 
-			if errors.Is(err, types.JokeNotFoundErr{Category: c, JokeType: t}) {
+			if errors.Is(err, types.ErrJokeNotFound{Category: c, JokeType: t}) {
 				CreateDiscordInteractionResponse(ctx, i, s, CreateJokeNotFoundMsg(t, c))
 			} else {
 				CreateDiscordInteractionResponse(ctx, i, s, CreateErrorMsg())
@@ -50,7 +50,7 @@ func SendJoke(ctx context.Context, s *discordgo.Session, i *discordgo.Interactio
 		if err != nil {
 			log.Error(ctx, "Failed during getting two-part joke from JokeDev", err)
 
-			if errors.Is(err, types.JokeNotFoundErr{Category: c, JokeType: t}) {
+			if errors.Is(err, types.ErrJokeNotFound{Category: c, JokeType: t}) {
 				CreateDiscordInteractionResponse(ctx, i, s, CreateJokeNotFoundMsg(t, c))
 			} else {
 				CreateDiscordInteractionResponse(ctx, i, s, CreateErrorMsg())

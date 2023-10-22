@@ -9,64 +9,92 @@ import (
 	"strings"
 )
 
-func CreateJokeMessage(username string, category types.JokeCategory, joke types.Joke) *discordgo.InteractionResponseData {
-	content := joke.Content()
+func CreateJokeMessage(username string, category types.JokeCategory, joke types.JokeContainer) *discordgo.InteractionResponseData {
+	var c types.JokeCategory
+	if jc, ok := joke.(types.JokeCategoryContainer); ok {
+		c = jc.Category()
+	} else {
+		c = category
+	}
 
-	return &discordgo.InteractionResponseData{
-		Content:    fmt.Sprintf("BEEP BOOP, Tak jest kapitanie %s!", username),
-		Components: createButtonReactions(),
-		Embeds: []*discordgo.MessageEmbed{
-			{
-				Type:        discordgo.EmbedTypeRich,
-				Title:       "Joke",
-				Description: content,
-				Color:       0x02f5f5,
-				Author: &discordgo.MessageEmbedAuthor{
-					Name: "komputer",
-				},
-				Fields: []*discordgo.MessageEmbedField{
-					{
-						Name:  "category",
-						Value: string(category),
-					},
+	embeds := []*discordgo.MessageEmbed{
+		{
+			Type:        discordgo.EmbedTypeRich,
+			Title:       "JokeContainer",
+			Description: joke.Content(),
+			Color:       0x02f5f5,
+			Author: &discordgo.MessageEmbedAuthor{
+				Name: "komputer",
+			},
+			Fields: []*discordgo.MessageEmbedField{
+				{
+					Name:  "category",
+					Value: string(c),
 				},
 			},
 		},
 	}
+
+	if c == types.YOMAMA {
+		embeds[0].Image = &discordgo.MessageEmbedImage{
+			URL: "https://media.tenor.com/sgS8GdoZGn8AAAAd/muscle-man-regular-show-muscle-man.gif",
+		}
+	}
+
+	return &discordgo.InteractionResponseData{
+		Content:    fmt.Sprintf("BEEP BOOP, Tak jest kapitanie %s!", username),
+		Components: createButtonReactions(),
+		Embeds:     embeds,
+	}
 }
 
-func CreateTwoPartJokeMessage(username string, category types.JokeCategory, joke types.JokeTwoParts) *discordgo.InteractionResponseData {
+func CreateTwoPartJokeMessage(username string, category types.JokeCategory, joke types.JokeTwoPartsContainer) *discordgo.InteractionResponseData {
 	question, answer := joke.ContentTwoPart()
+
+	var c types.JokeCategory
+	if jc, ok := joke.(types.JokeCategoryContainer); ok {
+		c = jc.Category()
+	} else {
+		c = category
+	}
+
+	embeds := []*discordgo.MessageEmbed{
+		{
+			Type:  discordgo.EmbedTypeRich,
+			Title: "JokeContainer",
+			Color: 0x02f5f5,
+			Author: &discordgo.MessageEmbedAuthor{
+				Name: "komputer",
+			},
+			Fields: []*discordgo.MessageEmbedField{
+				{
+					Name:   "Question",
+					Value:  question,
+					Inline: true,
+				},
+				{
+					Name:   "Answer",
+					Value:  answer,
+					Inline: true,
+				},
+				{
+					Name:  "category",
+					Value: string(c),
+				},
+			},
+		},
+	}
+
+	if c == types.YOMAMA {
+		embeds[0].Image = &discordgo.MessageEmbedImage{
+			URL: "https://media.tenor.com/sgS8GdoZGn8AAAAd/muscle-man-regular-show-muscle-man.gif",
+		}
+	}
 
 	return &discordgo.InteractionResponseData{
 		Content:    fmt.Sprintf("BEEP BOOP, Tak jest Panie kapitanie %s!", username),
 		Components: createButtonReactions(),
-		Embeds: []*discordgo.MessageEmbed{
-			{
-				Type:  discordgo.EmbedTypeRich,
-				Title: "Joke",
-				Color: 0x02f5f5,
-				Author: &discordgo.MessageEmbedAuthor{
-					Name: "komputer",
-				},
-				Fields: []*discordgo.MessageEmbedField{
-					{
-						Name:   "Question",
-						Value:  question,
-						Inline: true,
-					},
-					{
-						Name:   "Answer",
-						Value:  answer,
-						Inline: true,
-					},
-					{
-						Name:  "Category",
-						Value: string(category),
-					},
-				},
-			},
-		},
+		Embeds:     embeds,
 	}
 }
 

@@ -64,7 +64,7 @@ func saveJokeFromRapidAPI(ctx context.Context, jokeAPI HumorAPIJokeDB) error {
 	}
 
 	if res != nil && res.Current != nil {
-		return errors.New(fmt.Sprintf("Joke with externalID %d exists in database", jokeAPI.Joke.ID))
+		return errors.New(fmt.Sprintf("JokeContainer with externalID %d exists in database", jokeAPI.Joke.ID))
 	}
 
 	j := JokeDB{
@@ -79,7 +79,7 @@ func saveJokeFromRapidAPI(ctx context.Context, jokeAPI HumorAPIJokeDB) error {
 		return err
 	}
 
-	log.Info(ctx, fmt.Sprintf("Joke with ID %d was saved", jokeAPI.Joke.ID))
+	log.Info(ctx, fmt.Sprintf("JokeContainer with ID %d was saved", jokeAPI.Joke.ID))
 
 	return nil
 }

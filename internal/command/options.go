@@ -25,6 +25,10 @@ func getJokeCategoryOption(required bool) *discordgo.ApplicationCommandOption {
 				Name:  "Straszne",
 				Value: "Spooky",
 			},
+			{
+				Name:  "YoMamma",
+				Value: "YoMama",
+			},
 		},
 	}
 }

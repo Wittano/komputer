@@ -53,11 +53,11 @@ func AddJoke(ctx context.Context, joke JokeDB) (id primitive.ObjectID, err error
 	return
 }
 
-func GetSingleTypeJoke(ctx context.Context, category types.JokeCategory) (types.Joke, error) {
+func GetSingleTypeJoke(ctx context.Context, category types.JokeCategory) (types.JokeContainer, error) {
 	return findRandomJoke(ctx, JokeSearch{Type: types.Single, Category: category})
 }
 
-func GetTwoPartsTypeJoke(ctx context.Context, category types.JokeCategory) (types.JokeTwoParts, error) {
+func GetTwoPartsTypeJoke(ctx context.Context, category types.JokeCategory) (types.JokeTwoPartsContainer, error) {
 	return findRandomJoke(ctx, JokeSearch{Type: types.TwoPart, Category: category})
 }
 
@@ -108,7 +108,7 @@ func findRandomJoke(ctx context.Context, j JokeSearch) (JokeDB, error) {
 	}
 
 	if len(res) == 0 {
-		return JokeDB{}, types.JokeNotFoundErr{Category: category, JokeType: jokeType}
+		return JokeDB{}, types.ErrJokeNotFound{Category: category, JokeType: jokeType}
 	}
 
 	return res[rand.Int()%len(res)], nil
