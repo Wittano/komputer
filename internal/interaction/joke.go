@@ -35,7 +35,7 @@ func SendJoke(ctx context.Context, s *discordgo.Session, i *discordgo.Interactio
 		if err != nil {
 			log.Error(ctx, "Failed during getting single joke from JokeDev", err)
 
-			if errors.Is(err, types.ErrJokeNotFound{Category: c, JokeType: t}) {
+			if errors.Is(err, types.ErrJokeNotFound{Category: c, JokeType: t}) || errors.Is(err, joke.ErrJokeCategoryNotSupported{}) {
 				CreateDiscordInteractionResponse(ctx, i, s, CreateJokeNotFoundMsg(t, c))
 			} else {
 				CreateDiscordInteractionResponse(ctx, i, s, CreateErrorMsg())
@@ -50,7 +50,7 @@ func SendJoke(ctx context.Context, s *discordgo.Session, i *discordgo.Interactio
 		if err != nil {
 			log.Error(ctx, "Failed during getting two-part joke from JokeDev", err)
 
-			if errors.Is(err, types.ErrJokeNotFound{Category: c, JokeType: t}) {
+			if errors.Is(err, types.ErrJokeNotFound{Category: c, JokeType: t}) || errors.Is(err, joke.ErrJokeCategoryNotSupported{}) {
 				CreateDiscordInteractionResponse(ctx, i, s, CreateJokeNotFoundMsg(t, c))
 			} else {
 				CreateDiscordInteractionResponse(ctx, i, s, CreateErrorMsg())

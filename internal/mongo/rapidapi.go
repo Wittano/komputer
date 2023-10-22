@@ -18,7 +18,7 @@ type HumorAPIJokeDB struct {
 }
 
 func AddNewJokesFromHumorAPI(ctx context.Context) {
-	categories := []types.JokeCategory{types.ANY, types.PROGRAMMING, types.DARK}
+	categories := []types.JokeCategory{types.ANY, types.PROGRAMMING, types.DARK, types.YOMAMA}
 
 	for {
 		c := categories[rand.Int()%len(categories)]

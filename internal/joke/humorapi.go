@@ -14,12 +14,12 @@ import (
 )
 
 type HumorAPIRes struct {
-	joke string `json:"joke"`
-	ID   int64  `json:"id"`
+	JokeRes string `json:"joke"`
+	ID      int64  `json:"id"`
 }
 
 func (h HumorAPIRes) Content() string {
-	return h.joke
+	return h.JokeRes
 }
 
 type HumorAPILimitExceededErr struct {

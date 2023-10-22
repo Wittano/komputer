@@ -10,14 +10,6 @@ type (
 	JokeCategory string
 )
 
-func (j JokeCategory) ToJokeDevCategory() JokeCategory {
-	if j == YOMAMA {
-		return ANY
-	}
-
-	return j
-}
-
 func (j JokeCategory) ToHumorAPICategory() string {
 	switch j {
 	case PROGRAMMING:
