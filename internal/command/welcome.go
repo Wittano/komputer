@@ -20,14 +20,5 @@ var WelcomeCommand = DiscordCommand{
 }
 
 func executeWelcomeCommand(ctx context.Context, s *discordgo.Session, i *discordgo.InteractionCreate) {
-	err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-		Type: discordgo.InteractionResponseChannelMessageWithSource,
-		Data: &discordgo.InteractionResponseData{
-			Content: fmt.Sprintf("Witaj panie %s kapitanie! W czym mogę pomóc?", strings.ToUpper(i.Member.User.Username)),
-		},
-	})
-
-	if err != nil {
-		interaction.CreateErrorMsg()
-	}
+	interaction.CreateDiscordInteractionResponse(ctx, i, s, interaction.CreateDiscordMsg(fmt.Sprintf("Witaj panie %s kapitanie! W czym mogę pomóc?", strings.ToUpper(i.Member.User.Username))))
 }

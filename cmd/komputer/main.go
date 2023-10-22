@@ -11,6 +11,7 @@ import (
 	"github.com/wittano/komputer/internal/command"
 	"github.com/wittano/komputer/internal/log"
 	"github.com/wittano/komputer/internal/mongo"
+	"github.com/wittano/komputer/internal/voice"
 	"os"
 	"os/signal"
 )
@@ -21,6 +22,7 @@ var (
 		command.WelcomeCommand.Command.Name: command.WelcomeCommand,
 		command.JokeCommand.Command.Name:    command.JokeCommand,
 		command.AddJokeCommand.Command.Name: command.AddJokeCommand,
+		command.SpockCommand.Command.Name:   command.SpockCommand,
 	}
 )
 
@@ -70,6 +72,10 @@ func init() {
 			zerolog.Err(err).Msg("Registration slash command failed")
 		}
 	}
+}
+
+func init() {
+	bot.AddHandler(voice.HandleVoiceChannelUpdate)
 }
 
 func checkEnvVariables(vars ...string) {
