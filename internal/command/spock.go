@@ -10,6 +10,7 @@ import (
 	"github.com/wittano/komputer/internal/interaction"
 	"github.com/wittano/komputer/internal/log"
 	"github.com/wittano/komputer/internal/voice"
+	"math/rand"
 	"os"
 )
 
@@ -48,9 +49,9 @@ func execSpookSpeak(ctx context.Context, s *discordgo.Session, i *discordgo.Inte
 		}
 		defer voiceJoin.Close()
 
-		path, err := assets.GetAudioPath("spock.webm")
-		if err != nil {
-			log.Error(ctx, "Failed find assert \"spock.webm\" in assets directory", err)
+		path, err := assets.GetAudioPaths("spock")
+		if err != nil || len(path) == 0 {
+			log.Error(ctx, "Failed find any assert \"spock\" in assets directory", err)
 			return
 		}
 
@@ -59,7 +60,7 @@ func execSpookSpeak(ctx context.Context, s *discordgo.Session, i *discordgo.Inte
 
 		// TODO Rewrite this function cause ffmpeg generate zombie process
 		// TODO Add multi-server playing same song
-		dgvoice.PlayAudioFile(voiceJoin, path, ch)
+		dgvoice.PlayAudioFile(voiceJoin, path[rand.Int()%len(path)], ch)
 
 		voiceJoin.Disconnect()
 	}()

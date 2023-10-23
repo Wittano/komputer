@@ -1,23 +1,37 @@
 package assets
 
 import (
-	"errors"
 	"os"
 	"path"
+	"path/filepath"
+	"strings"
 )
 
 const assertDir = "assets"
 
-func GetAudioPath(filename string) (string, error) {
+func GetAudioPaths(filename string) ([]string, error) {
 	dir, err := os.Getwd()
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	p := path.Join(dir, assertDir, filename)
-	if _, err := os.Stat(p); errors.Is(err, os.ErrNotExist) {
-		return "", err
+	basePath := path.Join(dir, assertDir, filename)
+	dir = filepath.Dir(basePath)
+	name := filepath.Base(basePath)
+
+	ls, err := os.ReadDir(dir)
+	if err != nil {
+		return nil, err
 	}
 
-	return p, nil
+	var paths = make([]string, len(ls))
+
+	for _, d := range ls {
+		fName := d.Name()
+		if !d.IsDir() && strings.Contains(fName, name) {
+			paths = append(paths, filepath.Join(dir, fName))
+		}
+	}
+
+	return paths, nil
 }
