@@ -1,0 +1,142 @@
+{
+  "name": "joke",
+  "name_localizations": {
+    "pl": "żart",
+    "en-US": "joke"
+  },
+  "description": "Tell me some joke",
+  "description_localizations": {
+    "en-US": "Tell me some joke",
+    "pl": "Opowiedz mi żart"
+  },
+  "options": [
+    {
+      "type": 3,
+      "required": false,
+      "name": "category",
+      "name_localizations": {
+        "pl": "kategoria",
+        "en-US": "category"
+      },
+      "description": "Joke category",
+      "description_localizations": {
+        "pl": "Kategoria żartu",
+        "en-US": "Joke category"
+      },
+      "choices": [
+        {
+          "name": "Programming",
+          "name_localizations": {
+            "pl": "Programowanie",
+            "en-US": "Programming"
+          },
+          "value": "Programming"
+        },
+        {
+          "name": "Any",
+          "name_localizations": {
+            "pl": "Dowolne",
+            "en-US": "Any"
+          },
+          "value": "Any"
+        },
+        {
+          "name": "Misc",
+          "name_localizations": {
+            "pl": "Misc",
+            "en-US": "Misc"
+          },
+          "value": "Misc"
+        },
+        {
+          "name": "Dark",
+          "name_localizations": {
+            "pl": "Czarny humor",
+            "en-US": "Dark"
+          },
+          "value": "Dark"
+        },
+        {
+          "name": "Spooky",
+          "name_localizations": {
+            "pl": "Straszne",
+            "en-US": "Spooky"
+          },
+          "value": "Spooky"
+        },
+        {
+          "name": "Yo mama",
+          "name_localizations": {
+            "pl": "Twoja stara",
+            "en-US": "Yo mama"
+          },
+          "value": "YO_MAMA"
+        }
+      ]
+    },
+    {
+      "type": 3,
+      "name": "language",
+      "name_localizations": {
+        "pl": "język",
+        "en-US": "language"
+      },
+      "description": "Joke language",
+      "description_localizations": {
+        "pl": "Język",
+        "en-US": "Joke language"
+      },
+      "choices": [
+        {
+          "name": "Polish",
+          "name_localizations": {
+            "pl": "Polski",
+            "en-US": "Polish"
+          },
+          "value": "pl"
+        },
+        {
+          "name": "English",
+          "name_localizations": {
+            "pl": "Angielski",
+            "en-US": "English"
+          },
+          "value": "en"
+        }
+      ],
+      "required": false
+    },
+    {
+      "type": 3,
+      "required": false,
+      "name": "type",
+      "name_localizations": {
+        "pl": "typ",
+        "en-US": "type"
+      },
+      "description": "Type of joke",
+      "description_localizations": {
+        "pl": "Typ żartu",
+        "en-US": "Type of joke"
+      },
+      "choices": [
+        {
+          "name": "Single",
+          "name_localizations": {
+            "pl": "Jednoczęściowy",
+            "en-US": "Single"
+          },
+          "value": "Single"
+        },
+        {
+          "name": "Two-Part",
+          "name_localizations": {
+            "pl": "Dwuczęściowe",
+            "en-US": "Two-Part"
+          },
+          "value": "Two-Part"
+        }
+      ]
+    }
+  ]
+}

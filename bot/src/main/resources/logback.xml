@@ -1,0 +1,17 @@
+<configuration debug="true">
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <layout class="ch.qos.logback.classic.PatternLayout">
+            <pattern>%d{HH:mm:ss.SSS} [%thread] |%highlight(%-5level)| %logger{36} - %msg%n</pattern>
+
+            <!-- Apply colors based on log level -->
+            <filters>
+                <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+                    <level>ERROR</level>
+                </filter>
+            </filters>
+        </layout>
+    </appender>
+
+    <logger name="com.wittano.komputer.tests" level="DEBUG"/>
+
+</configuration>

@@ -1,0 +1,37 @@
+package com.wittano.komputer.bot.utils
+
+import com.wittano.komputer.bot.command.exception.CommandException
+import com.wittano.komputer.bot.joke.Joke
+import com.wittano.komputer.bot.joke.JokeCategory
+import com.wittano.komputer.bot.joke.JokeRandomService
+import com.wittano.komputer.bot.joke.JokeType
+import com.wittano.komputer.bot.joke.api.rapidapi.RapidApiException
+import com.wittano.komputer.commons.transtation.ErrorMessage
+import reactor.core.publisher.Mono
+import java.util.*
+
+internal fun getRandomJoke(
+    type: JokeType?,
+    category: JokeCategory?,
+    jokeRandomServices: Set<JokeRandomService>,
+    language: Locale?
+): Mono<Joke> {
+    val jokeNotFoundError = Mono.error<Joke>(CommandException("Joke not found", ErrorMessage.JOKE_NOT_FOUND))
+    val jokeRandomService = jokeRandomServices.filterService(type, category, language)
+
+    return jokeRandomService.takeIf { it.isNotEmpty() }
+        ?.random()
+        ?.getRandom(category, type, language)
+        ?.onErrorResume {
+            if (it is RapidApiException) {
+                return@onErrorResume jokeRandomService.excludeRapidApiServices()
+                    .takeIf { list -> list.isNotEmpty() }
+                    ?.random()
+                    ?.getRandom(category, type, language)
+                    ?: jokeNotFoundError
+            }
+
+            Mono.error(it)
+        }
+        ?: jokeNotFoundError
+}

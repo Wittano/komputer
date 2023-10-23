@@ -1,0 +1,52 @@
+{
+  "name": "config",
+  "description": "Set configuration for your server",
+  "options": [
+    {
+      "type": 3,
+      "required": false,
+      "name": "language",
+      "name_localizations": {
+        "pl": "język",
+        "en-US": "language"
+      },
+      "description": "Change default komputer's language",
+      "description_localizations": {
+        "pl": "Zmień język używany przez komputera",
+        "en-US": "Change default komputer's langauge"
+      },
+      "choices": [
+        {
+          "name": "Polish",
+          "name_localizations": {
+            "pl": "Polski",
+            "en-US": "Polish"
+          },
+          "value": "pl"
+        },
+        {
+          "name": "English",
+          "name_localizations": {
+            "pl": "Angielski",
+            "en-US": "English"
+          },
+          "value": "en"
+        }
+      ]
+    },
+    {
+      "type": 8,
+      "required": false,
+      "name": "role",
+      "name_localizations": {
+        "pl": "rola",
+        "en-US": "role"
+      },
+      "description": "Set role who can manage the bot",
+      "description_localizations": {
+        "pl": "Ustaw rolę kto może zarządzać botem",
+        "en-US": "Set role who can manage the bot"
+      }
+    }
+  ]
+}
