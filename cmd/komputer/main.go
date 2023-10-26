@@ -61,7 +61,6 @@ func init() {
 	})
 }
 
-// TODO Export registration commends to CLI tool
 func init() {
 	checkEnvVariables("APPLICATION_ID", "SERVER_GUID")
 

@@ -24,7 +24,7 @@ func GetAudioPaths(filename string) ([]string, error) {
 		return nil, err
 	}
 
-	var paths = make([]string, len(ls))
+	var paths []string
 
 	for _, d := range ls {
 		fName := d.Name()

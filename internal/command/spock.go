@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/bwmarrin/dgvoice"
 	"github.com/bwmarrin/discordgo"
 	"github.com/wittano/komputer/internal/assets"
 	"github.com/wittano/komputer/internal/interaction"
@@ -58,9 +57,10 @@ func execSpookSpeak(ctx context.Context, s *discordgo.Session, i *discordgo.Inte
 		ch := make(chan bool)
 		SpockMusicStopCh[i.GuildID] = ch
 
-		// TODO Rewrite this function cause ffmpeg generate zombie process
-		// TODO Add multi-server playing same song
-		dgvoice.PlayAudioFile(voiceJoin, path[rand.Int()%len(path)], ch)
+		songPath := path[rand.Int()%len(path)]
+		if err = voice.PlayAudio(voiceJoin, songPath, ch); err != nil {
+			log.Error(ctx, fmt.Sprintf("Failed play '%s' audio", songPath), err)
+		}
 
 		voiceJoin.Disconnect()
 	}()
