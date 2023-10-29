@@ -29,6 +29,8 @@ var (
 func SendJoke(ctx context.Context, s *discordgo.Session, i *discordgo.InteractionCreate, t types.JokeType, c types.JokeCategory) {
 	var msg *discordgo.InteractionResponseData
 
+	ctx = context.WithValue(ctx, "GUILD_ID", i.GuildID)
+
 	switch t {
 	case types.Single:
 		j, err := getSingleTypeJokeGenerator()(ctx, c)

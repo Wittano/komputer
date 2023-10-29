@@ -54,7 +54,9 @@ var (
 )
 
 func executeAddJokeCommand(ctx context.Context, s *discordgo.Session, i *discordgo.InteractionCreate) {
-	var j mongo.JokeDB
+	j := mongo.JokeDB{
+		GuildID: i.GuildID,
+	}
 
 	for _, o := range i.Data.(discordgo.ApplicationCommandInteractionData).Options {
 		switch o.Name {

@@ -17,6 +17,7 @@ type JokeDB struct {
 	ContentRes string             `bson:"content"`
 	Type       types.JokeType     `bson:"type"`
 	Category   types.JokeCategory `bson:"category"`
+	GuildID    string             `bson:"guild_id"`
 	ExternalID int64              `bson:"externalID"`
 }
 
@@ -83,9 +84,18 @@ func findRandomJoke(ctx context.Context, j JokeSearch) (JokeDB, error) {
 		}},
 	}},
 		{{
-			"$match", bson.D{{
-				"type", jokeType,
-			}},
+			"$match", bson.D{
+				{
+					"type", jokeType,
+				}, {
+					"$or", []bson.D{
+						{{
+							"guild_id", "",
+						}},
+						{{
+							"guild_id", ctx.Value("GUILD_ID"),
+						}}},
+				}},
 		}},
 	}
 
