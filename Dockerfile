@@ -8,7 +8,7 @@ RUN apk add make
 
 RUN make build
 
-FROM golang:1.20-alpine
+FROM alpine:3.18.4
 
 WORKDIR /app
 
