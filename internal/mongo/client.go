@@ -16,9 +16,7 @@ const jokeCollectionName = "jokes"
 func init() {
 	var err error
 
-	if err = godotenv.Load(); err != nil {
-		log.Error(context.Background(), "No .env file found", err)
-	}
+	godotenv.Load()
 
 	uri := os.Getenv("MONGODB_URI")
 	if uri == "" {
