@@ -31,7 +31,7 @@ jobs:
         with:
           image: wittano/komputer-bot
           platform: linux/amd64,linux/arm64,linux/arm/v7
-          registry: hub.docker.com
+          registry: docker.io
           addLatest: true
           dockerfile: ./Dockerfile
           tags: ${{ steps.meta.outputs.tags }}
