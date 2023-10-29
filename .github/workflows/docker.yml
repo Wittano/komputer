@@ -13,10 +13,10 @@ jobs:
       matrix:
         platform:
           - linux/amd64
-          - linux/arm64v5
-          - linux/arm64v6
-          - linux/arm64v7
-          - linux/arm64v8
+          - linux/arm64/v5
+          - linux/arm64/v6
+          - linux/arm64/v7
+          - linux/arm64/v8
     steps:
       - name: Check out the repo
         uses: actions/checkout@v4
