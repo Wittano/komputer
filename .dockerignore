@@ -1,0 +1,12 @@
+.env
+.env.example
+
+build/
+.direnv
+.idea
+.github
+
+README.md
+
+*.nix
+result/
