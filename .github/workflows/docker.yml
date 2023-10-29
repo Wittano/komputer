@@ -29,9 +29,10 @@ jobs:
       - name: Build and push Docker image
         uses: mr-smithers-excellent/docker-build-push@v6.2
         with:
-          context: .
+          image: wittano/komputer-bot
           platform: linux/amd64,linux/arm64,linux/arm/v7
-          file: ./Dockerfile
-          push: true
+          registry: hub.docker.com
+          addLatest: true
+          dockerfile: ./Dockerfile
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
