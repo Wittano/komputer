@@ -30,7 +30,7 @@ jobs:
         with:
           images: wittano/komputer-bot
           tags: |
-            type=semver,pattern={{version}},value=v1.0.0
+            type=semver,pattern={{version}}
       
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
