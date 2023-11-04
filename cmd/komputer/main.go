@@ -11,6 +11,7 @@ import (
 	"github.com/wittano/komputer/internal/command"
 	"github.com/wittano/komputer/internal/log"
 	"github.com/wittano/komputer/internal/mongo"
+	"github.com/wittano/komputer/internal/schedule"
 	"github.com/wittano/komputer/internal/voice"
 	"os"
 	"os/signal"
@@ -90,9 +91,8 @@ func checkEnvVariables(vars ...string) {
 func main() {
 	bot.Open()
 	defer bot.Close()
+	defer schedule.Scheduler.Stop()
 	defer mongo.CloseDb()
-
-	go mongo.AddNewJokesFromHumorAPI(context.Background())
 
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt)
