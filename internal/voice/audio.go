@@ -38,7 +38,8 @@ func PlayAudio(vc *discordgo.VoiceConnection, path string, stop <-chan bool) (er
 		return
 	}
 
-	defer cmd.Wait()
+	// wait and release child resources in undefiled time
+	go cmd.Wait()
 
 	//when stop is sent, kill ffmpeg
 	go func() {
@@ -121,6 +122,4 @@ func sendPCM(v *discordgo.VoiceConnection, pcm chan []int16) (err error) {
 		// send encoded opus data to the sendOpus channel
 		v.OpusSend <- opus
 	}
-
-	return
 }
