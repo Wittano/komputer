@@ -19,14 +19,6 @@
 
       defaultPackage.x86_64-linux = self.packages.x86_64-linux.komputer;
 
-      devShell = pkgs.mkShell {
-        packages = with pkgs; [
-          go
-          ffmpeg
-          rnix-lsp
-          nixfmt
-          nixpkgs-fmt
-        ];
-      };
+      devShell = import ./shell.nix { inherit pkgs; };
     };
 }
