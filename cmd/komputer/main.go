@@ -63,7 +63,7 @@ func init() {
 }
 
 func init() {
-	checkEnvVariables("APPLICATION_ID", "SERVER_GUID")
+	checkEnvVariables("APPLICATION_ID")
 
 	for _, c := range commands {
 		if _, err := bot.ApplicationCommandCreate(
