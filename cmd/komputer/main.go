@@ -70,7 +70,7 @@ func init() {
 			os.Getenv("SERVER_GUID"),
 			&c.Command,
 		); err != nil {
-			zerolog.Err(err).Msg("Registration slash command failed")
+			log.Error(context.Background(), "Registration slash command failed", err)
 		}
 	}
 }
@@ -96,6 +96,6 @@ func main() {
 
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt)
-	zerolog.Info().Msg("Bot is ready!. Press Ctrl+C to exit")
+	log.Info(context.Background(), "Bot is ready!. Press Ctrl+C to exit")
 	<-stop
 }

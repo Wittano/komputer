@@ -3,31 +3,26 @@ package log
 import (
 	"context"
 	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
+	"os"
 )
 
-func init() {
-	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
-}
+// TODO Add saving logs into file
+var logger = zerolog.New(os.Stdout).With().Ctx(context.Background()).Timestamp().Logger()
 
 func Info(ctx context.Context, msg string) {
-	logRequest(ctx, log.Info(), msg)
+	logger.Info().Ctx(ctx).Str("traceID", getTraceID(ctx)).Msg(msg)
 }
 
 func Warn(ctx context.Context, msg string) {
-	logRequest(ctx, log.Warn(), msg)
+	logger.Warn().Ctx(ctx).Str("traceID", getTraceID(ctx)).Msg(msg)
 }
 
 func Error(ctx context.Context, msg string, err error) {
-	log.Err(err).Ctx(ctx).Str("traceID", getTraceID(ctx)).Msg(msg)
+	logger.Err(err).Ctx(ctx).Str("traceID", getTraceID(ctx)).Msg(msg)
 }
 
 func Fatal(ctx context.Context, msg string, err error) {
-	log.Fatal().Err(err).Ctx(ctx).Str("traceID", getTraceID(ctx)).Msg(msg)
-}
-
-func logRequest(ctx context.Context, e *zerolog.Event, msg string) {
-	e.Ctx(ctx).Str("traceID", getTraceID(ctx)).Msg(msg)
+	logger.Fatal().Err(err).Ctx(ctx).Str("traceID", getTraceID(ctx)).Msg(msg)
 }
 
 func getTraceID(ctx context.Context) string {
