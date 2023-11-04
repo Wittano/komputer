@@ -93,6 +93,7 @@ func main() {
 	defer bot.Close()
 	defer schedule.Scheduler.Stop()
 	defer mongo.CloseDb()
+	defer log.FileLog.Close()
 
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt)
