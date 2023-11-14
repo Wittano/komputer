@@ -95,6 +95,8 @@ func main() {
 	defer mongo.CloseDb()
 	defer log.FileLog.Close()
 
+	schedule.Scheduler.StartAsync()
+
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt)
 	log.Info(context.Background(), "Bot is ready!. Press Ctrl+C to exit")
