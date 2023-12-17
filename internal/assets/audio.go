@@ -1,37 +1,43 @@
 package assets
 
 import (
+	"errors"
+	"math/rand"
 	"os"
 	"path"
 	"path/filepath"
-	"strings"
 )
 
 const assertDir = "assets"
 
-func GetAudioPaths(filename string) ([]string, error) {
+func Audios() ([]string, error) {
 	dir, err := os.Getwd()
 	if err != nil {
 		return nil, err
 	}
 
-	basePath := path.Join(dir, assertDir, filename)
-	dir = filepath.Dir(basePath)
-	name := filepath.Base(basePath)
-
-	ls, err := os.ReadDir(dir)
+	files, err := os.ReadDir(path.Join(dir, assertDir))
 	if err != nil {
 		return nil, err
 	}
 
-	var paths []string
+	if len(files) <= 0 {
+		return nil, errors.New("assert directory is empty")
+	}
 
-	for _, d := range ls {
-		fName := d.Name()
-		if !d.IsDir() && strings.Contains(fName, name) {
-			paths = append(paths, filepath.Join(dir, fName))
-		}
+	paths := make([]string, len(files))
+	for i, f := range files {
+		paths[i] = filepath.Join(dir, assertDir, f.Name())
 	}
 
 	return paths, nil
+}
+
+func RandomAudio() (string, error) {
+	paths, err := Audios()
+	if err != nil {
+		return "", err
+	}
+
+	return paths[rand.Int()%len(paths)], nil
 }

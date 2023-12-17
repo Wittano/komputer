@@ -15,6 +15,8 @@ install: build
 	cp -r assets $(DEST_DIR)
 	cp build/komputer $(DEST_DIR)
 
+run:
+	go run cmd/komputer/main.go
 
 uninstall:
 	rm -r $(DEST_DIR)
