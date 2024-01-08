@@ -12,13 +12,25 @@
       lib = nixpkgs.lib.extend (self: super: {
         my = import ./lib { inherit pkgs; lib = self; };
       });
-    in rec {
+
+      komputer = pkgs.callPackage ./default.nix { };
+    in
+    rec {
       inherit lib;
 
-      packages.x86_64-linux.komputer = pkgs.callPackage ./default.nix {};
+      packages.x86_64-linux.komputer = komputer;
+      defaultPackage.x86_64-linux = komputer;
 
-      defaultPackage.x86_64-linux = self.packages.x86_64-linux.komputer;
-
-      devShell = import ./shell.nix { inherit pkgs; };
+      devShell = pkgs.mkShell {
+        buildInputs = with pkgs; [
+          go
+          gopls
+          ffmpeg
+          rnix-lsp
+          nixfmt
+          nixpkgs-fmt
+        ];
+      };
     };
 }
+
