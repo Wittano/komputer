@@ -12,13 +12,13 @@ import (
 var (
 	testJokeSearch = JokeSearch{
 		Type:     Single,
-		Category: ANY,
+		Category: Any,
 	}
 	testJoke = Joke{
 		Question: "testQuestion",
 		Answer:   "testAnswer",
 		Type:     Single,
-		Category: ANY,
+		Category: Any,
 		GuildID:  "",
 	}
 )
@@ -45,7 +45,7 @@ func TestJokeService_Add(t *testing.T) {
 			t.Client,
 		}
 
-		service := NewJokeService(&mongodbService)
+		service := JokeService{&mongodbService}
 
 		if _, err := service.Add(ctx, testJoke); err != nil {
 			mt.Fatal(err)
@@ -63,7 +63,9 @@ func TestJokeService_AddButContextCancelled(t *testing.T) {
 		nil,
 	}
 
-	if _, err := NewJokeService(&mongodbService).Add(ctx, testJoke); err == nil {
+	service := JokeService{&mongodbService}
+
+	if _, err := service.Add(ctx, testJoke); err == nil {
 		t.Fatal("Context wasn't cancelled")
 	}
 }
@@ -78,7 +80,9 @@ func TestJokeService_SearchButContextWasCancelled(t *testing.T) {
 		nil,
 	}
 
-	if _, err := NewJokeService(&mongodbService).Get(ctx, testJokeSearch); err == nil {
+	service := JokeService{&mongodbService}
+
+	if _, err := service.Get(ctx, testJokeSearch); err == nil {
 		t.Fatal("Context wasn't cancelled")
 	}
 }
@@ -97,7 +101,7 @@ func TestJokeService_SearchButNotingFound(t *testing.T) {
 			t.Client,
 		}
 
-		service := NewJokeService(&mongodbService)
+		service := JokeService{&mongodbService}
 
 		if _, err := service.Get(ctx, testJokeSearch); err == nil {
 			mt.Fatal("Something was found in database, but it shouldn't")
@@ -126,7 +130,7 @@ func TestJokeService_SearchButFindRandomJoke(t *testing.T) {
 			t.Client,
 		}
 
-		service := NewJokeService(&mongodbService)
+		service := JokeService{&mongodbService}
 
 		joke, err := service.Get(ctx, JokeSearch{})
 		if err != nil {

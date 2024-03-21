@@ -24,7 +24,7 @@ func (j JokeCategory) ToHumorAPICategory() string {
 	switch j {
 	case PROGRAMMING:
 		return "nerdy"
-	case ANY:
+	case Any:
 		return "one_liner"
 	case DARK:
 		return "dark"
@@ -45,7 +45,7 @@ const (
 	MISC        JokeCategory = "Misc"
 	DARK        JokeCategory = "Dark"
 	YOMAMA      JokeCategory = "YoMama"
-	ANY         JokeCategory = "Any"
+	Any         JokeCategory = "Any"
 )
 
 type Joke struct {
@@ -63,8 +63,9 @@ type JokeSearch struct {
 	ID       primitive.ObjectID
 }
 
+// JokeService TODO Export JokeService as interface, after refactor external API
 type JokeService struct {
-	mongodb MongodbService
+	Mongodb MongodbService
 }
 
 func (j JokeService) Add(ctx context.Context, joke Joke) (primitive.ObjectID, error) {
@@ -74,7 +75,7 @@ func (j JokeService) Add(ctx context.Context, joke Joke) (primitive.ObjectID, er
 	default:
 	}
 
-	db, err := j.mongodb.Client(ctx)
+	db, err := j.Mongodb.Client(ctx)
 	if err != nil {
 		return [12]byte{}, err
 	}
@@ -94,13 +95,13 @@ func (j JokeService) Get(ctx context.Context, search JokeSearch) (Joke, error) {
 	default:
 	}
 
-	db, err := j.mongodb.Client(ctx)
+	db, err := j.Mongodb.Client(ctx)
 	if err != nil {
 		return Joke{}, err
 	}
 
 	if search.Category == "" {
-		search.Category = ANY
+		search.Category = Any
 	}
 
 	if search.Type == "" {
@@ -135,7 +136,7 @@ func (j JokeService) Get(ctx context.Context, search JokeSearch) (Joke, error) {
 		}})
 	}
 
-	if search.Category != "" && search.Category != ANY {
+	if search.Category != "" && search.Category != Any {
 		pipeline = append(pipeline, bson.D{{
 			matchQueryKey, bson.D{{
 				"category", search.Category,
@@ -160,10 +161,4 @@ func (j JokeService) Get(ctx context.Context, search JokeSearch) (Joke, error) {
 	}
 
 	return jokes[rand.Int()%len(jokes)], nil
-}
-
-func NewJokeService(db MongodbService) JokeService {
-	return JokeService{
-		db,
-	}
 }

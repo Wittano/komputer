@@ -31,7 +31,7 @@ func createJokeService(ctx context.Context) (db *mongodb.MongoDBContainer, servi
 	}
 	os.Setenv(mongodbURIKey, mongodbURI)
 
-	service = NewJokeService(NewMongodbDatabase(ctx))
+	service = JokeService{NewMongodbDatabase(ctx)}
 
 	return
 }
