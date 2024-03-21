@@ -5,9 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"github.com/wittano/komputer/internal/joke"
-	"github.com/wittano/komputer/internal/log"
 	"github.com/wittano/komputer/internal/types"
 	"go.mongodb.org/mongo-driver/bson"
+	"log/slog"
 	"math/rand"
 	"os"
 )
@@ -25,13 +25,13 @@ func AddNewJokesFromHumorAPI(ctx context.Context) {
 
 		j, err := joke.GetRandomJokeFromHumorAPI(ctx, c)
 		if err != nil && errors.Is(err, joke.HumorAPILimitExceededErr{}) {
-			log.Warn(ctx, "Limit of getting jokes from HumorAPI was exceeded")
+			slog.Warn("limit of getting jokes from HumorAPI was exceeded")
 			return
 		} else if err != nil && errors.Is(err, joke.HumorAPIKeyMissingErr{}) {
-			log.Warn(ctx, err.Error())
+			slog.Warn(err.Error())
 			return
 		} else if err != nil {
-			log.Error(ctx, "Failed get joke from HumorAPI", err)
+			slog.Error("failed get joke from HumorAPI", err)
 			continue
 		}
 
@@ -42,7 +42,7 @@ func AddNewJokesFromHumorAPI(ctx context.Context) {
 			}
 
 			if err := saveJokeFromRapidAPI(ctx, hJoke); err != nil {
-				log.Error(ctx, "Failed save a new joke into database", err)
+				slog.ErrorContext(ctx, "failed save a new joke into database", err)
 			}
 		}(ctx, c, j)
 	}
@@ -79,7 +79,7 @@ func saveJokeFromRapidAPI(ctx context.Context, jokeAPI HumorAPIJokeDB) error {
 		return err
 	}
 
-	log.Info(ctx, fmt.Sprintf("JokeContainer with ID %d was saved", jokeAPI.Joke.ID))
+	slog.InfoContext(ctx, "JokeContainer with ID %d was saved", jokeAPI.Joke.ID)
 
 	return nil
 }

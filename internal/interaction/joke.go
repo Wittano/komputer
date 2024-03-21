@@ -5,9 +5,9 @@ import (
 	"errors"
 	"github.com/bwmarrin/discordgo"
 	"github.com/wittano/komputer/internal/joke"
-	"github.com/wittano/komputer/internal/log"
 	"github.com/wittano/komputer/internal/mongo"
 	"github.com/wittano/komputer/internal/types"
+	"log/slog"
 	"math/rand"
 )
 
@@ -35,7 +35,7 @@ func SendJoke(ctx context.Context, s *discordgo.Session, i *discordgo.Interactio
 	case types.Single:
 		j, err := getSingleTypeJokeGenerator()(ctx, c)
 		if err != nil {
-			log.Error(ctx, "Failed during getting single joke from JokeDev", err)
+			slog.ErrorContext(ctx, "failed during getting single joke from JokeDev", err)
 
 			if errors.Is(err, types.ErrJokeNotFound{Category: c, JokeType: t}) || errors.Is(err, joke.ErrJokeCategoryNotSupported{}) {
 				CreateDiscordInteractionResponse(ctx, i, s, CreateJokeNotFoundMsg(t, c))
@@ -50,7 +50,7 @@ func SendJoke(ctx context.Context, s *discordgo.Session, i *discordgo.Interactio
 	case types.TwoPart:
 		j, err := getTwoPartsTypeJokeGenerator()(ctx, c)
 		if err != nil {
-			log.Error(ctx, "Failed during getting two-part joke from JokeDev", err)
+			slog.ErrorContext(ctx, "failed during getting two-part joke from JokeDev", err)
 
 			if errors.Is(err, types.ErrJokeNotFound{Category: c, JokeType: t}) || errors.Is(err, joke.ErrJokeCategoryNotSupported{}) {
 				CreateDiscordInteractionResponse(ctx, i, s, CreateJokeNotFoundMsg(t, c))

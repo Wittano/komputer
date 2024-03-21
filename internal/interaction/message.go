@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
-	"github.com/wittano/komputer/internal/log"
 	"github.com/wittano/komputer/internal/types"
+	"log/slog"
 	"strings"
 )
 
@@ -134,11 +134,12 @@ func createButtonReactions() []discordgo.MessageComponent {
 	}
 }
 
+// TODO Improved message
 func CreateDiscordInteractionResponse(ctx context.Context, i *discordgo.InteractionCreate, s *discordgo.Session, msg *discordgo.InteractionResponseData) {
 	if err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: msg,
 	}); err != nil {
-		log.Error(ctx, "Failed send response to discord user", err)
+		slog.ErrorContext(ctx, "Failed send response to discord user", err)
 	}
 }

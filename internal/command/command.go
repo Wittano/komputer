@@ -11,3 +11,7 @@ type DiscordCommand struct {
 	Command discordgo.ApplicationCommand
 	Execute discordHandler
 }
+
+func (d DiscordCommand) String() string {
+	return d.Command.Name
+}

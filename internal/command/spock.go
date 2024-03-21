@@ -2,18 +2,18 @@ package command
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"github.com/wittano/komputer/internal/assets"
 	"github.com/wittano/komputer/internal/interaction"
-	"github.com/wittano/komputer/internal/log"
 	"github.com/wittano/komputer/internal/voice"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
 )
 
+// TODO Replace chan bool by chan struct{} (0-bytes channel)
 var SpockMusicStopCh = map[string]chan bool{}
 
 var SpockCommand = DiscordCommand{
@@ -35,10 +35,11 @@ var SpockCommand = DiscordCommand{
 	Execute: execSpookSpeak,
 }
 
+// TODO Add context
 func audioIdOptions() []*discordgo.ApplicationCommandOptionChoice {
 	list, err := assets.Audios()
 	if err != nil {
-		log.Fatal(context.Background(), "Failed to get audios form assets folder", err)
+		slog.Error("failed to get audios form assets folder", err)
 	}
 
 	result := make([]*discordgo.ApplicationCommandOptionChoice, len(list))
@@ -60,7 +61,7 @@ func execSpookSpeak(ctx context.Context, s *discordgo.Session, i *discordgo.Inte
 
 	userVoiceChat, ok := voice.UserVoiceChatMap[i.Member.User.ID]
 	if !ok || userVoiceChat.GuildID != i.GuildID {
-		log.Error(ctx, fmt.Sprintf("Failed find user on voice channels on %s server", i.Member.GuildID), errors.New(fmt.Sprintf("user with ID %s wasn't found on any voice chat on %s server", i.Member.User.ID, i.GuildID)))
+		slog.ErrorContext(ctx, fmt.Sprintf("failed find user on voice channels on %s server", i.Member.GuildID), fmt.Errorf("user with ID %s wasn't found on any voice chat on %s server", i.Member.User.ID, i.GuildID))
 		interaction.CreateDiscordInteractionResponse(ctx, i, s, interaction.CreateDiscordMsg("BEEP BOOP. Kapitanie gdzie jesteś? Wejdź na kanał głosowy a ja dołącze"))
 		return
 	}
@@ -70,7 +71,7 @@ func execSpookSpeak(ctx context.Context, s *discordgo.Session, i *discordgo.Inte
 
 		voiceJoin, err := s.ChannelVoiceJoin(i.GuildID, userVoiceChat.ChannelID, false, true)
 		if err != nil {
-			log.Error(ctx, "Failed join to voice channel", err)
+			slog.ErrorContext(ctx, "failed join to voice channel", err)
 			return
 		}
 		defer voiceJoin.Close()
@@ -84,7 +85,7 @@ func execSpookSpeak(ctx context.Context, s *discordgo.Session, i *discordgo.Inte
 			default:
 				songPath, err = assets.RandomAudio()
 				if err != nil {
-					log.Error(ctx, "Failed find any audio in assets directory", err)
+					slog.ErrorContext(ctx, "failed find any audio in assets directory", err)
 					return
 				}
 			}
@@ -93,7 +94,7 @@ func execSpookSpeak(ctx context.Context, s *discordgo.Session, i *discordgo.Inte
 		if songPath == "" {
 			songPath, err = assets.RandomAudio()
 			if err != nil {
-				log.Error(ctx, "Failed find any audio in assets directory", err)
+				slog.ErrorContext(ctx, "failed find any audio in assets directory", err)
 				return
 			}
 		}
@@ -102,7 +103,7 @@ func execSpookSpeak(ctx context.Context, s *discordgo.Session, i *discordgo.Inte
 		SpockMusicStopCh[i.GuildID] = stop
 
 		if err = voice.PlayAudio(voiceJoin, songPath, stop); err != nil {
-			log.Error(ctx, fmt.Sprintf("Failed play '%s' songPath", songPath), err)
+			slog.ErrorContext(ctx, fmt.Sprintf("failed play '%s' songPath", songPath), err)
 		}
 
 		voiceJoin.Disconnect()

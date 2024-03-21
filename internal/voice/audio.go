@@ -19,18 +19,19 @@ const (
 	maxBytes      = (frameSize * 2) * 2 // max size of opus data
 )
 
+// TODO Added context to canceling action when users doesn't listening audio (e.g. force stop or every users from channel
 func PlayAudio(vc *discordgo.VoiceConnection, path string, stop <-chan bool) (err error) {
 	cmd := exec.Command("ffmpeg", "-i", path, "-f", "s16le", "-ar", strconv.Itoa(frameRate), "-ac", strconv.Itoa(channels), "pipe:1")
 	cmd.SysProcAttr = &syscall.SysProcAttr{
 		Setpgid: true,
 	}
 
-	ffmpegout, err := cmd.StdoutPipe()
+	output, err := cmd.StdoutPipe()
 	if err != nil {
 		return
 	}
 
-	ffmpegbuf := bufio.NewReaderSize(ffmpegout, 16384)
+	buf := bufio.NewReaderSize(output, 16384)
 
 	// Starts the ffmpeg command
 	err = cmd.Start()
@@ -72,9 +73,9 @@ func PlayAudio(vc *discordgo.VoiceConnection, path string, stop <-chan bool) (er
 
 	for {
 		// read data from ffmpeg stdout
-		audiobuf := make([]int16, frameSize*channels)
-		err = binary.Read(ffmpegbuf, binary.LittleEndian, &audiobuf)
-		if err == io.EOF || err == io.ErrUnexpectedEOF {
+		audioBuf := make([]int16, frameSize*channels)
+		err = binary.Read(buf, binary.LittleEndian, &audioBuf)
+		if err == io.EOF || errors.Is(err, io.ErrUnexpectedEOF) {
 			return
 		}
 		if err != nil {
@@ -83,7 +84,7 @@ func PlayAudio(vc *discordgo.VoiceConnection, path string, stop <-chan bool) (er
 
 		// Send received PCM to the sendPCM channel
 		select {
-		case send <- audiobuf:
+		case send <- audioBuf:
 		case <-stopPlaying:
 			return
 		}

@@ -3,9 +3,9 @@ package mongo
 import (
 	"context"
 	"github.com/joho/godotenv"
-	"github.com/wittano/komputer/internal/log"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"log"
 	"os"
 )
 
@@ -13,6 +13,8 @@ var client *mongo.Client
 
 const jokeCollectionName = "jokes"
 
+// TODO refactor database operation to service
+// This will be helpful for testing
 func init() {
 	var err error
 

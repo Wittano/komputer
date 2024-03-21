@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 )
 
+// TODO removed local storage of audio
 const assertDir = "assets"
 
 func Audios() ([]string, error) {

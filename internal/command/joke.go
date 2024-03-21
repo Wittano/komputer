@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"github.com/wittano/komputer/internal/interaction"
-	"github.com/wittano/komputer/internal/log"
 	"github.com/wittano/komputer/internal/mongo"
 	"github.com/wittano/komputer/internal/types"
+	"log/slog"
 	"os"
 )
 
@@ -69,7 +69,7 @@ func executeAddJokeCommand(ctx context.Context, s *discordgo.Session, i *discord
 		case "question":
 			j.Question = o.Value.(string)
 		default:
-			log.Warn(ctx, fmt.Sprintf("Invalid option for %s", o.Name))
+			slog.WarnContext(ctx, "Invalid option for %s", o.Name)
 		}
 	}
 
@@ -90,7 +90,7 @@ func executeAddJokeCommand(ctx context.Context, s *discordgo.Session, i *discord
 
 	id, err := mongo.AddJoke(ctx, j)
 	if err != nil {
-		log.Error(ctx, "Failed add new joke into database", err)
+		slog.ErrorContext(ctx, "Failed add new joke into database", err)
 		interaction.CreateDiscordInteractionResponse(ctx, i, s, interaction.CreateDiscordMsg("BEEP BOOP. Coś poszło nie tak z dodanie twego żartu Kapitanie"))
 		return
 	}
@@ -114,7 +114,7 @@ func executeJokeCommand(ctx context.Context, s *discordgo.Session, i *discordgo.
 		case "type":
 			jokeType = types.JokeType(o.Value.(string))
 		default:
-			log.Warn(ctx, fmt.Sprintf("Invalid option for %s", o.Name))
+			slog.WarnContext(ctx, fmt.Sprintf("Invalid option for %s", o.Name))
 		}
 	}
 

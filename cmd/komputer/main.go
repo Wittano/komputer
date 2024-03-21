@@ -6,25 +6,26 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/google/uuid"
 	"github.com/joho/godotenv"
-	zerolog "github.com/rs/zerolog/log"
 	"github.com/wittano/komputer/internal"
 	"github.com/wittano/komputer/internal/command"
-	"github.com/wittano/komputer/internal/log"
 	"github.com/wittano/komputer/internal/mongo"
 	"github.com/wittano/komputer/internal/schedule"
 	"github.com/wittano/komputer/internal/voice"
+	"log"
+	"log/slog"
 	"os"
 	"os/signal"
+	"time"
 )
 
 var (
 	bot      *discordgo.Session
 	commands = map[string]command.DiscordCommand{
-		command.WelcomeCommand.Command.Name:   command.WelcomeCommand,
-		command.JokeCommand.Command.Name:      command.JokeCommand,
-		command.AddJokeCommand.Command.Name:   command.AddJokeCommand,
-		command.SpockCommand.Command.Name:     command.SpockCommand,
-		command.SpockStopCommand.Command.Name: command.SpockStopCommand,
+		command.WelcomeCommand.String():   command.WelcomeCommand,
+		command.JokeCommand.String():      command.JokeCommand,
+		command.AddJokeCommand.String():   command.AddJokeCommand,
+		command.SpockCommand.String():     command.SpockCommand,
+		command.SpockStopCommand.String(): command.SpockStopCommand,
 	}
 )
 
@@ -39,25 +40,27 @@ func init() {
 
 	bot, err = discordgo.New(fmt.Sprintf("Bot %s", os.Getenv("DISCORD_BOT_TOKEN")))
 	if err != nil {
-		panic(err)
+		log.Fatalf("failed connect with Discord: %s", err)
 	}
 }
 
 func init() {
 	bot.AddHandler(func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-		ctx := context.WithValue(context.Background(), "traceID", uuid.New().String())
+		ctx := context.WithValue(context.Background(), "requestID", uuid.New().String())
+		deadlineCtx, cancel := context.WithTimeout(ctx, time.Second*3)
+		defer cancel()
 
 		if i.Type == discordgo.InteractionMessageComponent {
 			if handler, ok := internal.JokeMessageComponentHandler[i.Data.(discordgo.MessageComponentInteractionData).CustomID]; ok {
-				log.Info(ctx, fmt.Sprintf("User %s execute message component action '%s'", i.Member.User.ID, i.Data.(discordgo.MessageComponentInteractionData).CustomID))
-				handler(ctx, s, i)
+				slog.InfoContext(deadlineCtx, fmt.Sprintf("User %s execute message component action '%s'", i.Member.User.ID, i.Data.(discordgo.MessageComponentInteractionData).CustomID))
+				handler(deadlineCtx, s, i)
 				return
 			}
 		}
 
 		if c, ok := commands[i.ApplicationCommandData().Name]; ok {
-			log.Info(ctx, fmt.Sprintf("User %s execute slash command '%s'", i.Member.User.ID, i.ApplicationCommandData().Name))
-			c.Execute(ctx, s, i)
+			slog.InfoContext(deadlineCtx, fmt.Sprintf("User %s execute slash command '%s'", i.Member.User.ID, i.ApplicationCommandData().Name))
+			c.Execute(deadlineCtx, s, i)
 		}
 	})
 }
@@ -71,7 +74,7 @@ func init() {
 			os.Getenv("SERVER_GUID"),
 			&c.Command,
 		); err != nil {
-			log.Error(context.Background(), "Registration slash command failed", err)
+			log.Fatalf("registration slash command failed: %s", err)
 		}
 	}
 }
@@ -83,7 +86,7 @@ func init() {
 func checkEnvVariables(vars ...string) {
 	for _, v := range vars {
 		if _, ok := os.LookupEnv(v); !ok {
-			zerolog.Fatal().Msg(fmt.Sprintf("Missing %s varaiable", v))
+			log.Fatalf("Missing %s varaiable", v)
 		}
 	}
 }
@@ -93,12 +96,11 @@ func main() {
 	defer bot.Close()
 	defer schedule.Scheduler.Stop()
 	defer mongo.CloseDb()
-	defer log.FileLog.Close()
 
 	schedule.Scheduler.StartAsync()
 
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt)
-	log.Info(context.Background(), "Bot is ready!. Press Ctrl+C to exit")
+	slog.Info("Bot is ready!. Press Ctrl+C to exit")
 	<-stop
 }

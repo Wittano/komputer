@@ -5,13 +5,15 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/wittano/komputer/internal/log"
 	"github.com/wittano/komputer/internal/types"
 	"io"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"os"
 )
+
+const humorApiURL = "https://humor-jokes-and-memes.p.rapidapi.com/jokes/random?exclude-tags=nsfw&include-tags="
 
 type HumorAPIRes struct {
 	JokeRes string `json:"joke"`
@@ -28,12 +30,13 @@ type HumorAPILimitExceededErr struct {
 type HumorAPIKeyMissingErr struct {
 }
 
+// TODO Remove or refactor errors
 func (h HumorAPIKeyMissingErr) Error() string {
 	return "RAPID_API_KEY is missing"
 }
 
 func (h HumorAPILimitExceededErr) Error() string {
-	return "Humor API limit exceeded"
+	return "HumorAPI limit exceeded"
 }
 
 func GetRandomJokeFromHumorAPI(ctx context.Context, category types.JokeCategory) (HumorAPIRes, error) {
@@ -42,7 +45,7 @@ func GetRandomJokeFromHumorAPI(ctx context.Context, category types.JokeCategory)
 		return HumorAPIRes{}, HumorAPIKeyMissingErr{}
 	}
 
-	u, err := url.Parse("https://humor-jokes-and-memes.p.rapidapi.com/jokes/random?exclude-tags=nsfw&include-tags=" + category.ToHumorAPICategory())
+	u, err := url.Parse(humorApiURL + category.ToHumorAPICategory())
 	if err != nil {
 		return HumorAPIRes{}, err
 	}
@@ -67,7 +70,7 @@ func GetRandomJokeFromHumorAPI(ctx context.Context, category types.JokeCategory)
 	} else if res.StatusCode != 200 {
 		msg, err := io.ReadAll(res.Body)
 		if err != nil {
-			log.Error(ctx, "Failed read response body from HumorAPI", err)
+			slog.ErrorContext(ctx, "Failed read response body from HumorAPI", err)
 			msg = []byte{}
 		}
 
