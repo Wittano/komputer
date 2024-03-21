@@ -10,7 +10,6 @@ import (
 	"github.com/wittano/komputer/internal/mongo"
 	"github.com/wittano/komputer/internal/voice"
 	"github.com/wittano/komputer/pkgs/config"
-	"github.com/wittano/komputer/pkgs/external"
 	"log"
 	"log/slog"
 	"os"
@@ -122,8 +121,6 @@ func main() {
 	}
 
 	defer mongo.CloseDb()
-
-	go external.StartDownloadingJokeFromHumorAPI(ctx)
 
 	stop := make(chan os.Signal)
 	defer close(stop)
