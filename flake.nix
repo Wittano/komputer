@@ -35,6 +35,7 @@
         };
       };
       devShells.${system}.default = pkgs.mkShell {
+        hardeningDisable = [ "all" ];
         buildInputs = with pkgs; [
           # Go
           go
