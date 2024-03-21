@@ -7,9 +7,9 @@ import (
 	"github.com/google/uuid"
 	"github.com/wittano/komputer/internal"
 	"github.com/wittano/komputer/internal/command"
-	"github.com/wittano/komputer/internal/mongo"
 	"github.com/wittano/komputer/internal/voice"
 	"github.com/wittano/komputer/pkgs/config"
+	"github.com/wittano/komputer/pkgs/db"
 	"log"
 	"log/slog"
 	"os"
@@ -32,8 +32,9 @@ type slashCommandHandler struct {
 }
 
 type DiscordBot struct {
-	ctx context.Context
-	bot *discordgo.Session
+	ctx     context.Context
+	bot     *discordgo.Session
+	mongodb db.MongoDBService
 }
 
 func (d *DiscordBot) Start() (err error) {
@@ -46,8 +47,11 @@ func (d *DiscordBot) Start() (err error) {
 	return
 }
 
-func (d *DiscordBot) Close() error {
-	return d.bot.Close()
+func (d *DiscordBot) Close() (err error) {
+	err = d.mongodb.Close()
+	err = d.bot.Close()
+
+	return
 }
 
 func newDiscordBot(ctx context.Context) (*DiscordBot, error) {
@@ -81,8 +85,11 @@ func newDiscordBot(ctx context.Context) (*DiscordBot, error) {
 	bot.AddHandler(handler.handleSlashCommand)
 
 	return &DiscordBot{
-		ctx,
-		bot,
+		ctx: ctx,
+		bot: bot,
+		// Create connection with database (optional)
+		// Databases doesn't require to running bot
+		mongodb: db.NewMongoDatabase(ctx),
 	}, nil
 }
 
@@ -119,8 +126,6 @@ func main() {
 		log.Fatal(err)
 		return
 	}
-
-	defer mongo.CloseDb()
 
 	stop := make(chan os.Signal)
 	defer close(stop)
