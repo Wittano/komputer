@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"github.com/google/uuid"
-	"github.com/joho/godotenv"
 	"github.com/wittano/komputer/internal"
 	"github.com/wittano/komputer/internal/command"
 	"github.com/wittano/komputer/internal/mongo"
 	"github.com/wittano/komputer/internal/voice"
+	"github.com/wittano/komputer/pkgs/config"
 	"github.com/wittano/komputer/pkgs/external"
 	"log"
 	"log/slog"
@@ -27,11 +27,6 @@ var (
 		command.SpockStopCommand.String(): command.SpockStopCommand,
 	}
 )
-
-func init() {
-	// TODO Load dotenv ONLY in development environment
-	godotenv.Load()
-}
 
 type slashCommandHandler struct {
 	ctx context.Context
@@ -57,12 +52,12 @@ func (d *DiscordBot) Close() error {
 }
 
 func newDiscordBot(ctx context.Context) (*DiscordBot, error) {
-	err := checkEnvVariables("DISCORD_BOT_TOKEN", "APPLICATION_ID")
+	prop, err := config.NewBotProperties()
 	if err != nil {
 		return nil, err
 	}
 
-	bot, err := discordgo.New(fmt.Sprintf("Bot %s", os.Getenv("DISCORD_BOT_TOKEN")))
+	bot, err := discordgo.New(fmt.Sprintf("Bot %s", prop.Token))
 	if err != nil {
 		return nil, fmt.Errorf("failed connect with Discord: %s", err)
 	}
@@ -73,8 +68,8 @@ func newDiscordBot(ctx context.Context) (*DiscordBot, error) {
 	// Register slash commands
 	for _, c := range commands {
 		if _, err := bot.ApplicationCommandCreate(
-			os.Getenv("APPLICATION_ID"),
-			os.Getenv("SERVER_GUID"), // If empty, command registers globally
+			prop.AppID,
+			prop.ServerGUID, // If empty, command registers globally
 			&c.Command,
 		); err != nil {
 			return nil, fmt.Errorf("registration slash command failed: %s", err)
@@ -109,16 +104,6 @@ func (sc slashCommandHandler) handleSlashCommand(s *discordgo.Session, i *discor
 		slog.InfoContext(deadlineCtx, fmt.Sprintf("User %s execute slash command '%s'", i.Member.User.ID, i.ApplicationCommandData().Name))
 		c.Execute(deadlineCtx, s, i)
 	}
-}
-
-func checkEnvVariables(vars ...string) error {
-	for _, v := range vars {
-		if _, ok := os.LookupEnv(v); !ok {
-			return fmt.Errorf("missing %s varaiable", v)
-		}
-	}
-
-	return nil
 }
 
 func main() {

@@ -7,16 +7,19 @@ else
   	GOARCH="arm64"
 endif
 
-build:
+dev:
+	CGO_ENABLED=1 GOOS=linux GOARCH=$(GOARCH) go build -tags dev -o ./build/komputer ./cmd/komputer/main.go
+
+prod:
 	CGO_ENABLED=1 GOOS=linux GOARCH=$(GOARCH) go build -o ./build/komputer ./cmd/komputer/main.go
 
-install: build
+test:
+	go test ./...
+
+install: prod
 	mkdir -p $(DEST_DIR)
 	cp -r assets $(DEST_DIR)
 	cp build/komputer $(DEST_DIR)
-
-run:
-	go run cmd/komputer/main.go
 
 uninstall:
 	rm -r $(DEST_DIR)
