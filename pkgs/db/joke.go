@@ -49,26 +49,31 @@ const (
 )
 
 type Joke struct {
-	id         primitive.ObjectID `bson:"_id"`
-	Question   string             `bson:"question"`
-	ContentRes string             `bson:"content"`
-	Type       JokeType           `bson:"type"`
-	Category   JokeCategory       `bson:"category"`
-	GuildID    string             `bson:"guild_id"`
-	ExternalID int64              `bson:"externalID"`
+	id       primitive.ObjectID `bson:"_id"`
+	Question string             `bson:"question"`
+	Answer   string             `bson:"answer"`
+	Type     JokeType           `bson:"type"`
+	Category JokeCategory       `bson:"category"`
+	GuildID  string             `bson:"guild_id"`
 }
 
-type JokeSearcher struct {
+type JokeSearch struct {
 	Type     JokeType
 	Category JokeCategory
 	ID       primitive.ObjectID
 }
 
 type JokeService struct {
-	mongodb MongoDBService
+	mongodb MongodbService
 }
 
 func (j JokeService) Add(ctx context.Context, joke Joke) (primitive.ObjectID, error) {
+	select {
+	case <-ctx.Done():
+		return [12]byte{}, context.Canceled
+	default:
+	}
+
 	db, err := j.mongodb.Client(ctx)
 	if err != nil {
 		return [12]byte{}, err
@@ -82,7 +87,13 @@ func (j JokeService) Add(ctx context.Context, joke Joke) (primitive.ObjectID, er
 	return res.InsertedID.(primitive.ObjectID), nil
 }
 
-func (j JokeService) Get(ctx context.Context, search JokeSearcher) (Joke, error) {
+func (j JokeService) Get(ctx context.Context, search JokeSearch) (Joke, error) {
+	select {
+	case <-ctx.Done():
+		return Joke{}, context.Canceled
+	default:
+	}
+
 	db, err := j.mongodb.Client(ctx)
 	if err != nil {
 		return Joke{}, err
@@ -137,6 +148,7 @@ func (j JokeService) Get(ctx context.Context, search JokeSearcher) (Joke, error)
 	if err != nil {
 		return Joke{}, err
 	}
+	defer res.Close(ctx)
 
 	var jokes []Joke
 	if err = res.All(ctx, &jokes); err != nil {
@@ -150,7 +162,7 @@ func (j JokeService) Get(ctx context.Context, search JokeSearcher) (Joke, error)
 	return jokes[rand.Int()%len(jokes)], nil
 }
 
-func NewJokeService(db MongoDBService) JokeService {
+func NewJokeService(db MongodbService) JokeService {
 	return JokeService{
 		db,
 	}

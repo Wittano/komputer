@@ -6,22 +6,31 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"os"
+	"time"
 )
 
-type MongoDBDatabase struct {
+const mongodbURIKey = "MONGODB_URI"
+
+type MongodbDatabase struct {
 	uri string
 	ctx context.Context
 	db  *mongo.Client
 }
 
-func (m *MongoDBDatabase) Close() (err error) {
+func (m *MongodbDatabase) Close() (err error) {
 	err = m.db.Disconnect(m.ctx)
 	m.db = nil
 
 	return err
 }
 
-func (m *MongoDBDatabase) Client(ctx context.Context) (*mongo.Client, error) {
+func (m *MongodbDatabase) Client(ctx context.Context) (*mongo.Client, error) {
+	select {
+	case <-ctx.Done():
+		return nil, context.Canceled
+	default:
+	}
+
 	if m.uri == "" {
 		return nil, errors.New("missing URI to connect database")
 	}
@@ -34,7 +43,10 @@ func (m *MongoDBDatabase) Client(ctx context.Context) (*mongo.Client, error) {
 
 	serverAPI := options.ServerAPI(options.ServerAPIVersion1)
 
-	m.db, err = mongo.Connect(ctx, options.Client().
+	timeoutCtx, cancel := context.WithTimeout(ctx, time.Second*5)
+	defer cancel()
+
+	m.db, err = mongo.Connect(timeoutCtx, options.Client().
 		ApplyURI(m.uri).
 		SetServerAPIOptions(serverAPI))
 	if err != nil {
@@ -45,10 +57,10 @@ func (m *MongoDBDatabase) Client(ctx context.Context) (*mongo.Client, error) {
 	return m.db, nil
 }
 
-func NewMongoDatabase(ctx context.Context) (db *MongoDBDatabase) {
-	db = new(MongoDBDatabase)
+func NewMongodbDatabase(ctx context.Context) (db *MongodbDatabase) {
+	db = new(MongodbDatabase)
 
-	if uri, ok := os.LookupEnv("MONGODB_URI"); ok {
+	if uri, ok := os.LookupEnv(mongodbURIKey); ok {
 		db.uri = uri
 	}
 

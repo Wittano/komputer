@@ -16,6 +16,13 @@ prod:
 test:
 	go test ./...
 
+testContainers:
+ifeq (,$(shell command -v docker 2> /dev/null))
+	$(error "No docker in $(PATH)")
+endif
+
+	go test -tags testcontainers ./pkgs/db
+
 install: prod
 	mkdir -p $(DEST_DIR)
 	cp -r assets $(DEST_DIR)

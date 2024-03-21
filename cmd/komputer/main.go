@@ -34,7 +34,7 @@ type slashCommandHandler struct {
 type DiscordBot struct {
 	ctx     context.Context
 	bot     *discordgo.Session
-	mongodb db.MongoDBService
+	mongodb db.MongodbService
 }
 
 func (d *DiscordBot) Start() (err error) {
@@ -89,7 +89,7 @@ func newDiscordBot(ctx context.Context) (*DiscordBot, error) {
 		bot: bot,
 		// Create connection with database (optional)
 		// Databases doesn't require to running bot
-		mongodb: db.NewMongoDatabase(ctx),
+		mongodb: db.NewMongodbDatabase(ctx),
 	}, nil
 }
 
