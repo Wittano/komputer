@@ -6,19 +6,19 @@ import (
 	"testing"
 )
 
-const uri = "mongodb+srv://username:password@server/database"
+const testUri = "mongodb+srv://username:password@server/database"
 
 func TestNewMongodbDatabase(t *testing.T) {
-	os.Setenv(mongodbURIKey, uri)
+	os.Setenv(mongodbURIKey, testUri)
 
-	if db := NewMongodbDatabase(context.Background()); db.uri != uri {
-		t.Fatalf("Invalid URI. Expected: '%s', Result: '%s'", uri, db.uri)
+	if db := NewMongodbDatabase(context.Background()); db.uri != testUri {
+		t.Fatalf("Invalid URI. Expected: '%s', Result: '%s'", testUri, db.uri)
 	}
 }
 
 func TestNewMongodbDatabaseButMongodbURIMissing(t *testing.T) {
-	if db := NewMongodbDatabase(context.Background()); db.uri != uri {
-		t.Fatalf("Invalid URI. Expected: '%s', Result: '%s'", uri, db.uri)
+	if db := NewMongodbDatabase(context.Background()); db.uri != testUri {
+		t.Fatalf("Invalid URI. Expected: '%s', Result: '%s'", testUri, db.uri)
 	}
 }
 
@@ -34,7 +34,7 @@ func TestMongodbDatabase_ClientButURIMissing(t *testing.T) {
 
 func TestMongodbDatabase_ClientButConnectionFailed(t *testing.T) {
 	ctx := context.Background()
-	os.Setenv(mongodbURIKey, uri)
+	os.Setenv(mongodbURIKey, testUri)
 
 	db := NewMongodbDatabase(ctx)
 

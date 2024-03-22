@@ -10,11 +10,18 @@ import (
 	"github.com/wittano/komputer/pkgs/command"
 	"github.com/wittano/komputer/pkgs/config"
 	"github.com/wittano/komputer/pkgs/db"
+	"github.com/wittano/komputer/pkgs/joke"
 	"log"
 	"log/slog"
 	"os"
 	"os/signal"
 	"time"
+)
+
+const (
+	jokeDevServiceID  = 0
+	humorAPIServiceID = 1
+	databaseServiceID = 2
 )
 
 type slashCommandHandler struct {
@@ -26,7 +33,7 @@ type slashCommandHandler struct {
 func (sc slashCommandHandler) handleSlashCommand(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	deadlineCtx, cancel := context.WithTimeout(sc.ctx, time.Second*2)
 	requestIDCtx := context.WithValue(deadlineCtx, "requestID", uuid.New().String())
-	ctx := context.WithValue(requestIDCtx, db.GuildIDKey, i.GuildID)
+	ctx := context.WithValue(requestIDCtx, joke.GuildIDKey, i.GuildID)
 	defer cancel()
 
 	userID := i.Member.User.ID
@@ -101,7 +108,9 @@ func newDiscordBot(ctx context.Context) (*DiscordBot, error) {
 	bot.AddHandler(voice.HandleVoiceChannelUpdate)
 
 	// Register slash commands
-	commands := createCommands(ctx)
+	database := db.NewMongodbDatabase(ctx)
+	getServices := createJokeGetServices(ctx, database)
+	commands := createCommands(getServices)
 	for _, c := range commands {
 		if _, err := bot.ApplicationCommandCreate(
 			prop.AppID,
@@ -113,23 +122,29 @@ func newDiscordBot(ctx context.Context) (*DiscordBot, error) {
 	}
 
 	// General handler for slash commands
-	handler := slashCommandHandler{ctx, commands, createOptions(ctx)}
+	handler := slashCommandHandler{ctx, commands, createOptions(getServices)}
 
 	bot.AddHandler(handler.handleSlashCommand)
 
 	return &DiscordBot{
-		ctx: ctx,
-		bot: bot,
+		ctx:     ctx,
+		bot:     bot,
+		mongodb: database,
 	}, nil
 }
 
-func createCommands(ctx context.Context) map[string]command.DiscordSlashCommandHandler {
-	mongodb := db.NewMongodbDatabase(ctx)
-	jokeService := db.JokeService{Mongodb: mongodb}
+func createJokeGetServices(globalCtx context.Context, database *db.MongodbDatabase) command.JokeGetServices {
+	return map[uint8]joke.GetService{
+		jokeDevServiceID:  joke.NewJokeDevService(globalCtx),
+		humorAPIServiceID: joke.NewHumorAPIService(globalCtx),
+		databaseServiceID: joke.NewDatabaseJokeService(database),
+	}
+}
 
+func createCommands(services command.JokeGetServices) map[string]command.DiscordSlashCommandHandler {
 	welcomeCmd := command.WelcomeCommand{}
-	addJokeCmd := command.AddJokeCommand{Service: jokeService}
-	jokeCmd := command.JokeCommand{Service: jokeService}
+	addJokeCmd := command.AddJokeCommand{Service: services[databaseServiceID].(joke.DatabaseJokeService)}
+	jokeCmd := command.JokeCommand{Services: services}
 
 	return map[string]command.DiscordSlashCommandHandler{
 		command.WelcomeCommandName: welcomeCmd,
@@ -138,18 +153,15 @@ func createCommands(ctx context.Context) map[string]command.DiscordSlashCommandH
 	}
 }
 
-func createOptions(ctx context.Context) map[string]command.DiscordEventHandler {
-	mongodb := db.NewMongodbDatabase(ctx)
-	jokeService := db.JokeService{Mongodb: mongodb}
-
-	welcomeCmd := command.ApologiesOption{}
-	addJokeCmd := command.NextJokeOption{Service: jokeService}
-	jokeCmd := command.SameJokeCategoryOption{Service: jokeService}
+func createOptions(services command.JokeGetServices) map[string]command.DiscordEventHandler {
+	apologiesOption := command.ApologiesOption{}
+	nextJokeOption := command.NextJokeOption{Services: services}
+	sameJokeCategoryOption := command.SameJokeCategoryOption{Services: services}
 
 	return map[string]command.DiscordEventHandler{
-		command.ApologiesButtonName: welcomeCmd,
-		command.AddJokeCommandName:  addJokeCmd,
-		command.GetJokeCommandName:  jokeCmd,
+		command.ApologiesButtonName:        apologiesOption,
+		command.NextJokeButtonName:         nextJokeOption,
+		command.SameJokeCategoryButtonName: sameJokeCategoryOption,
 	}
 }
 
@@ -160,6 +172,7 @@ func main() {
 	bot, err := newDiscordBot(ctx)
 	if err != nil {
 		log.Fatal(err)
+		return
 	}
 
 	defer bot.Close()

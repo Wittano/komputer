@@ -6,20 +6,30 @@ import (
 	"context"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/mongodb"
+	"github.com/wittano/komputer/pkgs/joke"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"os"
 	"testing"
 )
 
+var testJoke = joke.Joke{
+	Question: "testQuestion",
+	Answer:   "testAnswer",
+	Type:     joke.Single,
+	Category: joke.Any,
+	GuildID:  "",
+}
+
 type jokeSerchArgs struct {
 	name   string
 	withID bool
-	search JokeSearch
-	joke   Joke
+	search joke.SearchParameters
+	joke   joke.Joke
 }
 
-func createJokeService(ctx context.Context) (db *mongodb.MongoDBContainer, service JokeService, err error) {
+func createJokeService(ctx context.Context) (db *mongodb.MongoDBContainer, service joke.DatabaseJokeService, err error) {
 	db, err = mongodb.RunContainer(ctx, testcontainers.WithEnv(map[string]string{
-		"MONGO_INITDB_DATABASE": databaseName,
+		"MONGO_INITDB_DATABASE": joke.DatabaseName,
 	}))
 	if err != nil {
 		return
@@ -31,7 +41,7 @@ func createJokeService(ctx context.Context) (db *mongodb.MongoDBContainer, servi
 	}
 	os.Setenv(mongodbURIKey, mongodbURI)
 
-	service = JokeService{NewMongodbDatabase(ctx)}
+	service = joke.NewDatabaseJokeService(NewMongodbDatabase(ctx))
 
 	return
 }
@@ -56,7 +66,7 @@ func TestJokeService_AddWithRealDatabase(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if id == [12]byte{} {
+	if id == "" {
 		t.Fatal("New joke wasn't saved")
 	}
 }
@@ -67,93 +77,93 @@ func TestJokeService_Get(t *testing.T) {
 	args := []jokeSerchArgs{
 		{
 			name:   "find random joke",
-			search: JokeSearch{},
+			search: joke.SearchParameters{},
 			joke:   testJoke,
 		},
 		{
 			name:   "find by type",
-			search: JokeSearch{Type: TwoPart},
-			joke: Joke{
-				Type:     TwoPart,
+			search: joke.SearchParameters{Type: joke.TwoPart},
+			joke: joke.Joke{
+				Type:     joke.TwoPart,
 				Question: "testTwoPartQuestion",
 				Answer:   "testTwoPartAnswer",
-				Category: DARK,
+				Category: joke.DARK,
 				GuildID:  testGuildID,
 			},
 		},
 		{
 			name:   "find by category",
-			search: JokeSearch{Category: MISC},
-			joke: Joke{
-				Type:     Single,
+			search: joke.SearchParameters{Category: joke.MISC},
+			joke: joke.Joke{
+				Type:     joke.Single,
 				Question: "testQuestion",
 				Answer:   "testAnswer",
-				Category: MISC,
+				Category: joke.MISC,
 				GuildID:  testGuildID,
 			},
 		},
 		{
 			name:   "find by id",
 			withID: true,
-			search: JokeSearch{}, // I added ID after adding entity to database
-			joke: Joke{
-				Type:     Single,
+			search: joke.SearchParameters{}, // I added ID after adding entity to database
+			joke: joke.Joke{
+				Type:     joke.Single,
 				Question: "testQuestion",
 				Answer:   "testAnswer",
-				Category: PROGRAMMING,
+				Category: joke.PROGRAMMING,
 				GuildID:  testGuildID,
 			},
 		},
 		{
 			name:   "find by id and category",
 			withID: true,
-			search: JokeSearch{Category: MISC},
-			joke: Joke{
-				Type:     Single,
+			search: joke.SearchParameters{Category: joke.MISC},
+			joke: joke.Joke{
+				Type:     joke.Single,
 				Question: "testQuestion",
 				Answer:   "testAnswer",
-				Category: MISC,
+				Category: joke.MISC,
 				GuildID:  testGuildID,
 			},
 		},
 		{
 			name:   "find by id and type",
 			withID: true,
-			search: JokeSearch{Type: TwoPart},
-			joke: Joke{
-				Type:     TwoPart,
+			search: joke.SearchParameters{Type: joke.TwoPart},
+			joke: joke.Joke{
+				Type:     joke.TwoPart,
 				Question: "testTwoPartQuestion",
 				Answer:   "testTwoPartAnswer",
-				Category: DARK,
+				Category: joke.DARK,
 				GuildID:  testGuildID,
 			},
 		},
 		{
 			name:   "find by type and category",
-			search: JokeSearch{Type: TwoPart, Category: YOMAMA},
-			joke: Joke{
-				Type:     TwoPart,
+			search: joke.SearchParameters{Type: joke.TwoPart, Category: joke.YOMAMA},
+			joke: joke.Joke{
+				Type:     joke.TwoPart,
 				Question: "testTwoPartQuestion",
 				Answer:   "testTwoPartAnswer",
-				Category: YOMAMA,
+				Category: joke.YOMAMA,
 				GuildID:  testGuildID,
 			},
 		},
 		{
 			name:   "find by id, category and type",
 			withID: true,
-			search: JokeSearch{Type: TwoPart, Category: DARK},
-			joke: Joke{
-				Type:     TwoPart,
+			search: joke.SearchParameters{Type: joke.TwoPart, Category: joke.DARK},
+			joke: joke.Joke{
+				Type:     joke.TwoPart,
 				Question: "testTwoPartQuestion",
 				Answer:   "testTwoPartAnswer",
-				Category: DARK,
+				Category: joke.DARK,
 				GuildID:  testGuildID,
 			},
 		},
 	}
 
-	ctx := context.WithValue(context.Background(), GuildIDKey, testGuildID)
+	ctx := context.WithValue(context.Background(), joke.GuildIDKey, testGuildID)
 	db, service, err := createJokeService(ctx)
 	if err != nil {
 		t.Fatal(err)
@@ -162,14 +172,18 @@ func TestJokeService_Get(t *testing.T) {
 
 	// Added jokes to database
 	for _, data := range args {
-		joke, search, withID := data.joke, data.search, data.withID
-		id, err := service.Add(ctx, joke)
+		newJoke, search, withID := data.joke, data.search, data.withID
+		id, err := service.Add(ctx, newJoke)
 		if err != nil {
 			t.Fatal(err)
 		}
-		joke.id = id
+		newJoke.ID, err = primitive.ObjectIDFromHex(id)
+		if err != nil {
+			t.Fatal(err)
+		}
+
 		if withID {
-			search.ID = id
+			search.ID = newJoke.ID
 		}
 	}
 

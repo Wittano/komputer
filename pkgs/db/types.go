@@ -1,8 +1,8 @@
 package db
 
 import (
+	"context"
 	"go.mongodb.org/mongo-driver/mongo"
-	"golang.org/x/net/context"
 	"io"
 )
 

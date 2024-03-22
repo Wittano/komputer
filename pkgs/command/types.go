@@ -7,7 +7,7 @@ import (
 
 type DiscordSlashCommandHandler interface {
 	Command() *discordgo.ApplicationCommand
-	Execute(ctx context.Context, s *discordgo.Session, i *discordgo.InteractionCreate) (DiscordMessageReceiver, error)
+	DiscordEventHandler
 }
 
 type DiscordEventHandler interface {

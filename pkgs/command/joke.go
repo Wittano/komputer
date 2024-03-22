@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
-	"github.com/wittano/komputer/pkgs/db"
+	"github.com/wittano/komputer/pkgs/joke"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"log/slog"
 	"math/rand"
@@ -31,8 +31,10 @@ const (
 	ApologiesButtonName        = "apologiesButtonId"
 )
 
+type JokeGetServices map[uint8]joke.GetService
+
 type JokeCommand struct {
-	Service db.JokeService
+	Services JokeGetServices
 }
 
 func (j JokeCommand) Command() *discordgo.ApplicationCommand {
@@ -57,7 +59,12 @@ func (j JokeCommand) Command() *discordgo.ApplicationCommand {
 func (j JokeCommand) Execute(ctx context.Context, _ *discordgo.Session, i *discordgo.InteractionCreate) (DiscordMessageReceiver, error) {
 	searchQuery := getJokeSearchParameters(ctx, i.Data.(discordgo.ApplicationCommandInteractionData))
 
-	res, err := j.Service.Get(ctx, searchQuery)
+	service, err := selectGetService(ctx, j.Services)
+	if err != nil {
+		return nil, ErrorResponse{err, "Nie udało mi się, znaleść żadnego żartu"}
+	}
+
+	res, err := service.Get(ctx, searchQuery)
 	if err != nil {
 		return nil, err
 	}
@@ -68,15 +75,30 @@ func (j JokeCommand) Execute(ctx context.Context, _ *discordgo.Session, i *disco
 	}, nil
 }
 
-func getJokeSearchParameters(ctx context.Context, data discordgo.ApplicationCommandInteractionData) (query db.JokeSearch) {
-	query.Type, query.Category = db.Single, db.Any
+func selectGetService(ctx context.Context, getServices JokeGetServices) (joke.GetService, error) {
+	if len(getServices) <= 0 {
+		return nil, errors.New("all joke services is disabled")
+	}
+
+	i := rand.Int() % len(getServices)
+	service := getServices[uint8(i)]
+	if activeService, ok := service.(joke.ActiveService); ok && !activeService.Active(ctx) {
+		delete(getServices, uint8(i))
+		return selectGetService(ctx, getServices)
+	}
+
+	return service, nil
+}
+
+func getJokeSearchParameters(ctx context.Context, data discordgo.ApplicationCommandInteractionData) (query joke.SearchParameters) {
+	query.Type, query.Category = joke.Single, joke.Any
 
 	for _, o := range data.Options {
 		switch o.Name {
 		case categoryOptionKey:
-			query.Category = db.JokeCategory(o.Value.(string))
+			query.Category = joke.Category(o.Value.(string))
 		case typeOptionKey:
-			query.Type = db.JokeType(o.Value.(string))
+			query.Type = joke.Type(o.Value.(string))
 		case idOptionKey:
 			query.ID = o.Value.(primitive.ObjectID)
 		default:
@@ -96,19 +118,19 @@ func getJokeCategoryOption(required bool) *discordgo.ApplicationCommandOption {
 		Choices: []*discordgo.ApplicationCommandOptionChoice{
 			{
 				Name:  "Programowanie",
-				Value: db.PROGRAMMING,
+				Value: joke.PROGRAMMING,
 			},
 			{
 				Name:  "Różne",
-				Value: db.MISC,
+				Value: joke.MISC,
 			},
 			{
 				Name:  "Czarny humor",
-				Value: db.DARK,
+				Value: joke.DARK,
 			},
 			{
 				Name:  "YoMamma",
-				Value: db.YOMAMA,
+				Value: joke.YOMAMA,
 			},
 		},
 	}
@@ -123,12 +145,12 @@ func getJokeTypeOption(required bool) *discordgo.ApplicationCommandOption {
 		Choices: []*discordgo.ApplicationCommandOptionChoice{
 			{
 				Name:  "Single",
-				Value: db.Single,
+				Value: joke.Single,
 			},
 			{
 
 				Name:  "Two-Part",
-				Value: db.TwoPart,
+				Value: joke.TwoPart,
 			},
 		},
 	}
@@ -136,14 +158,14 @@ func getJokeTypeOption(required bool) *discordgo.ApplicationCommandOption {
 
 type jokeResponse struct {
 	username string
-	joke     db.Joke
+	joke     joke.Joke
 }
 
 func (j jokeResponse) Response() (msg *discordgo.InteractionResponseData) {
 	switch j.joke.Type {
-	case db.Single:
+	case joke.Single:
 		msg = j.createSingleTypeJoke()
-	case db.TwoPart:
+	case joke.TwoPart:
 		msg = j.createTwoPartJoke()
 	}
 
@@ -169,7 +191,7 @@ func (j jokeResponse) createSingleTypeJoke() (msg *discordgo.InteractionResponse
 		},
 	}
 
-	if j.joke.Category == db.YOMAMA {
+	if j.joke.Category == joke.YOMAMA {
 		const muscleManGifURL = "https://media.tenor.com/sgS8GdoZGn8AAAAd/muscle-man-regular-show-muscle-man.gif"
 
 		embeds[0].Image = &discordgo.MessageEmbedImage{
@@ -212,7 +234,7 @@ func (j jokeResponse) createTwoPartJoke() *discordgo.InteractionResponseData {
 		},
 	}
 
-	if j.joke.Category == db.YOMAMA {
+	if j.joke.Category == joke.YOMAMA {
 		embeds[0].Image = &discordgo.MessageEmbedImage{
 			URL: "https://media.tenor.com/sgS8GdoZGn8AAAAd/muscle-man-regular-show-muscle-man.gif",
 		}
@@ -250,7 +272,7 @@ func createButtonReactions() []discordgo.MessageComponent {
 }
 
 type AddJokeCommand struct {
-	Service db.JokeService
+	Service joke.AddService
 }
 
 func (a AddJokeCommand) Command() *discordgo.ApplicationCommand {
@@ -278,7 +300,7 @@ func (a AddJokeCommand) Command() *discordgo.ApplicationCommand {
 	}
 }
 
-func (a AddJokeCommand) Execute(ctx context.Context, s *discordgo.Session, i *discordgo.InteractionCreate) (DiscordMessageReceiver, error) {
+func (a AddJokeCommand) Execute(ctx context.Context, _ *discordgo.Session, i *discordgo.InteractionCreate) (DiscordMessageReceiver, error) {
 	newJoke := createJokeFromOptions(ctx, i.Data.(discordgo.ApplicationCommandInteractionData))
 
 	if newJoke.Answer == "" {
@@ -290,20 +312,20 @@ func (a AddJokeCommand) Execute(ctx context.Context, s *discordgo.Session, i *di
 		return nil, err
 	}
 
-	return simpleMessageResponse{msg: fmt.Sprintf("BEEP BOOP. Dodałem twój żart panie Kapitanie. Jego ID to `%s`", id.Hex()), hidden: false}, nil
+	return simpleMessageResponse{msg: fmt.Sprintf("BEEP BOOP. Dodałem twój żart panie Kapitanie. Jego ID to `%s`", id), hidden: false}, nil
 }
 
-func createJokeFromOptions(ctx context.Context, data discordgo.ApplicationCommandInteractionData) (joke db.Joke) {
+func createJokeFromOptions(ctx context.Context, data discordgo.ApplicationCommandInteractionData) (j joke.Joke) {
 	for _, o := range data.Options {
 		switch o.Name {
 		case categoryOptionKey:
-			joke.Category = db.JokeCategory(o.Value.(string))
+			j.Category = joke.Category(o.Value.(string))
 		case typeOptionKey:
-			joke.Type = db.JokeType(o.Value.(string))
+			j.Type = joke.Type(o.Value.(string))
 		case answerOptionKey:
-			joke.Answer = o.Value.(string)
+			j.Answer = o.Value.(string)
 		case questionOptionKey:
-			joke.Question = o.Value.(string)
+			j.Question = o.Value.(string)
 		default:
 			slog.WarnContext(ctx, "Invalid option for %s", o.Name)
 		}
@@ -319,39 +341,49 @@ func (a ApologiesOption) Execute(_ context.Context, _ *discordgo.Session, _ *dis
 }
 
 type NextJokeOption struct {
-	Service db.JokeService
+	Services JokeGetServices
 }
 
 func (n NextJokeOption) Execute(ctx context.Context, _ *discordgo.Session, i *discordgo.InteractionCreate) (DiscordMessageReceiver, error) {
-	joke, err := n.Service.Get(ctx, db.JokeSearch{Type: randJokeType()})
+	service, err := selectGetService(ctx, n.Services)
 	if err != nil {
 		return nil, err
 	}
 
-	return jokeResponse{i.Member.User.Username, joke}, nil
+	res, err := service.Get(ctx, joke.SearchParameters{Type: randJokeType()})
+	if err != nil {
+		return nil, err
+	}
+
+	return jokeResponse{i.Member.User.Username, res}, nil
 }
 
-func randJokeType() db.JokeType {
-	jokeType := db.Single
+func randJokeType() joke.Type {
+	jokeType := joke.Single
 	if rand.Int()%2 == 0 {
-		jokeType = db.TwoPart
+		jokeType = joke.TwoPart
 	}
 
 	return jokeType
 }
 
 type SameJokeCategoryOption struct {
-	Service db.JokeService
+	Services JokeGetServices
 }
 
 func (s SameJokeCategoryOption) Execute(ctx context.Context, _ *discordgo.Session, i *discordgo.InteractionCreate) (DiscordMessageReceiver, error) {
 	embedFields := i.Message.Embeds[0].Fields
-	category := db.JokeCategory(embedFields[len(embedFields)-1].Value)
+	category := joke.Category(embedFields[len(embedFields)-1].Value)
 
-	joke, err := s.Service.Get(ctx, db.JokeSearch{Type: randJokeType(), Category: category})
+	service, err := selectGetService(ctx, s.Services)
 	if err != nil {
 		return nil, err
 	}
 
-	return jokeResponse{i.Member.User.Username, joke}, nil
+	res, err := service.Get(ctx, joke.SearchParameters{Type: randJokeType(), Category: category})
+	if err != nil {
+		return nil, err
+	}
+
+	return jokeResponse{i.Member.User.Username, res}, nil
 }
