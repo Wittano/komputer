@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/wittano/komputer/internal/file"
 	"io"
 	"net/http"
 	"time"
@@ -70,14 +69,22 @@ var DevServiceLimitExceededErr = errors.New("jokedev: current limit exceeded")
 
 type DevService struct {
 	client    http.Client
+	active    bool
 	globalCtx context.Context
 }
 
-func (d DevService) Active(_ context.Context) bool {
-	return !file.IsServiceLocked(devServiceName)
+func (d DevService) Active(ctx context.Context) (active bool) {
+	select {
+	case <-ctx.Done():
+		active = false
+	default:
+		active = d.active
+	}
+
+	return
 }
 
-func (d DevService) Get(ctx context.Context, search SearchParameters) (Joke, error) {
+func (d *DevService) Get(ctx context.Context, search SearchParameters) (Joke, error) {
 	select {
 	case <-ctx.Done():
 		return Joke{}, context.Canceled
@@ -111,7 +118,10 @@ func (d DevService) Get(ctx context.Context, search SearchParameters) (Joke, err
 			return Joke{}, err
 		}
 
-		go lockJokeService(d.globalCtx, devServiceName, resetTime)
+		d.active = false
+
+		go unlockService(d.globalCtx, &d.active, resetTime)
+
 		return Joke{}, DevServiceLimitExceededErr
 	}
 

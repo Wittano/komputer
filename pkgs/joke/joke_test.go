@@ -205,3 +205,29 @@ func TestDatabaseJokeService_Active(t *testing.T) {
 		}
 	})
 }
+
+func TestUnlockService(t *testing.T) {
+	testFlag := false
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	resetTime := time.Now()
+
+	unlockService(ctx, &testFlag, resetTime)
+
+	if testFlag != true {
+		t.Fatal("Service doesn't unlock")
+	}
+}
+
+func TestUnlockServiceButParentContextCancelled(t *testing.T) {
+	testFlag := false
+	ctx, cancel := context.WithCancel(context.Background())
+	resetTime := time.Now().Add(1 * time.Hour)
+
+	cancel()
+	unlockService(ctx, &testFlag, resetTime)
+
+	if testFlag != true {
+		t.Fatal("Service doesn't unlock")
+	}
+}

@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/wittano/komputer/internal/file"
 	"io"
 	"log/slog"
 	"net/http"
@@ -30,20 +29,22 @@ var HumorAPILimitExceededErr = errors.New("humorAPI: daily limit of jokes was ex
 
 type HumorAPIService struct {
 	client    http.Client
+	active    bool
 	globalCtx context.Context
 }
 
-func (h HumorAPIService) Active(ctx context.Context) bool {
+func (h HumorAPIService) Active(ctx context.Context) (active bool) {
 	select {
 	case <-ctx.Done():
-		return false
+		active = false
 	default:
+		active = h.active
 	}
 
-	return !file.IsServiceLocked(humorAPIServiceName)
+	return
 }
 
-func (h HumorAPIService) Get(ctx context.Context, search SearchParameters) (Joke, error) {
+func (h *HumorAPIService) Get(ctx context.Context, search SearchParameters) (Joke, error) {
 	select {
 	case <-ctx.Done():
 		return Joke{}, context.Canceled
@@ -76,11 +77,10 @@ func (h HumorAPIService) Get(ctx context.Context, search SearchParameters) (Joke
 	isLimitExceeded := len(res.Header[xAPIQuotaLeftHeaderName]) > 0 && res.Header[xAPIQuotaLeftHeaderName][0] == "0"
 
 	if res.StatusCode == http.StatusTooManyRequests || res.StatusCode == http.StatusPaymentRequired || isLimitExceeded {
+		h.active = false
 		resetTime := time.Now().Add(time.Hour * 24)
 
-		file.CreateLockForService(h.globalCtx, humorAPIServiceName)
-
-		go unlockJokeService(h.globalCtx, humorAPIServiceName, resetTime)
+		go unlockService(h.globalCtx, &h.active, resetTime)
 
 		return Joke{}, HumorAPILimitExceededErr
 	} else if res.StatusCode != http.StatusOK {

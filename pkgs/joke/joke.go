@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/wittano/komputer/internal/file"
 	"github.com/wittano/komputer/pkgs/db"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -175,14 +174,14 @@ func (d DatabaseJokeService) Get(ctx context.Context, search SearchParameters) (
 	return jokes[rand.Int()%len(jokes)], nil
 }
 
-func unlockJokeService(ctx context.Context, name string, resetTime time.Time) {
+func unlockService(ctx context.Context, activeFlag *bool, resetTime time.Time) {
 	deadlineCtx, cancel := context.WithDeadline(ctx, resetTime)
 	defer cancel()
 
 	for {
 		select {
 		case <-deadlineCtx.Done():
-			file.RemoveLockForService(ctx, name)
+			*activeFlag = true
 			return
 		}
 	}
