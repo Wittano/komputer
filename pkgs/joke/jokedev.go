@@ -10,7 +10,10 @@ import (
 	"time"
 )
 
-const devServiceName = "jokedev"
+const (
+	rateLimitRemainingHeaderName = "RateLimit-Remaining"
+	jokeDevAPIUrlTemplate        = "https://v2.jokeapi.dev/joke/%s?type=%s"
+)
 
 type jokeMapper interface {
 	Joke() Joke
@@ -26,21 +29,21 @@ type jokeApiFlags struct {
 }
 
 type jokeApiSingleResponse struct {
-	Error       bool         `json:"error"`
-	CategoryRes string       `json:"category"`
-	Type        string       `json:"type"`
-	Flags       jokeApiFlags `json:"flags"`
-	Id          int          `json:"id"`
-	Safe        bool         `json:"safe"`
-	Lang        string       `json:"lang"`
-	Content     string       `json:"joke"`
+	Error    bool         `json:"error"`
+	Category string       `json:"category"`
+	Type     string       `json:"type"`
+	Flags    jokeApiFlags `json:"flags"`
+	Id       int          `json:"id"`
+	Safe     bool         `json:"safe"`
+	Lang     string       `json:"lang"`
+	Content  string       `json:"joke"`
 }
 
 func (j jokeApiSingleResponse) Joke() Joke {
 	return Joke{
 		Answer:   j.Content,
 		Type:     Single,
-		Category: Category(j.CategoryRes),
+		Category: Category(j.Category),
 	}
 }
 
@@ -99,7 +102,7 @@ func (d *DevService) Get(ctx context.Context, search SearchParameters) (Joke, er
 		search.Category = Any
 	}
 
-	jokeDevApiURL := fmt.Sprintf("https://v2.jokeapi.dev/joke/%s?type=%s", search.Category, search.Category)
+	jokeDevApiURL := fmt.Sprintf(jokeDevAPIUrlTemplate, search.Category, search.Type)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, jokeDevApiURL, nil)
 	if err != nil {
 		return Joke{}, err
@@ -112,17 +115,20 @@ func (d *DevService) Get(ctx context.Context, search SearchParameters) (Joke, er
 	defer res.Body.Close()
 
 	// Check if daily limit exceeded
-	if res.StatusCode == http.StatusTooManyRequests || res.Header["RateLimit-Remaining"][0] == "0" {
-		resetTime, err := time.Parse("Sun, 06 Nov 1994 08:49:37 GMT", res.Header["RateLimit-Reset"][0])
-		if err != nil {
-			return Joke{}, err
-		}
+	isLimitExceeded := len(res.Header[rateLimitRemainingHeaderName]) > 0 && res.Header[rateLimitRemainingHeaderName][0] == "0"
 
+	if res.StatusCode == http.StatusTooManyRequests || isLimitExceeded {
+		const rateLimitReset = "RateLimit-Reset"
+		resetTime := prepareResetTime(res.Header[rateLimitReset])
 		d.active = false
 
 		go unlockService(d.globalCtx, &d.active, resetTime)
 
 		return Joke{}, DevServiceLimitExceededErr
+	}
+
+	if res.StatusCode >= 400 {
+		return Joke{}, errors.New("jokedev: client or server side error")
 	}
 
 	resBody, err := io.ReadAll(res.Body)
@@ -133,15 +139,36 @@ func (d *DevService) Get(ctx context.Context, search SearchParameters) (Joke, er
 	var jokeMapper jokeMapper
 	switch search.Type {
 	case Single:
-		jokeMapper = jokeApiSingleResponse{}
+		singleRes := jokeApiSingleResponse{}
+
+		err = json.Unmarshal(resBody, &singleRes)
+
+		jokeMapper = singleRes
 	case TwoPart:
-		jokeMapper = jokeApiTwoPartResponse{}
+		twoPartRes := &jokeApiTwoPartResponse{}
+
+		err = json.Unmarshal(resBody, &twoPartRes)
+
+		jokeMapper = twoPartRes
 	}
 
-	err = json.Unmarshal(resBody, &jokeMapper)
 	if err != nil {
 		return Joke{}, err
 	}
 
 	return jokeMapper.Joke(), nil
+}
+
+func prepareResetTime(rateLimitReset []string) (resetTime time.Time) {
+	var err error
+	if len(rateLimitReset) > 0 {
+		resetTime, err = time.Parse("Sun, 06 Nov 1994 08:49:37 GMT", rateLimitReset[0])
+		if err != nil {
+			resetTime = time.Now().Add(24 * time.Hour)
+		}
+	} else {
+		resetTime = time.Now().Add(24 * time.Hour)
+	}
+
+	return resetTime
 }
