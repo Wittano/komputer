@@ -2,6 +2,7 @@ package joke
 
 import (
 	"context"
+	"github.com/wittano/komputer/internal/file"
 	"github.com/wittano/komputer/pkgs/db"
 	"net/http"
 	"time"
@@ -23,11 +24,15 @@ type ActiveService interface {
 func NewJokeDevService(globalCtx context.Context) GetService {
 	client := http.Client{Timeout: time.Second * 1}
 
+	file.RemoveLockForService(globalCtx, devServiceName)
+
 	return DevService{client, globalCtx}
 }
 
 func NewHumorAPIService(globalCtx context.Context) GetService {
 	client := http.Client{Timeout: time.Second * 1}
+
+	file.RemoveLockForService(globalCtx, humorAPIServiceName)
 
 	return HumorAPIService{client, globalCtx}
 }

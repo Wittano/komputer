@@ -2,6 +2,7 @@ package joke
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/wittano/komputer/internal/file"
 	"github.com/wittano/komputer/pkgs/db"
@@ -57,12 +58,17 @@ type DatabaseJokeService struct {
 }
 
 func (d DatabaseJokeService) Active(ctx context.Context) bool {
-	client, err := d.mongodb.Client(ctx)
+	const maxTimeoutTime = 500
+
+	timeoutCtx, cancel := context.WithTimeout(ctx, maxTimeoutTime*time.Millisecond)
+	defer cancel()
+
+	client, err := d.mongodb.Client(timeoutCtx)
 	if err != nil {
 		return false
 	}
 
-	err = client.Ping(ctx, readpref.Nearest(readpref.WithMaxStaleness(500)))
+	err = client.Ping(timeoutCtx, readpref.Nearest(readpref.WithMaxStaleness(maxTimeoutTime)))
 	if err != nil {
 		return false
 	}
@@ -95,6 +101,10 @@ func (d DatabaseJokeService) Get(ctx context.Context, search SearchParameters) (
 	case <-ctx.Done():
 		return Joke{}, context.Canceled
 	default:
+	}
+
+	if !d.Active(ctx) {
+		return Joke{}, errors.New("databases isn't responding")
 	}
 
 	mongodb, err := d.mongodb.Client(ctx)
@@ -165,9 +175,7 @@ func (d DatabaseJokeService) Get(ctx context.Context, search SearchParameters) (
 	return jokes[rand.Int()%len(jokes)], nil
 }
 
-func lockJokeService(ctx context.Context, name string, resetTime time.Time) {
-	file.CreateLockForService(ctx, name)
-
+func unlockJokeService(ctx context.Context, name string, resetTime time.Time) {
 	deadlineCtx, cancel := context.WithDeadline(ctx, resetTime)
 	defer cancel()
 
@@ -175,6 +183,7 @@ func lockJokeService(ctx context.Context, name string, resetTime time.Time) {
 		select {
 		case <-deadlineCtx.Done():
 			file.RemoveLockForService(ctx, name)
+			return
 		}
 	}
 }

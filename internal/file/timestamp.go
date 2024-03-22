@@ -34,7 +34,7 @@ func CreateLockForService(ctx context.Context, name string) {
 func IsServiceLocked(name string) bool {
 	_, err := os.Stat(lockFilePrefix + name)
 
-	return err == nil
+	return !os.IsNotExist(err)
 }
 
 func RemoveLockForService(ctx context.Context, name string) {

@@ -16,7 +16,9 @@ import (
 const (
 	humorAPIServiceName = "humorapi"
 
-	humorApiURL = "https://humor-jokes-and-memes.p.rapidapi.com/jokes/random?exclude-tags=nsfw&include-tags="
+	humorApiURL             = "https://humor-jokes-and-memes.p.rapidapi.com/jokes/random?exclude-tags=nsfw&include-tags="
+	humorAPIKey             = "RAPID_API_KEY"
+	xAPIQuotaLeftHeaderName = "X-API-Quota-Left"
 )
 
 type humorAPIResponse struct {
@@ -31,8 +33,14 @@ type HumorAPIService struct {
 	globalCtx context.Context
 }
 
-func (h HumorAPIService) Active(_ context.Context) bool {
-	return file.IsServiceLocked(devServiceName)
+func (h HumorAPIService) Active(ctx context.Context) bool {
+	select {
+	case <-ctx.Done():
+		return false
+	default:
+	}
+
+	return !file.IsServiceLocked(humorAPIServiceName)
 }
 
 func (h HumorAPIService) Get(ctx context.Context, search SearchParameters) (Joke, error) {
@@ -42,11 +50,10 @@ func (h HumorAPIService) Get(ctx context.Context, search SearchParameters) (Joke
 	default:
 	}
 
-	if h.Active(ctx) {
+	if !h.Active(ctx) {
 		return Joke{}, HumorAPILimitExceededErr
 	}
 
-	const humorAPIKey = "RAPID_API_KEY"
 	apiKey, ok := os.LookupEnv(humorAPIKey)
 	if !ok {
 		return Joke{}, errors.New("humorAPI: missing " + humorAPIKey)
@@ -66,10 +73,14 @@ func (h HumorAPIService) Get(ctx context.Context, search SearchParameters) (Joke
 	}
 	defer res.Body.Close()
 
-	if res.StatusCode == http.StatusTooManyRequests || res.StatusCode == http.StatusPaymentRequired || res.Header["X-API-Quota-Left"][0] == "0" {
+	isLimitExceeded := len(res.Header[xAPIQuotaLeftHeaderName]) > 0 && res.Header[xAPIQuotaLeftHeaderName][0] == "0"
+
+	if res.StatusCode == http.StatusTooManyRequests || res.StatusCode == http.StatusPaymentRequired || isLimitExceeded {
 		resetTime := time.Now().Add(time.Hour * 24)
 
-		go lockJokeService(h.globalCtx, humorAPIServiceName, resetTime)
+		file.CreateLockForService(h.globalCtx, humorAPIServiceName)
+
+		go unlockJokeService(h.globalCtx, humorAPIServiceName, resetTime)
 
 		return Joke{}, HumorAPILimitExceededErr
 	} else if res.StatusCode != http.StatusOK {
@@ -80,6 +91,12 @@ func (h HumorAPIService) Get(ctx context.Context, search SearchParameters) (Joke
 		}
 
 		return Joke{}, fmt.Errorf("humorAPI: failed to get joke. status '%d', msg: '%s'", res.StatusCode, msg)
+	}
+
+	select {
+	case <-ctx.Done():
+		return Joke{}, context.Canceled
+	default:
 	}
 
 	resBody, err := io.ReadAll(res.Body)

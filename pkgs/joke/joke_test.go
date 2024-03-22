@@ -123,6 +123,8 @@ func TestJokeService_SearchButFindRandomJoke(t *testing.T) {
 	mt := createMTest(t)
 
 	mt.Run("get new joke, but nothing was found", func(t *mtest.T) {
+		t.AddMockResponses(mtest.CreateSuccessResponse(bson.E{"ok", "1"},
+			bson.E{"_id", primitive.NewObjectID()}))
 		t.AddMockResponses(mtest.CreateCursorResponse(0, collectionName+".0", mtest.FirstBatch, bson.D{
 			{"_id", primitive.NewObjectID()},
 			{"question", testJoke.Question},
@@ -160,6 +162,46 @@ func TestJokeService_SearchButFindRandomJoke(t *testing.T) {
 		}
 		if joke.Answer != testJoke.Answer {
 			t.Fatalf("Invalid Answer. Expected '%s', Result: '%s'", testJoke.Answer, joke.Answer)
+		}
+	})
+}
+
+func TestDatabaseJokeService_ActiveButContextCancelled(t *testing.T) {
+	mt := createMTest(t)
+	mt.Run("testing active database", func(t *mtest.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		cancel()
+
+		mongodbService := testMongodbService{
+			t.Client,
+			ctx,
+		}
+
+		service := DatabaseJokeService{&mongodbService}
+
+		if service.Active(ctx) {
+			t.Fatal("service can still running and handle new requests")
+		}
+	})
+}
+
+func TestDatabaseJokeService_Active(t *testing.T) {
+	mt := createMTest(t)
+	mt.Run("testing active database", func(t *mtest.T) {
+		t.AddMockResponses(mtest.CreateSuccessResponse(bson.E{"ok", "1"},
+			bson.E{"_id", primitive.NewObjectID()}))
+
+		ctx := context.Background()
+
+		mongodbService := testMongodbService{
+			t.Client,
+			ctx,
+		}
+
+		service := DatabaseJokeService{&mongodbService}
+
+		if !service.Active(ctx) {
+			t.Fatal("service isn't responding")
 		}
 	})
 }
