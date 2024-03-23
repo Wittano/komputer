@@ -301,10 +301,10 @@ func (a AddJokeCommand) Command() *discordgo.ApplicationCommand {
 }
 
 func (a AddJokeCommand) Execute(ctx context.Context, _ *discordgo.Session, i *discordgo.InteractionCreate) (DiscordMessageReceiver, error) {
-	newJoke := createJokeFromOptions(ctx, i.Data.(discordgo.ApplicationCommandInteractionData))
+	newJoke := createJokeFromOptions(i.Data.(discordgo.ApplicationCommandInteractionData))
 
 	if newJoke.Answer == "" {
-		return nil, ErrorResponse{err: errors.New("joke: missing answer"), msg: "Kapitanie brakuje żartu"}
+		return nil, ErrorResponse{err: errors.New("joke: missing answer"), msg: "Zrujnowałeś ten żart, Panie Kapitanie"}
 	}
 
 	id, err := a.Service.Add(ctx, newJoke)
@@ -315,7 +315,7 @@ func (a AddJokeCommand) Execute(ctx context.Context, _ *discordgo.Session, i *di
 	return simpleMessageResponse{msg: fmt.Sprintf("BEEP BOOP. Dodałem twój żart panie Kapitanie. Jego ID to `%s`", id), hidden: false}, nil
 }
 
-func createJokeFromOptions(ctx context.Context, data discordgo.ApplicationCommandInteractionData) (j joke.Joke) {
+func createJokeFromOptions(data discordgo.ApplicationCommandInteractionData) (j joke.Joke) {
 	for _, o := range data.Options {
 		switch o.Name {
 		case categoryOptionKey:
@@ -326,8 +326,6 @@ func createJokeFromOptions(ctx context.Context, data discordgo.ApplicationComman
 			j.Answer = o.Value.(string)
 		case questionOptionKey:
 			j.Question = o.Value.(string)
-		default:
-			slog.WarnContext(ctx, "Invalid option for %s", o.Name)
 		}
 	}
 

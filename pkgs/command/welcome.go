@@ -21,6 +21,6 @@ func (w WelcomeCommand) Command() *discordgo.ApplicationCommand {
 	}
 }
 
-func (w WelcomeCommand) Execute(_ context.Context, _ *discordgo.Session, i *discordgo.InteractionCreate) (DiscordMessageReciver, error) {
+func (w WelcomeCommand) Execute(_ context.Context, _ *discordgo.Session, i *discordgo.InteractionCreate) (DiscordMessageReceiver, error) {
 	return simpleMessageResponse{msg: fmt.Sprintf("Witaj panie %s kapitanie! W czym mogę pomóc?", strings.ToUpper(i.Member.User.Username))}, nil
 }

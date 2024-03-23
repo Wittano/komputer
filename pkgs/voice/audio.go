@@ -102,10 +102,10 @@ func PlayAudio(ctx context.Context, vc *discordgo.VoiceConnection, path string, 
 	}
 }
 
-func sendPCM(ctx context.Context, v *discordgo.VoiceConnection, pcm <-chan []int16) (err error) {
+func sendPCM(ctx context.Context, v *discordgo.VoiceConnection, pcm <-chan []int16) error {
 	opusEncoder, err := gopus.NewEncoder(frameRate, channels, gopus.Audio)
 	if err != nil {
-		return
+		return err
 	}
 
 	for {
@@ -122,7 +122,7 @@ func sendPCM(ctx context.Context, v *discordgo.VoiceConnection, pcm <-chan []int
 			// try encoding pcm frame with Opus
 			opus, err := opusEncoder.Encode(recv, frameSize, maxBytes)
 			if err != nil {
-				return
+				return err
 			}
 
 			if v.Ready == false || v.OpusSend == nil {
