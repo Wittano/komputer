@@ -13,8 +13,6 @@ import (
 )
 
 const (
-	humorAPIServiceName = "humorapi"
-
 	humorApiURL             = "https://humor-jokes-and-memes.p.rapidapi.com/jokes/random?exclude-tags=nsfw&include-tags="
 	humorAPIKey             = "RAPID_API_KEY"
 	xAPIQuotaLeftHeaderName = "X-API-Quota-Left"

@@ -6,11 +6,11 @@ import (
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"github.com/google/uuid"
-	"github.com/wittano/komputer/internal/voice"
 	"github.com/wittano/komputer/pkgs/command"
 	"github.com/wittano/komputer/pkgs/config"
 	"github.com/wittano/komputer/pkgs/db"
 	"github.com/wittano/komputer/pkgs/joke"
+	"github.com/wittano/komputer/pkgs/voice"
 	"log"
 	"log/slog"
 	"os"
@@ -71,9 +71,10 @@ func handleEventResponse(ctx context.Context, s *discordgo.Session, i *discordgo
 }
 
 type DiscordBot struct {
-	ctx     context.Context
-	bot     *discordgo.Session
-	mongodb db.MongodbService
+	ctx           context.Context
+	bot           *discordgo.Session
+	mongodb       db.MongodbService
+	spockVoiceChs map[string]chan struct{}
 }
 
 func (d *DiscordBot) Start() (err error) {
@@ -87,6 +88,10 @@ func (d *DiscordBot) Start() (err error) {
 }
 
 func (d *DiscordBot) Close() (err error) {
+	for _, v := range d.spockVoiceChs {
+		close(v)
+	}
+
 	err = d.mongodb.Close()
 	err = d.bot.Close()
 
@@ -105,12 +110,16 @@ func newDiscordBot(ctx context.Context) (*DiscordBot, error) {
 	}
 
 	// Update list of current user on voice channels
-	bot.AddHandler(voice.HandleVoiceChannelUpdate)
+	spockVoiceChns := make(map[string]chan struct{})
+	guildVoiceChats := make(map[string]voice.ChatInfo)
+	vcHander := voice.ChatHandler{Ctx: ctx, SpockVoiceChns: spockVoiceChns, GuildVoiceChats: guildVoiceChats}
+
+	bot.AddHandler(vcHander.HandleVoiceChannelUpdate)
 
 	// Register slash commands
 	database := db.NewMongodbDatabase(ctx)
 	getServices := createJokeGetServices(ctx, database)
-	commands := createCommands(getServices)
+	commands := createCommands(getServices, spockVoiceChns)
 	for _, c := range commands {
 		if _, err := bot.ApplicationCommandCreate(
 			prop.AppID,
@@ -127,9 +136,10 @@ func newDiscordBot(ctx context.Context) (*DiscordBot, error) {
 	bot.AddHandler(handler.handleSlashCommand)
 
 	return &DiscordBot{
-		ctx:     ctx,
-		bot:     bot,
-		mongodb: database,
+		ctx:           ctx,
+		bot:           bot,
+		mongodb:       database,
+		spockVoiceChs: spockVoiceChns,
 	}, nil
 }
 
@@ -141,15 +151,19 @@ func createJokeGetServices(globalCtx context.Context, database *db.MongodbDataba
 	}
 }
 
-func createCommands(services command.JokeGetServices) map[string]command.DiscordSlashCommandHandler {
+func createCommands(services command.JokeGetServices, spockVoiceChns map[string]chan struct{}) map[string]command.DiscordSlashCommandHandler {
 	welcomeCmd := command.WelcomeCommand{}
 	addJokeCmd := command.AddJokeCommand{Service: services[databaseServiceID].(joke.DatabaseJokeService)}
 	jokeCmd := command.JokeCommand{Services: services}
+	spockCmd := command.SpockCommand{SpockMusicStopChs: spockVoiceChns}
+	stopSpockCmd := command.SpockStopCommand{SpockMusicStopChs: spockVoiceChns}
 
 	return map[string]command.DiscordSlashCommandHandler{
-		command.WelcomeCommandName: welcomeCmd,
-		command.AddJokeCommandName: addJokeCmd,
-		command.GetJokeCommandName: jokeCmd,
+		command.WelcomeCommandName:   welcomeCmd,
+		command.AddJokeCommandName:   addJokeCmd,
+		command.GetJokeCommandName:   jokeCmd,
+		command.SpockCommandName:     spockCmd,
+		command.SpockStopCommandName: stopSpockCmd,
 	}
 }
 
