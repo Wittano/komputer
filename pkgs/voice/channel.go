@@ -10,9 +10,19 @@ type ChatInfo struct {
 	ChannelID string
 }
 
+type SpockVoiceChannels map[string]chan struct{}
+
+func (s SpockVoiceChannels) Close() error {
+	for _, ch := range s {
+		close(ch)
+	}
+
+	return nil
+}
+
 type ChatHandler struct {
 	Ctx             context.Context
-	SpockVoiceChns  map[string]chan struct{}
+	SpockVoiceChns  SpockVoiceChannels
 	GuildVoiceChats map[string]ChatInfo
 }
 

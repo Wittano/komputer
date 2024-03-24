@@ -74,7 +74,7 @@ type DiscordBot struct {
 	ctx           context.Context
 	bot           *discordgo.Session
 	mongodb       db.MongodbService
-	spockVoiceChs map[string]chan struct{}
+	spockVoiceChs voice.SpockVoiceChannels
 }
 
 func (d *DiscordBot) Start() (err error) {
@@ -88,10 +88,7 @@ func (d *DiscordBot) Start() (err error) {
 }
 
 func (d *DiscordBot) Close() (err error) {
-	for _, v := range d.spockVoiceChs {
-		close(v)
-	}
-
+	err = d.spockVoiceChs.Close()
 	err = d.mongodb.Close()
 	err = d.bot.Close()
 
@@ -110,7 +107,7 @@ func newDiscordBot(ctx context.Context) (*DiscordBot, error) {
 	}
 
 	// Update list of current user on voice channels
-	spockVoiceChns := make(map[string]chan struct{})
+	spockVoiceChns := make(voice.SpockVoiceChannels)
 	guildVoiceChats := make(map[string]voice.ChatInfo)
 	vcHander := voice.ChatHandler{Ctx: ctx, SpockVoiceChns: spockVoiceChns, GuildVoiceChats: guildVoiceChats}
 
@@ -143,15 +140,15 @@ func newDiscordBot(ctx context.Context) (*DiscordBot, error) {
 	}, nil
 }
 
-func createJokeGetServices(globalCtx context.Context, database *db.MongodbDatabase) command.JokeGetServices {
-	return map[uint8]joke.GetService{
+func createJokeGetServices(globalCtx context.Context, database *db.MongodbDatabase) []joke.GetService {
+	return []joke.GetService{
 		jokeDevServiceID:  joke.NewJokeDevService(globalCtx),
 		humorAPIServiceID: joke.NewHumorAPIService(globalCtx),
 		databaseServiceID: joke.NewDatabaseJokeService(database),
 	}
 }
 
-func createCommands(services command.JokeGetServices, spockVoiceChns map[string]chan struct{}) map[string]command.DiscordSlashCommandHandler {
+func createCommands(services []joke.GetService, spockVoiceChns map[string]chan struct{}) map[string]command.DiscordSlashCommandHandler {
 	welcomeCmd := command.WelcomeCommand{}
 	addJokeCmd := command.AddJokeCommand{Service: services[databaseServiceID].(joke.DatabaseJokeService)}
 	jokeCmd := command.JokeCommand{Services: services}
@@ -167,7 +164,7 @@ func createCommands(services command.JokeGetServices, spockVoiceChns map[string]
 	}
 }
 
-func createOptions(services command.JokeGetServices) map[string]command.DiscordEventHandler {
+func createOptions(services []joke.GetService) map[string]command.DiscordEventHandler {
 	apologiesOption := command.ApologiesOption{}
 	nextJokeOption := command.NextJokeOption{Services: services}
 	sameJokeCategoryOption := command.SameJokeCategoryOption{Services: services}

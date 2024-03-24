@@ -10,6 +10,7 @@ import (
 	"log/slog"
 	"math/rand"
 	"os"
+	"slices"
 )
 
 const (
@@ -31,10 +32,8 @@ const (
 	ApologiesButtonName        = "apologiesButtonId"
 )
 
-type JokeGetServices map[uint8]joke.GetService
-
 type JokeCommand struct {
-	Services JokeGetServices
+	Services []joke.GetService
 }
 
 func (j JokeCommand) Command() *discordgo.ApplicationCommand {
@@ -75,15 +74,26 @@ func (j JokeCommand) Execute(ctx context.Context, _ *discordgo.Session, i *disco
 	}, nil
 }
 
-func selectGetService(ctx context.Context, getServices JokeGetServices) (joke.GetService, error) {
-	if len(getServices) <= 0 {
-		return nil, errors.New("all joke services is disabled")
+func selectGetService(ctx context.Context, getServices []joke.GetService) (joke.GetService, error) {
+	if len(getServices) == 1 {
+		service := getServices[0]
+
+		if activeService, ok := service.(joke.ActiveService); ok && !activeService.Active(ctx) {
+			return nil, errors.New("all joke services is disabled")
+		}
+
+		return service, nil
 	}
 
 	i := rand.Int() % len(getServices)
 	service := getServices[uint8(i)]
+	if service == nil {
+		getServices = slices.Delete(getServices, i, i+1)
+		return selectGetService(ctx, getServices)
+	}
+
 	if activeService, ok := service.(joke.ActiveService); ok && !activeService.Active(ctx) {
-		delete(getServices, uint8(i))
+		getServices = slices.Delete(getServices, i, i+1)
 		return selectGetService(ctx, getServices)
 	}
 
@@ -339,7 +349,7 @@ func (a ApologiesOption) Execute(_ context.Context, _ *discordgo.Session, _ *dis
 }
 
 type NextJokeOption struct {
-	Services JokeGetServices
+	Services []joke.GetService
 }
 
 func (n NextJokeOption) Execute(ctx context.Context, _ *discordgo.Session, i *discordgo.InteractionCreate) (DiscordMessageReceiver, error) {
@@ -366,7 +376,7 @@ func randJokeType() joke.Type {
 }
 
 type SameJokeCategoryOption struct {
-	Services JokeGetServices
+	Services []joke.GetService
 }
 
 func (s SameJokeCategoryOption) Execute(ctx context.Context, _ *discordgo.Session, i *discordgo.InteractionCreate) (DiscordMessageReceiver, error) {

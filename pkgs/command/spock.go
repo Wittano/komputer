@@ -16,6 +16,7 @@ const (
 )
 
 type SpockCommand struct {
+	GlobalCtx         context.Context
 	SpockMusicStopChs map[string]chan struct{}
 	GuildVoiceChats   map[string]voice.ChatInfo
 }
