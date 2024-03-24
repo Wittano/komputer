@@ -21,9 +21,9 @@ func (d dumpMongoService) Client(_ context.Context) (*mongo.Client, error) {
 func TestSelectGetService(t *testing.T) {
 	ctx := context.Background()
 	testServices := []joke.GetService{
-		0: joke.NewJokeDevService(ctx),
-		1: joke.NewHumorAPIService(ctx),
-		2: joke.NewDatabaseJokeService(dumpMongoService{}),
+		joke.NewJokeDevService(ctx),
+		joke.NewHumorAPIService(ctx),
+		joke.NewDatabaseJokeService(dumpMongoService{}),
 	}
 
 	service, err := selectGetService(ctx, testServices)
@@ -44,9 +44,9 @@ func TestSelectGetServiceButContextCancelled(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 	testServices := []joke.GetService{
-		0: joke.NewJokeDevService(ctx),
-		1: joke.NewHumorAPIService(ctx),
-		2: joke.NewDatabaseJokeService(dumpMongoService{}),
+		joke.NewJokeDevService(ctx),
+		joke.NewHumorAPIService(ctx),
+		joke.NewDatabaseJokeService(dumpMongoService{}),
 	}
 
 	if _, err := selectGetService(ctx, testServices); err == nil {
@@ -57,7 +57,7 @@ func TestSelectGetServiceButContextCancelled(t *testing.T) {
 func TestSelectGetServiceButServicesIsDeactivated(t *testing.T) {
 	ctx := context.Background()
 	testServices := []joke.GetService{
-		2: joke.NewDatabaseJokeService(dumpMongoService{}),
+		joke.NewDatabaseJokeService(dumpMongoService{}),
 	}
 
 	if _, err := selectGetService(ctx, testServices); err == nil {
