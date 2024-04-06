@@ -45,7 +45,7 @@
           ffmpeg
 
           # Nixpkgs
-          nixfmt
+          nixfmt-classic
         ];
       };
     };
