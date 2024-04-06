@@ -9,35 +9,35 @@ import (
 const komputerMsgPrefix = "BEEP BOOP. "
 
 type ErrorResponse struct {
-	err error
-	msg string
+	Err error
+	Msg string
 }
 
 func (e ErrorResponse) Error() string {
-	return e.err.Error()
+	return e.Err.Error()
 }
 
 func (e ErrorResponse) Response() *discordgo.InteractionResponseData {
-	if e.msg == "" {
-		e.msg = komputerMsgPrefix + "Coś poszło nie tak :("
+	if e.Msg == "" {
+		e.Msg = komputerMsgPrefix + "Coś poszło nie tak :("
 	} else {
-		e.msg = komputerMsgPrefix + e.msg
+		e.Msg = komputerMsgPrefix + e.Msg
 	}
 
-	return &discordgo.InteractionResponseData{Content: e.msg}
+	return &discordgo.InteractionResponseData{Content: e.Msg}
 }
 
-type simpleMessageResponse struct {
-	msg    string
-	hidden bool
+type SimpleMessageResponse struct {
+	Msg    string
+	Hidden bool
 }
 
-func (s simpleMessageResponse) Response() (msg *discordgo.InteractionResponseData) {
+func (s SimpleMessageResponse) Response() (msg *discordgo.InteractionResponseData) {
 	msg = &discordgo.InteractionResponseData{
-		Content: s.msg,
+		Content: s.Msg,
 	}
 
-	if !s.hidden {
+	if s.Hidden {
 		msg.Flags = discordgo.MessageFlagsEphemeral
 	}
 
@@ -49,6 +49,6 @@ func CreateDiscordInteractionResponse(ctx context.Context, i *discordgo.Interact
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: msg.Response(),
 	}); err != nil {
-		slog.ErrorContext(ctx, "failed send response to discord user", err)
+		slog.With(requestIDKey, ctx.Value(requestIDKey)).ErrorContext(ctx, "failed send response to discord user", "error", err)
 	}
 }

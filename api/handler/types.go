@@ -52,11 +52,11 @@ func MakeHttpHandler(handler ApiHandler) http.HandlerFunc {
 
 			resBody, err := apiErr.MarshalJSON()
 			if err != nil {
-				slog.ErrorContext(r.Context(), "failed send error message: %s", err)
+				slog.ErrorContext(r.Context(), "failed send error message", "error", err)
 			} else {
 				_, err := w.Write(resBody)
 				if err != nil {
-					slog.ErrorContext(r.Context(), "failed send error message: %s", err)
+					slog.ErrorContext(r.Context(), "failed send error message", "error", err)
 				}
 			}
 		}

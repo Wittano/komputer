@@ -40,7 +40,7 @@ func (sc SpockCommand) Command() *discordgo.ApplicationCommand {
 
 func (sc SpockCommand) Execute(ctx context.Context, s *discordgo.Session, i *discordgo.InteractionCreate) (DiscordMessageReceiver, error) {
 	const spockQuote = "Kurwa Spock"
-	defaultMsg := simpleMessageResponse{spockQuote, false}
+	defaultMsg := SimpleMessageResponse{spockQuote, false}
 
 	if _, ok := s.VoiceConnections[i.GuildID]; ok {
 		return defaultMsg, nil
@@ -48,9 +48,9 @@ func (sc SpockCommand) Execute(ctx context.Context, s *discordgo.Session, i *dis
 
 	info, ok := sc.GuildVoiceChats[i.GuildID]
 	if !ok || info.UserCount == 0 {
-		slog.ErrorContext(ctx, fmt.Sprintf("failed find user on voice channels on %s server", i.Member.GuildID), fmt.Errorf("user with ID %s wasn't found on any voice chat on %s server", i.Member.User.ID, i.GuildID))
+		slog.With(requestIDKey, ctx.Value(requestIDKey)).ErrorContext(ctx, fmt.Sprintf(fmt.Sprintf("user with ID '%s' wasn't found on any voice chat on '%s' server", i.Member.User.ID, i.GuildID)))
 
-		return simpleMessageResponse{msg: "Kapitanie gdzie jesteś? Wejdź na kanał głosowy a ja dołącze"}, nil
+		return SimpleMessageResponse{Msg: "Kapitanie gdzie jesteś? Wejdź na kanał głosowy a ja dołącze"}, nil
 	}
 
 	go sc.playAudio(ctx, info.ChannelID, s, i)
@@ -65,31 +65,33 @@ func (sc SpockCommand) playAudio(ctx context.Context, channelID string, s *disco
 	default:
 	}
 
+	logger := slog.With(requestIDKey, ctx.Value(requestIDKey))
+
 	s.Identify.Intents = discordgo.MakeIntent(discordgo.IntentsGuildVoiceStates)
 
 	voiceChat, err := s.ChannelVoiceJoin(i.GuildID, channelID, false, true)
 	if err != nil {
-		slog.ErrorContext(ctx, "failed join to voice channel", err)
+		logger.ErrorContext(ctx, "failed join to voice channel", "error", err)
 
 		return
 	}
 	defer func(voiceChat *discordgo.VoiceConnection) {
 		if err := voiceChat.Disconnect(); err != nil {
-			slog.ErrorContext(ctx, "failed disconnect bot from voice channel", err)
+			logger.ErrorContext(ctx, "failed disconnect bot from voice channel", "error", err)
 		}
 	}(voiceChat)
 	defer voiceChat.Close()
 
 	songPath, err := songPath(i.Data.(discordgo.ApplicationCommandInteractionData))
 	if err != nil {
-		slog.ErrorContext(ctx, "failed find song path", err)
+		logger.ErrorContext(ctx, "failed find song path", "error", err)
 
 		return
 	}
 
 	stopCh, ok := sc.SpockMusicStopChs[i.GuildID]
 	if !ok {
-		slog.ErrorContext(ctx, fmt.Sprintf("failed find user on voice channels on %s server", i.Member.GuildID), fmt.Errorf("user with ID %s wasn't found on any voice chat on %s server", i.Member.User.ID, i.GuildID))
+		logger.ErrorContext(ctx, fmt.Sprintf("failed find user on voice channels on '%s' server", i.Member.GuildID), "error", fmt.Errorf("user with ID '%s' wasn't found on any voice chat on '%s' server", i.Member.User.ID, i.GuildID))
 
 		return
 	}
@@ -100,7 +102,7 @@ func (sc SpockCommand) playAudio(ctx context.Context, channelID string, s *disco
 	)
 
 	if audioDuration, err := voice.DuractionAudio(songPath); err != nil {
-		slog.WarnContext(ctx, "failed calculated audio duration", err)
+		logger.WarnContext(ctx, "failed calculated audio duration", "error", err)
 
 		playingCtx, cancel = context.WithCancel(context.Background())
 	} else {
@@ -110,7 +112,7 @@ func (sc SpockCommand) playAudio(ctx context.Context, channelID string, s *disco
 	defer cancel()
 
 	if err = voice.PlayAudio(playingCtx, voiceChat, songPath, stopCh); err != nil {
-		slog.ErrorContext(ctx, fmt.Sprintf("failed play '%s' songPath", songPath), err)
+		logger.ErrorContext(ctx, fmt.Sprintf("failed play '%s' songPath", songPath), "error", err)
 	}
 }
 

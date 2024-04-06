@@ -67,8 +67,9 @@ func PlayAudio(ctx context.Context, vc *discordgo.VoiceConnection, path string, 
 	defer close(pcm)
 
 	stopPlaying := make(chan struct{})
-	defer close(stopPlaying)
 	go func(ctx context.Context, vs *discordgo.VoiceConnection, pcm <-chan []int16) {
+		defer close(stopPlaying)
+
 		sendPCM(ctx, vc, pcm)
 		stopPlaying <- struct{}{}
 	}(ctx, vc, pcm)

@@ -98,7 +98,7 @@ func (d *DevService) Get(ctx context.Context, search SearchParameters) (Joke, er
 		return Joke{}, DevServiceLimitExceededErr
 	}
 
-	if search.Category == YOMAMA {
+	if search.Category == YOMAMA || search.Category == "" {
 		search.Category = Any
 	}
 

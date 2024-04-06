@@ -37,11 +37,11 @@ func UploadFile(ctx context.Context, filename string, file multipart.File) (err 
 		default:
 			const bufSize = 1024 * 1024
 
-			_, err := io.CopyN(destFile, file, bufSize)
+			_, err = io.CopyN(destFile, file, bufSize)
 			if errors.Is(err, io.EOF) {
 				return nil
 			} else {
-				return
+				return err
 			}
 		}
 	}

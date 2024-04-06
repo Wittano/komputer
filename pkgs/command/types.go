@@ -5,6 +5,8 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
+const requestIDKey = "requestID"
+
 type DiscordSlashCommandHandler interface {
 	Command() *discordgo.ApplicationCommand
 	DiscordEventHandler

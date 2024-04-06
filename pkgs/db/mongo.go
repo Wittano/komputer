@@ -18,6 +18,10 @@ type MongodbDatabase struct {
 }
 
 func (m *MongodbDatabase) Close() (err error) {
+	if m.db == nil {
+		return nil
+	}
+
 	err = m.db.Disconnect(m.ctx)
 	m.db = nil
 

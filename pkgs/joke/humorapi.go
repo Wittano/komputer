@@ -84,7 +84,8 @@ func (h *HumorAPIService) Get(ctx context.Context, search SearchParameters) (Jok
 	} else if res.StatusCode != http.StatusOK {
 		msg, err := io.ReadAll(res.Body)
 		if err != nil {
-			slog.ErrorContext(ctx, "humorAPI: failed read response body", err)
+			const requestIDKey = "requestID"
+			slog.With(requestIDKey, ctx.Value(requestIDKey)).ErrorContext(ctx, "humorAPI: failed read response body", "error", err)
 			msg = []byte{}
 		}
 

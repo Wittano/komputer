@@ -22,7 +22,7 @@ func (ssc SpockStopCommand) Command() *discordgo.ApplicationCommand {
 }
 
 func (ssc SpockStopCommand) Execute(ctx context.Context, s *discordgo.Session, i *discordgo.InteractionCreate) (res DiscordMessageReceiver, _ error) {
-	res = simpleMessageResponse{msg: "Przepraszam"}
+	res = SimpleMessageResponse{Msg: "Przepraszam"}
 
 	select {
 	case <-ctx.Done():

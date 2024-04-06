@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	idOptionKey       = "ID"
+	idOptionKey       = "id"
 	categoryOptionKey = "category"
 	typeOptionKey     = "type"
 	questionOptionKey = "question"
@@ -112,7 +112,7 @@ func getJokeSearchParameters(ctx context.Context, data discordgo.ApplicationComm
 		case idOptionKey:
 			query.ID = o.Value.(primitive.ObjectID)
 		default:
-			slog.WarnContext(ctx, fmt.Sprintf("Invalid option for %s", o.Name))
+			slog.With(requestIDKey, ctx.Value(requestIDKey)).WarnContext(ctx, fmt.Sprintf("Invalid option for %s", o.Name))
 		}
 	}
 
@@ -186,7 +186,7 @@ func (j jokeResponse) createSingleTypeJoke() (msg *discordgo.InteractionResponse
 	embeds := []*discordgo.MessageEmbed{
 		{
 			Type:        discordgo.EmbedTypeRich,
-			Title:       "JokeContainer",
+			Title:       "Joke",
 			Description: j.joke.Answer,
 			Color:       0x02f5f5,
 			Author: &discordgo.MessageEmbedAuthor{
@@ -220,7 +220,7 @@ func (j jokeResponse) createTwoPartJoke() *discordgo.InteractionResponseData {
 	embeds := []*discordgo.MessageEmbed{
 		{
 			Type:  discordgo.EmbedTypeRich,
-			Title: "JokeContainer",
+			Title: "Joke",
 			Color: 0x02f5f5,
 			Author: &discordgo.MessageEmbedAuthor{
 				Name: "komputer",
@@ -314,15 +314,17 @@ func (a AddJokeCommand) Execute(ctx context.Context, _ *discordgo.Session, i *di
 	newJoke := createJokeFromOptions(i.Data.(discordgo.ApplicationCommandInteractionData))
 
 	if newJoke.Answer == "" {
-		return nil, ErrorResponse{err: errors.New("joke: missing answer"), msg: "Zrujnowałeś ten żart, Panie Kapitanie"}
+		return nil, ErrorResponse{Err: errors.New("joke: missing answer"), Msg: "Zrujnowałeś ten żart, Panie Kapitanie"}
 	}
+
+	newJoke.ID = primitive.NewObjectID()
 
 	id, err := a.Service.Add(ctx, newJoke)
 	if err != nil {
 		return nil, err
 	}
 
-	return simpleMessageResponse{msg: fmt.Sprintf("BEEP BOOP. Dodałem twój żart panie Kapitanie. Jego ID to `%s`", id), hidden: false}, nil
+	return SimpleMessageResponse{Msg: fmt.Sprintf("BEEP BOOP. Dodałem twój żart panie Kapitanie. Jego ID to `%s`", id), Hidden: true}, nil
 }
 
 func createJokeFromOptions(data discordgo.ApplicationCommandInteractionData) (j joke.Joke) {
@@ -345,7 +347,7 @@ func createJokeFromOptions(data discordgo.ApplicationCommandInteractionData) (j 
 type ApologiesOption struct{}
 
 func (a ApologiesOption) Execute(_ context.Context, _ *discordgo.Session, _ *discordgo.InteractionCreate) (DiscordMessageReceiver, error) {
-	return simpleMessageResponse{msg: "Przepraszam"}, nil
+	return SimpleMessageResponse{Msg: "Przepraszam"}, nil
 }
 
 type NextJokeOption struct {
