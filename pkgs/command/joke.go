@@ -58,6 +58,13 @@ func (j JokeCommand) Command() *discordgo.ApplicationCommand {
 func (j JokeCommand) Execute(ctx context.Context, _ *discordgo.Session, i *discordgo.InteractionCreate) (DiscordMessageReceiver, error) {
 	searchQuery := getJokeSearchParameters(ctx, i.Data.(discordgo.ApplicationCommandInteractionData))
 
+findJoke:
+	select {
+	case <-ctx.Done():
+		return nil, context.Canceled
+	default:
+	}
+
 	service, err := selectGetService(ctx, j.Services)
 	if err != nil {
 		return nil, ErrorResponse{err, "Nie udało mi się, znaleść żadnego żartu"}
@@ -65,7 +72,8 @@ func (j JokeCommand) Execute(ctx context.Context, _ *discordgo.Session, i *disco
 
 	res, err := service.Get(ctx, searchQuery)
 	if err != nil {
-		return nil, err
+		slog.With(requestIDKey, ctx.Value(requestIDKey)).ErrorContext(ctx, err.Error())
+		goto findJoke
 	}
 
 	return jokeResponse{
