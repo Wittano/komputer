@@ -7,9 +7,11 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/jarcoal/httpmock v1.3.1
 	github.com/joho/godotenv v1.5.1
+	github.com/mitchellh/go-homedir v1.1.0
 	github.com/testcontainers/testcontainers-go v0.29.1
 	github.com/testcontainers/testcontainers-go/modules/mongodb v0.29.1
 	go.mongodb.org/mongo-driver v1.14.0
+	gopkg.in/yaml.v3 v3.0.1
 	layeh.com/gopus v0.0.0-20210501142526-1ee02d434e32
 )
 
@@ -36,6 +38,7 @@ require (
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/gorilla/websocket v1.5.1 // indirect
 	github.com/klauspost/compress v1.17.7 // indirect
+	github.com/kr/text v0.2.0 // indirect
 	github.com/lufia/plan9stats v0.0.0-20211012122336-39d0f177ccd0 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
 	github.com/moby/patternmatcher v0.6.0 // indirect
