@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"github.com/wittano/komputer/pkgs/settings"
+	"github.com/wittano/komputer/web/internal/settings"
 	"io"
 	"mime/multipart"
 	"net/http"

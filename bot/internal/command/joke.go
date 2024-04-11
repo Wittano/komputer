@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
-	"github.com/wittano/komputer/pkgs/joke"
+	"github.com/wittano/komputer/bot/internal/joke"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"log/slog"
 	"math/rand"

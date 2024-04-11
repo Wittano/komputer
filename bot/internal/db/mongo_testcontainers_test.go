@@ -6,7 +6,7 @@ import (
 	"context"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/mongodb"
-	"github.com/wittano/komputer/pkgs/joke"
+	"github.com/wittano/komputer/bot/internal/joke"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"os"
 	"testing"

@@ -3,8 +3,8 @@ package handler
 import (
 	"context"
 	"fmt"
-	"github.com/wittano/komputer/pkgs/settings"
-	"github.com/wittano/komputer/pkgs/voice"
+	"github.com/wittano/komputer/web/internal/file"
+	"github.com/wittano/komputer/web/internal/settings"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -75,7 +75,7 @@ func validRequestedFile(filename string, req http.Request) error {
 		return err
 	}
 
-	if err = voice.ValidMp3File(fileHeader); err != nil {
+	if err = file.ValidMp3File(fileHeader); err != nil {
 		return err
 	}
 
@@ -111,7 +111,7 @@ func uploadRequestedFile(ctx context.Context, filename string, req *http.Request
 	}
 	defer dest.Close()
 
-	if err = voice.UploadFile(ctx, f, dest); err != nil {
+	if err = file.UploadFile(ctx, f, dest); err != nil {
 		errCh <- newInternalApiError(err)
 		os.Remove(dest.Name())
 

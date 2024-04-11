@@ -13,15 +13,20 @@ dev:
 prod:
 	CGO_ENABLED=1 GOOS=linux GOARCH=$(GOARCH) go build -o ./build/komputer ./cmd/komputer/main.go
 
-test:
-	go test ./...
+test-bot:
+	go test ./bot/...
+
+test-web:
+	go test ./web/...
+
+test: test-bot test-web
 
 testContainers:
 ifeq (,$(shell command -v docker 2> /dev/null))
 	$(error "No docker in $(PATH)")
 endif
 
-	go test -tags testcontainers ./pkgs/db
+	go test -tags testcontainers ./bot
 
 install: prod
 	mkdir -p $(DEST_DIR)

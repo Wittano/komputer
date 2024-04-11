@@ -2,7 +2,7 @@ package joke
 
 import (
 	"context"
-	"github.com/wittano/komputer/pkgs/db"
+	"github.com/wittano/komputer/bot/internal/db"
 	"net/http"
 	"time"
 )

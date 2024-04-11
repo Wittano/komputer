@@ -4,8 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
-	"github.com/wittano/komputer/internal/assets"
-	"github.com/wittano/komputer/pkgs/voice"
+	"github.com/wittano/komputer/bot/internal/voice"
 	"log/slog"
 	"os"
 )
@@ -77,7 +76,7 @@ func (sc SpockCommand) playAudio(ctx context.Context, channelID string, s *disco
 	}
 	defer func(voiceChat *discordgo.VoiceConnection) {
 		if err := voiceChat.Disconnect(); err != nil {
-			logger.ErrorContext(ctx, "failed disconnect bot from voice channel", "error", err)
+			logger.ErrorContext(ctx, "failed disconnect discord from voice channel", "error", err)
 		}
 	}(voiceChat)
 	defer voiceChat.Close()
@@ -122,12 +121,12 @@ func songPath(data discordgo.ApplicationCommandInteractionData) (path string, er
 		case idOptionName:
 			path = o.Value.(string)
 		default:
-			path, err = assets.RandomAudio()
+			path, err = voice.RandomAudio()
 		}
 	}
 
 	if path == "" && err == nil {
-		path, err = assets.RandomAudio()
+		path, err = voice.RandomAudio()
 	}
 
 	return

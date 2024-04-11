@@ -15,7 +15,7 @@ type SpockStopCommand struct {
 func (ssc SpockStopCommand) Command() *discordgo.ApplicationCommand {
 	return &discordgo.ApplicationCommand{
 		Name:        SpockStopCommandName,
-		Description: "Stop playing song by bot",
+		Description: "Stop playing song by discord",
 		GuildID:     os.Getenv("SERVER_GUID"),
 		Type:        discordgo.ChatApplicationCommand,
 	}

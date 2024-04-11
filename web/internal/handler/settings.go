@@ -2,7 +2,7 @@ package handler
 
 import (
 	"encoding/json"
-	"github.com/wittano/komputer/pkgs/settings"
+	"github.com/wittano/komputer/web/internal/settings"
 	"io"
 	"net/http"
 )

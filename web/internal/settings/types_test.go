@@ -101,7 +101,7 @@ func TestSettings_Update(t *testing.T) {
 	}
 
 	if _, err := os.Stat(temp.Name()); !errors.Is(err, os.ErrNotExist) {
-		t.Fatalf("file '%s' didn't move to new directory. %s", temp.Name(), err)
+		t.Fatalf("file '%s' didn't moveToNewLocation to new directory. %s", temp.Name(), err)
 	}
 
 	newFile := filepath.Join(newDir, filepath.Base(temp.Name()))

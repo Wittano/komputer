@@ -3,7 +3,6 @@ package settings
 import (
 	"errors"
 	"github.com/mitchellh/go-homedir"
-	"github.com/wittano/komputer/internal/assets"
 	"gopkg.in/yaml.v3"
 	"os"
 	"path/filepath"
@@ -32,7 +31,7 @@ func (s *Settings) Update(new Settings) error {
 			return err
 		}
 
-		err := assets.Move(s.AssetDir, new.AssetDir)
+		err := moveToNewLocation(s.AssetDir, new.AssetDir)
 		if err != nil {
 			return err
 		}
