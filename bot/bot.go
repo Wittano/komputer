@@ -8,9 +8,9 @@ import (
 	"github.com/google/uuid"
 	"github.com/wittano/komputer/bot/internal/command"
 	"github.com/wittano/komputer/bot/internal/config"
-	"github.com/wittano/komputer/bot/internal/db"
 	"github.com/wittano/komputer/bot/internal/joke"
 	"github.com/wittano/komputer/bot/internal/voice"
+	"github.com/wittano/komputer/db"
 	"log/slog"
 	"time"
 )
@@ -161,7 +161,7 @@ func NewDiscordBot(ctx context.Context) (*DiscordBot, error) {
 	bot.AddHandler(vcHander.HandleVoiceChannelUpdate)
 
 	// Register slash commands
-	database := db.NewMongodbDatabase(ctx)
+	database := db.Mongodb(ctx)
 	getServices := createJokeGetServices(ctx, database)
 	commands := createCommands(ctx, getServices, spockVoiceChns, guildVoiceChats)
 	for _, c := range commands {

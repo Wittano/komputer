@@ -65,7 +65,7 @@ func createMultipartFileHeader(filename string) (*multipart.FileHeader, error) {
 	}
 
 	if file, ok := multipartForm.File[testFileName]; !ok || len(file) <= 0 {
-		return nil, errors.New("failed create multipart file")
+		return nil, errors.New("failed create multipart audio")
 	} else {
 		return file[0], nil
 	}

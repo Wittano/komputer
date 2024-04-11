@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/wittano/komputer/bot/internal/db"
+	"github.com/wittano/komputer/db"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -14,7 +14,6 @@ import (
 )
 
 const (
-	DatabaseName   = "komputer"
 	collectionName = "jokes"
 	GuildIDKey     = "guildID"
 )
@@ -87,7 +86,7 @@ func (d DatabaseJokeService) Add(ctx context.Context, joke Joke) (string, error)
 		return "", err
 	}
 
-	res, err := mongodb.Database(DatabaseName).Collection(collectionName).InsertOne(ctx, joke)
+	res, err := mongodb.Database(db.DatabaseName).Collection(collectionName).InsertOne(ctx, joke)
 	if err != nil {
 		return "", err
 	}
@@ -156,7 +155,7 @@ func (d DatabaseJokeService) Get(ctx context.Context, search SearchParameters) (
 	}
 
 	// SearchParameters
-	res, err := mongodb.Database(DatabaseName).Collection(collectionName).Aggregate(ctx, pipeline)
+	res, err := mongodb.Database(db.DatabaseName).Collection(collectionName).Aggregate(ctx, pipeline)
 	if err != nil {
 		return Joke{}, err
 	}

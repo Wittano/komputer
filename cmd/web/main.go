@@ -9,15 +9,14 @@ import (
 const defaultConfigPath = "config.yml"
 
 func main() {
-	configPath := flag.String("config", defaultConfigPath, "Path to web console configuration file")
+	configPath := flag.String("config", defaultConfigPath, "Path to web console configuration audio")
 	flag.Parse()
 
-	s, err := web.NewWebConsoleServer(*configPath)
+	e, err := web.NewWebConsoleServer(*configPath)
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer s.Close()
+	defer e.Close()
 
-	log.Println("Server listening on 8080")
-	log.Fatal(s.ListenAndServe())
+	e.Logger.Fatal(e.Start(":8080"))
 }

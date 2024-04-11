@@ -4,12 +4,23 @@ import (
 	"context"
 	"fmt"
 	"github.com/labstack/echo/v4"
-	"github.com/wittano/komputer/web/internal/file"
+	"github.com/wittano/komputer/web/internal/audio"
 	"github.com/wittano/komputer/web/internal/settings"
 	"net/http"
 	"os"
 	"path/filepath"
 )
+
+func GetAudio(c echo.Context) error {
+	id := c.Param("id")
+
+	info, err := audio.GetAudioInfo(c.Request().Context(), id)
+	if err != nil {
+		return err
+	}
+
+	return c.File(info.Path)
+}
 
 func UploadNewAudio(c echo.Context) (err error) {
 	multipartForm, err := c.MultipartForm()
@@ -32,7 +43,7 @@ func UploadNewAudio(c echo.Context) (err error) {
 	for k := range multipartForm.File {
 		if err = validRequestedFile(k, *c.Request()); err != nil {
 			c.Logger().Error(err)
-			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("invalid '%s' file", k))
+			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("invalid '%s' audio", k))
 		}
 
 		go uploadRequestedFile(c.Request().Context(), k, c.Request(), errCh, successCh)
@@ -66,10 +77,10 @@ func validRequestedFile(filename string, req http.Request) error {
 	}
 
 	if fileHeader.Size >= settings.Config.Upload.MaxFileSize {
-		return fmt.Errorf("file '%s' is too big", filename)
+		return fmt.Errorf("audio '%s' is too big", filename)
 	}
 
-	if err = file.ValidMp3File(fileHeader); err != nil {
+	if err = audio.ValidMp3File(fileHeader); err != nil {
 		return err
 	}
 
@@ -105,7 +116,7 @@ func uploadRequestedFile(ctx context.Context, filename string, req *http.Request
 	}
 	defer dest.Close()
 
-	if err = file.UploadFile(ctx, f, dest); err != nil {
+	if err = audio.UploadFile(ctx, f, dest); err != nil {
 		errCh <- err
 		os.Remove(dest.Name())
 

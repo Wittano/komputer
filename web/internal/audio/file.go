@@ -1,4 +1,4 @@
-package file
+package audio
 
 import (
 	"bytes"
@@ -20,7 +20,7 @@ func UploadFile(ctx context.Context, src io.Reader, dest *os.File) error {
 
 			_, err := io.CopyN(dest, src, bufSize)
 			if errors.Is(err, io.EOF) {
-				return nil
+				return saveFileDataInDatabase(ctx, dest.Name())
 			} else if err != nil {
 				return err
 			}
@@ -30,7 +30,7 @@ func UploadFile(ctx context.Context, src io.Reader, dest *os.File) error {
 
 func ValidMp3File(file *multipart.FileHeader) (err error) {
 	if !strings.HasSuffix(file.Filename, "mp3") {
-		return errors.New("invalid file extension")
+		return errors.New("invalid audio extension")
 	}
 
 	f, err := file.Open()
@@ -47,7 +47,7 @@ func ValidMp3File(file *multipart.FileHeader) (err error) {
 
 func checkAudioFileBinary(f multipart.File) (err error) {
 	const headerBytesSize = 2
-	err = errors.New("invalid file")
+	err = errors.New("invalid audio")
 
 	buf := make([]byte, headerBytesSize)
 	n, err := f.Read(buf)

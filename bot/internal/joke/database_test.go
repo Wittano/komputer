@@ -2,6 +2,7 @@ package joke
 
 import (
 	"context"
+	"github.com/wittano/komputer/db"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -41,7 +42,7 @@ func createMTest(t *testing.T) *mtest.T {
 	return mtest.New(t, mtest.NewOptions().
 		ClientType(mtest.Mock).
 		CollectionName(collectionName).
-		DatabaseName(DatabaseName))
+		DatabaseName(db.DatabaseName))
 }
 
 func TestJokeService_Add(t *testing.T) {
@@ -102,7 +103,7 @@ func TestJokeService_SearchButNotingFound(t *testing.T) {
 	mt := createMTest(t)
 
 	mt.Run("get new joke, but nothing was found", func(t *mtest.T) {
-		t.AddMockResponses(mtest.CreateCursorResponse(1, DatabaseName+"."+collectionName, mtest.FirstBatch, bson.D{}))
+		t.AddMockResponses(mtest.CreateCursorResponse(1, db.DatabaseName+"."+collectionName, mtest.FirstBatch, bson.D{}))
 
 		ctx := context.Background()
 

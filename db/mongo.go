@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-const mongodbURIKey = "MONGODB_URI"
+const MongodbURIKey = "MONGODB_URI"
 
 type MongodbDatabase struct {
 	uri string
@@ -61,14 +61,20 @@ func (m *MongodbDatabase) Client(ctx context.Context) (*mongo.Client, error) {
 	return m.db, nil
 }
 
-func NewMongodbDatabase(ctx context.Context) (db *MongodbDatabase) {
+var db *MongodbDatabase
+
+func Mongodb(ctx context.Context) *MongodbDatabase {
+	if db != nil {
+		return db
+	}
+
 	db = new(MongodbDatabase)
 
-	if uri, ok := os.LookupEnv(mongodbURIKey); ok {
+	if uri, ok := os.LookupEnv(MongodbURIKey); ok {
 		db.uri = uri
 	}
 
 	db.ctx = ctx
 
-	return
+	return db
 }
