@@ -3,10 +3,10 @@ package settings
 import (
 	"errors"
 	"github.com/mitchellh/go-homedir"
+	"github.com/wittano/komputer/internal/assets"
 	"gopkg.in/yaml.v3"
 	"os"
 	"path/filepath"
-	"sync"
 )
 
 const (
@@ -14,11 +14,11 @@ const (
 	DefaultSettingsPath = ".config/komputer/settings.yml"
 )
 
-const maxFileSize = 8 * (1 << 20) // 8MB in bytes
+const defaultMaxFileSize = 8 * (1 << 20) // 8MB in bytes
 
 type UploadSettings struct {
-	MaxFileCount uint `yaml:"max_file_count" json:"max_file_count"`
-	MaxFileSize  uint `yaml:"max_file_size" json:"max_file_size"`
+	MaxFileCount int64 `yaml:"max_file_count" json:"max_file_count"`
+	MaxFileSize  int64 `yaml:"max_file_size" json:"max_file_size"`
 }
 
 type Settings struct {
@@ -32,7 +32,7 @@ func (s *Settings) Update(new Settings) error {
 			return err
 		}
 
-		err := moveAssets(s.AssetDir, new.AssetDir)
+		err := assets.Move(s.AssetDir, new.AssetDir)
 		if err != nil {
 			return err
 		}
@@ -49,6 +49,10 @@ func (s *Settings) Update(new Settings) error {
 	}
 
 	return nil
+}
+
+func (s Settings) CheckFileCountLimit(count int) bool {
+	return count >= 1 && int64(count) <= s.Upload.MaxFileCount
 }
 
 var Config *Settings
@@ -98,7 +102,7 @@ func defaultSettings(path string) (*Settings, error) {
 		AssetDir: DefaultAssertDir,
 		Upload: UploadSettings{
 			MaxFileCount: 5,
-			MaxFileSize:  maxFileSize,
+			MaxFileSize:  defaultMaxFileSize,
 		},
 	}
 
@@ -109,34 +113,4 @@ func defaultSettings(path string) (*Settings, error) {
 	}
 
 	return &defaultSettings, nil
-}
-
-func moveAssets(oldSrc string, path string) (err error) {
-	dirs, err := os.ReadDir(oldSrc)
-	if err != nil {
-		return err
-	}
-
-	var wg sync.WaitGroup
-	wg.Add(len(dirs))
-
-	for _, dir := range dirs {
-		go func(wg *sync.WaitGroup, oldSrc string, file os.DirEntry) {
-			defer wg.Done()
-
-			if err != nil {
-				return
-			}
-
-			filename := filepath.Join(oldSrc, file.Name())
-			newPath := filepath.Join(path, filepath.Base(filename))
-			if err = os.Rename(filename, newPath); err != nil {
-				return
-			}
-		}(&wg, oldSrc, dir)
-	}
-
-	wg.Wait()
-
-	return
 }
