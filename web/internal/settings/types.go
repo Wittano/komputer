@@ -2,15 +2,13 @@ package settings
 
 import (
 	"errors"
-	"github.com/mitchellh/go-homedir"
 	"gopkg.in/yaml.v3"
 	"os"
-	"path/filepath"
 )
 
 const (
-	DefaultAssertDir    = ".cache/komputer"
-	DefaultSettingsPath = ".config/komputer/settings.yml"
+	DefaultAssertDir    = "assets"
+	DefaultSettingsPath = "settings.yml"
 )
 
 const defaultMaxFileSize = 8 * (1 << 20) // 8MB in bytes
@@ -61,14 +59,9 @@ func Load(path string) error {
 		return nil
 	}
 
-	home, err := homedir.Dir()
-	if err != nil {
-		return err
-	}
-
-	settingPath := filepath.Join(home, DefaultSettingsPath)
+	settingPath := DefaultSettingsPath
 	if path != "" {
-		settingPath = filepath.Join(path)
+		settingPath = path
 	}
 
 	if _, err := os.Stat(settingPath); errors.Is(err, os.ErrNotExist) {

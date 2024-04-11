@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"fmt"
+	"github.com/labstack/echo/v4"
 	"github.com/wittano/komputer/web/internal/file"
 	"github.com/wittano/komputer/web/internal/settings"
 	"net/http"
@@ -10,57 +11,46 @@ import (
 	"path/filepath"
 )
 
-const oneMegaByte = 1 << 20 // 8MB in bytes
-
-func UploadNewAudio(res http.ResponseWriter, req *http.Request) (err error) {
-	err = req.ParseMultipartForm(settings.Config.Upload.MaxFileSize * oneMegaByte)
+func UploadNewAudio(c echo.Context) (err error) {
+	multipartForm, err := c.MultipartForm()
 	if err != nil {
-		return newInternalApiError(err)
+		return err
 	}
 
-	filesCount := len(req.MultipartForm.File)
+	filesCount := len(multipartForm.File)
 	if !settings.Config.CheckFileCountLimit(filesCount) {
-		return apiError{
-			Status: http.StatusBadRequest,
-			Msg:    "illegal uploaded files count",
-		}
+		return echo.NewHTTPError(http.StatusBadRequest, "invalid number of uploaded files")
 	}
 
 	var (
 		errCh     = make(chan error)
-		successCh = make(chan struct{}, filesCount)
+		successCh = make(chan struct{})
 	)
 	defer close(errCh)
 	defer close(successCh)
 
-	for k := range req.MultipartForm.File {
-		err = validRequestedFile(k, *req)
-		if err != nil {
-			return apiError{
-				Status: http.StatusBadRequest,
-				Msg:    fmt.Sprintf("invalid '%s' file", k),
-				Err:    err,
-			}
+	for k := range multipartForm.File {
+		if err = validRequestedFile(k, *c.Request()); err != nil {
+			c.Logger().Error(err)
+			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("invalid '%s' file", k))
 		}
 
-		go uploadRequestedFile(req.Context(), k, req, errCh, successCh)
+		go uploadRequestedFile(c.Request().Context(), k, c.Request(), errCh, successCh)
 	}
-
-	successCounter := filesCount
 
 	for {
 		select {
-		case <-req.Context().Done():
+		case <-c.Request().Context().Done():
 			return context.Canceled
 		case err = <-errCh:
 			return err
 		case <-successCh:
-			successCounter -= 1
+			filesCount -= 1
 			break
 		}
 
-		if successCounter <= 0 {
-			res.WriteHeader(http.StatusCreated)
+		if filesCount <= 0 {
+			c.Response().WriteHeader(http.StatusCreated)
 
 			break
 		}
@@ -73,6 +63,10 @@ func validRequestedFile(filename string, req http.Request) error {
 	_, fileHeader, err := req.FormFile(filename)
 	if err != nil {
 		return err
+	}
+
+	if fileHeader.Size >= settings.Config.Upload.MaxFileSize {
+		return fmt.Errorf("file '%s' is too big", filename)
 	}
 
 	if err = file.ValidMp3File(fileHeader); err != nil {
@@ -97,7 +91,7 @@ func uploadRequestedFile(ctx context.Context, filename string, req *http.Request
 
 	f, _, err := req.FormFile(filename)
 	if err != nil {
-		errCh <- newInternalApiError(err)
+		errCh <- err
 
 		return
 	}
@@ -105,14 +99,14 @@ func uploadRequestedFile(ctx context.Context, filename string, req *http.Request
 
 	dest, err := os.Create(filepath.Join(settings.Config.AssetDir, filename))
 	if err != nil {
-		errCh <- newInternalApiError(err)
+		errCh <- err
 
 		return
 	}
 	defer dest.Close()
 
 	if err = file.UploadFile(ctx, f, dest); err != nil {
-		errCh <- newInternalApiError(err)
+		errCh <- err
 		os.Remove(dest.Name())
 
 		return
