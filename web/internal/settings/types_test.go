@@ -65,7 +65,7 @@ upload:
 
 func TestSettings_Update(t *testing.T) {
 	dir := t.TempDir()
-	temp, err := os.CreateTemp(dir, "temp")
+	temp, err := os.CreateTemp(dir, "temp*.mp3")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -100,12 +100,13 @@ func TestSettings_Update(t *testing.T) {
 		t.Fatalf("old settings didn't update. Expected: %v, Result: %v", newSettings, oldSettings)
 	}
 
-	if _, err := os.Stat(temp.Name()); !errors.Is(err, os.ErrNotExist) {
+	oldFile := filepath.Join(dir, filepath.Base(temp.Name()))
+	if _, err := os.Stat(oldFile); !errors.Is(err, os.ErrNotExist) {
 		t.Fatalf("audio '%s' didn't moveToNewLocation to new directory. %s", temp.Name(), err)
 	}
 
 	newFile := filepath.Join(newDir, filepath.Base(temp.Name()))
-	if _, err := os.Stat(newFile); err != nil && errors.Is(err, os.ErrNotExist) {
+	if _, err := os.Stat(newFile); errors.Is(err, os.ErrNotExist) {
 		t.Fatal(err)
 	}
 }
