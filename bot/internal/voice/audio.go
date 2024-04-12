@@ -22,7 +22,7 @@ const (
 	audioBufSize     = 16384
 )
 
-func PlayAudio(ctx context.Context, vc *discordgo.VoiceConnection, path string, stop <-chan struct{}) (err error) {
+func Play(ctx context.Context, vc *discordgo.VoiceConnection, path string, stop <-chan struct{}) (err error) {
 	select {
 	case <-ctx.Done():
 		return context.Canceled
@@ -103,6 +103,30 @@ func PlayAudio(ctx context.Context, vc *discordgo.VoiceConnection, path string, 
 	}
 }
 
+func Duration(path string) (duration time.Duration, err error) {
+	cmd := exec.Command("ffprobe", "-i", path, "-show_entries", "format=duration", "-v", "quiet", "-of", "csv='p=0'")
+	cmd.SysProcAttr = &syscall.SysProcAttr{
+		Setpgid: true,
+	}
+
+	if err = cmd.Start(); err != nil {
+		return
+	}
+
+	output, err := cmd.StdoutPipe()
+	if err != nil {
+		return
+	}
+	defer output.Close()
+
+	rawTime, err := io.ReadAll(output)
+	if err != nil {
+		return
+	}
+
+	return time.ParseDuration(string(rawTime) + "s")
+}
+
 func sendPCM(ctx context.Context, v *discordgo.VoiceConnection, pcm <-chan []int16) error {
 	opusEncoder, err := gopus.NewEncoder(frameRate, channels, gopus.Audio)
 	if err != nil {
@@ -134,28 +158,4 @@ func sendPCM(ctx context.Context, v *discordgo.VoiceConnection, pcm <-chan []int
 			v.OpusSend <- opus
 		}
 	}
-}
-
-func DuractionAudio(path string) (duration time.Duration, err error) {
-	cmd := exec.Command("ffprobe", "-i", path, "-show_entries", "format=duration", "-v", "quiet", "-of", "csv='p=0'")
-	cmd.SysProcAttr = &syscall.SysProcAttr{
-		Setpgid: true,
-	}
-
-	if err = cmd.Start(); err != nil {
-		return
-	}
-
-	output, err := cmd.StdoutPipe()
-	if err != nil {
-		return
-	}
-	defer output.Close()
-
-	rawTime, err := io.ReadAll(output)
-	if err != nil {
-		return
-	}
-
-	return time.ParseDuration(string(rawTime) + "s")
 }

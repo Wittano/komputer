@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/labstack/echo/v4"
 	"github.com/wittano/komputer/db"
+	"github.com/wittano/komputer/web/internal/api"
 	"github.com/wittano/komputer/web/internal/audio"
 	"github.com/wittano/komputer/web/settings"
 	"mime/multipart"
@@ -51,13 +52,20 @@ func UploadNewAudio(c echo.Context) (err error) {
 
 	filesCount := len(files)
 	if !settings.Config.CheckFileCountLimit(filesCount) {
-		return echo.NewHTTPError(http.StatusBadRequest, "invalid number of uploaded files")
+		return errors.Join(echo.NewHTTPError(http.StatusBadRequest, "invalid number of uploaded files"), err)
 	}
 
 	ctx := c.Request().Context()
 	service := audio.UploadService{Db: db.Mongodb(ctx)}
 
 	if err := service.Upload(ctx, files); err != nil {
+		var apiError api.Error
+
+		if errors.As(err, &apiError) {
+			c.Logger().Error(apiError.Err)
+			err = apiError.HttpErr
+		}
+
 		return err
 	}
 

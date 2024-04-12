@@ -6,12 +6,14 @@ import (
 	"fmt"
 	"github.com/labstack/echo/v4"
 	"github.com/wittano/komputer/db"
+	"github.com/wittano/komputer/web/internal/api"
 	"github.com/wittano/komputer/web/settings"
 	"io"
 	"mime/multipart"
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 type UploadService struct {
@@ -28,8 +30,13 @@ func (u UploadService) Upload(ctx context.Context, files []*multipart.FileHeader
 
 	filesCount := len(files)
 	for _, f := range files {
-		if err := validRequestedFile(*f); err != nil {
-			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("invalid '%s' audio", f.Filename))
+		if err := validRequestedFile(*f); errors.Is(err, os.ErrExist) {
+			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("file with name: '%s' exists", f.Filename))
+		} else if err != nil {
+			return api.Error{
+				HttpErr: echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("invalid '%s' audio", f.Filename)),
+				Err:     err,
+			}
 		}
 
 		go u.save(ctx, f, errCh, successCh)
@@ -92,10 +99,18 @@ func (u UploadService) save(ctx context.Context, file *multipart.FileHeader, err
 			if errors.Is(err, io.EOF) {
 				audioService := DatabaseService{u.Db}
 
-				err = audioService.save(ctx, dest.Name())
+				id, err := audioService.save(ctx, dest.Name())
 				if err != nil {
 					errCh <- err
 				} else {
+					renameFile := strings.ReplaceAll(dest.Name(), file.Filename, id.Hex()+".mp3")
+					if err = os.Rename(destPath, renameFile); err != nil {
+						errCh <- err
+						os.Remove(destPath)
+
+						return
+					}
+
 					successSig <- struct{}{}
 				}
 

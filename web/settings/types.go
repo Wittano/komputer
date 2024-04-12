@@ -80,7 +80,7 @@ func Load(path string) error {
 		return err
 	}
 
-	return nil
+	return os.MkdirAll(Config.AssetDir, 0700)
 }
 
 func defaultSettings(path string) (*Settings, error) {
@@ -90,8 +90,14 @@ func defaultSettings(path string) (*Settings, error) {
 	}
 	defer f.Close()
 
+	const cacheDirKey = "CACHE_AUDIO_DIR"
+	assetDir := DefaultAssertDir
+	if assetDirPath, ok := os.LookupEnv(cacheDirKey); ok && assetDirPath != "" {
+		assetDir = assetDirPath
+	}
+
 	defaultSettings := Settings{
-		AssetDir: DefaultAssertDir,
+		AssetDir: assetDir,
 		Upload: UploadSettings{
 			MaxFileCount: 5,
 			MaxFileSize:  defaultMaxFileSize,

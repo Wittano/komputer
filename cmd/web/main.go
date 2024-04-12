@@ -6,7 +6,7 @@ import (
 	"log"
 )
 
-const defaultConfigPath = "config.yml"
+const defaultConfigPath = "settings.yml"
 
 func main() {
 	configPath := flag.String("config", defaultConfigPath, "Path to web console configuration audio")

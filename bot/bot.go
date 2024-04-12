@@ -6,12 +6,14 @@ import (
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"github.com/google/uuid"
+	"github.com/wittano/komputer/bot/internal/api"
 	"github.com/wittano/komputer/bot/internal/command"
 	"github.com/wittano/komputer/bot/internal/config"
 	"github.com/wittano/komputer/bot/internal/joke"
 	"github.com/wittano/komputer/bot/internal/voice"
 	"github.com/wittano/komputer/db"
 	"log/slog"
+	"os"
 	"time"
 )
 
@@ -21,7 +23,10 @@ const (
 	databaseServiceID = 2
 )
 
-const requestIDKey = "requestID"
+const (
+	baseURLKey   = "WEB_API_BASE_URL"
+	requestIDKey = "requestID"
+)
 
 type slashCommandHandler struct {
 	ctx      context.Context
@@ -115,10 +120,17 @@ func createJokeGetServices(globalCtx context.Context, database *db.MongodbDataba
 }
 
 func createCommands(globalCtx context.Context, services []joke.GetService, spockVoiceChns map[string]chan struct{}, guildVoiceChats map[string]voice.ChatInfo) map[string]command.DiscordSlashCommandHandler {
+	var client *api.WebClient
+	if url, ok := os.LookupEnv(baseURLKey); ok && url != "" {
+		client = api.NewClient(url)
+	} else {
+		slog.WarnContext(globalCtx, "BaseURL for Web API is empty. Web API is disabled")
+	}
+
 	welcomeCmd := command.WelcomeCommand{}
 	addJokeCmd := command.AddJokeCommand{Service: services[databaseServiceID].(joke.DatabaseJokeService)}
 	jokeCmd := command.JokeCommand{Services: services}
-	spockCmd := command.SpockCommand{GlobalCtx: globalCtx, SpockMusicStopChs: spockVoiceChns, GuildVoiceChats: guildVoiceChats}
+	spockCmd := command.SpockCommand{GlobalCtx: globalCtx, SpockMusicStopChs: spockVoiceChns, GuildVoiceChats: guildVoiceChats, ApiClient: client}
 	stopSpockCmd := command.SpockStopCommand{SpockMusicStopChs: spockVoiceChns}
 
 	return map[string]command.DiscordSlashCommandHandler{
