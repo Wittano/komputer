@@ -2,15 +2,14 @@ package handler
 
 import (
 	"github.com/labstack/echo/v4"
-	"github.com/wittano/komputer/web/internal/settings"
+	"github.com/wittano/komputer/web/settings"
 	"net/http"
 )
 
 func UpdateSettings(c echo.Context) error {
 	var newSetting settings.Settings
 
-	err := c.Bind(&newSetting)
-	if err != nil {
+	if err := c.Bind(&newSetting); err != nil {
 		return err
 	}
 

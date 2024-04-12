@@ -2,31 +2,10 @@ package audio
 
 import (
 	"bytes"
-	"context"
 	"errors"
-	"io"
 	"mime/multipart"
-	"os"
 	"strings"
 )
-
-func UploadFile(ctx context.Context, src io.Reader, dest *os.File) error {
-	for {
-		select {
-		case <-ctx.Done():
-			return context.Canceled
-		default:
-			const bufSize = 1 << 20 // 1MB buffer size
-
-			_, err := io.CopyN(dest, src, bufSize)
-			if errors.Is(err, io.EOF) {
-				return saveFileDataInDatabase(ctx, dest.Name())
-			} else if err != nil {
-				return err
-			}
-		}
-	}
-}
 
 func ValidMp3File(file *multipart.FileHeader) (err error) {
 	if !strings.HasSuffix(file.Filename, "mp3") {

@@ -4,7 +4,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/wittano/komputer/web/internal/handler"
-	"github.com/wittano/komputer/web/internal/settings"
+	"github.com/wittano/komputer/web/settings"
 )
 
 func NewWebConsoleServer(configPath string) (*echo.Echo, error) {

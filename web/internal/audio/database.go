@@ -9,8 +9,12 @@ import (
 
 const audioCollectionName = "audio"
 
-func saveFileDataInDatabase(ctx context.Context, filename string) error {
-	client, err := db.Mongodb(ctx).Client(ctx)
+type DatabaseService struct {
+	Database db.MongodbService
+}
+
+func (a DatabaseService) save(ctx context.Context, filename string) error {
+	client, err := a.Database.Client(ctx)
 	if err != nil {
 		return err
 	}
@@ -24,13 +28,13 @@ func saveFileDataInDatabase(ctx context.Context, filename string) error {
 	return err
 }
 
-func GetAudioInfo(ctx context.Context, id string) (result db.AudioInfo, err error) {
+func (a DatabaseService) Get(ctx context.Context, id string) (result db.AudioInfo, err error) {
 	hex, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return
 	}
 
-	client, err := db.Mongodb(ctx).Client(ctx)
+	client, err := a.Database.Client(ctx)
 	if err != nil {
 		return db.AudioInfo{}, err
 	}
