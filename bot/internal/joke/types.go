@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/wittano/komputer/db"
 	"net/http"
+	"os"
 	"time"
 )
 
@@ -29,7 +30,10 @@ func NewJokeDevService(globalCtx context.Context) GetService {
 func NewHumorAPIService(globalCtx context.Context) GetService {
 	client := http.Client{Timeout: time.Second * 1}
 
-	return &HumorAPIService{client, true, globalCtx}
+	env, ok := os.LookupEnv(humorAPIKey)
+	active := ok || env != ""
+
+	return &HumorAPIService{client, active, globalCtx}
 }
 
 func NewDatabaseJokeService(database db.MongodbService) DatabaseJokeService {
