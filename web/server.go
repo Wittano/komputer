@@ -19,6 +19,7 @@ func NewWebConsoleServer(configPath string) (*echo.Echo, error) {
 
 	e.POST("/api/v1/audio", handler.UploadNewAudio)
 	e.GET("/api/v1/audio/:id", handler.GetAudio)
+	e.DELETE("/api/v1/audio/:id", handler.RemoveAudio)
 
 	e.GET("/api/v1/setting", handler.GetSettings)
 	e.PUT("/api/v1/setting", handler.UpdateSettings)

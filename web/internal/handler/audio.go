@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"errors"
+	"fmt"
 	"github.com/labstack/echo/v4"
 	"github.com/wittano/komputer/db"
 	"github.com/wittano/komputer/web/internal/audio"
@@ -10,17 +12,29 @@ import (
 )
 
 func GetAudio(c echo.Context) error {
-	id := c.Param("id")
-
 	ctx := c.Request().Context()
 	service := audio.DatabaseService{Database: db.Mongodb(ctx)}
 
-	info, err := service.Get(ctx, id)
+	info, err := service.Get(ctx, c.Param("id"))
 	if err != nil {
 		return err
 	}
 
 	return c.File(info.Path)
+}
+
+func RemoveAudio(c echo.Context) error {
+	ctx := c.Request().Context
+	service := audio.DatabaseService{Database: db.Mongodb(ctx())}
+
+	id := c.Param("id")
+	if err := service.Delete(ctx(), id); errors.Is(err, audio.NotFoundErr) {
+		return echo.NewHTTPError(http.StatusNotFound, fmt.Sprintf("audio with id '%s' wasn't found", id))
+	} else if err != nil {
+		return err
+	}
+
+	return c.String(http.StatusOK, "")
 }
 
 func UploadNewAudio(c echo.Context) (err error) {
