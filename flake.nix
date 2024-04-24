@@ -47,6 +47,8 @@
           # Nixpkgs
           nixfmt-classic
         ];
+
+        GOROOT = "${pkgs.go}/share/go";
       };
     };
 }

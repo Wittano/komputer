@@ -3,9 +3,9 @@ module github.com/wittano/komputer
 go 1.22.1
 
 require (
-	github.com/wittano/komputer/bot v0.0.0-20240411141946-658aa8d45c90
-	github.com/wittano/komputer/web v0.0.0-20240412103354-9dbece601221
-	go.mongodb.org/mongo-driver v1.14.0
+	github.com/wittano/komputer/bot v0.0.0-20240413161249-52fbf7107441
+	github.com/wittano/komputer/web v0.0.0-20240413161249-52fbf7107441
+	go.mongodb.org/mongo-driver v1.15.0
 )
 
 require (
@@ -15,9 +15,9 @@ require (
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/gorilla/websocket v1.5.1 // indirect
 	github.com/joho/godotenv v1.5.1 // indirect
-	github.com/klauspost/compress v1.17.7 // indirect
+	github.com/klauspost/compress v1.17.8 // indirect
 	github.com/kr/text v0.2.0 // indirect
-	github.com/labstack/echo/v4 v4.11.4 // indirect
+	github.com/labstack/echo/v4 v4.12.0 // indirect
 	github.com/labstack/gommon v0.4.2 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
@@ -27,7 +27,7 @@ require (
 	github.com/xdg-go/pbkdf2 v1.0.0 // indirect
 	github.com/xdg-go/scram v1.1.2 // indirect
 	github.com/xdg-go/stringprep v1.0.4 // indirect
-	github.com/youmark/pkcs8 v0.0.0-20201027041543-1326539a0a0a // indirect
+	github.com/youmark/pkcs8 v0.0.0-20240424034433-3c2c7870ae76 // indirect
 	golang.org/x/crypto v0.22.0 // indirect
 	golang.org/x/net v0.24.0 // indirect
 	golang.org/x/sync v0.7.0 // indirect
