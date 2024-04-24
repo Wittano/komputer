@@ -5,7 +5,10 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-const requestIDKey = "requestID"
+const (
+	serverGuildKey = "SERVER_GUID"
+	requestIDKey   = "requestID"
+)
 
 type DiscordSlashCommandHandler interface {
 	Command() *discordgo.ApplicationCommand

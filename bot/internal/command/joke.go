@@ -40,7 +40,7 @@ func (j JokeCommand) Command() *discordgo.ApplicationCommand {
 	return &discordgo.ApplicationCommand{
 		Name:        GetJokeCommandName,
 		Description: "Tell me some joke",
-		GuildID:     os.Getenv("SERVER_GUID"),
+		GuildID:     os.Getenv(serverGuildKey),
 		Type:        discordgo.ChatApplicationCommand,
 		Options: []*discordgo.ApplicationCommandOption{
 			getJokeCategoryOption(false),
@@ -120,7 +120,7 @@ func getJokeSearchParameters(ctx context.Context, data discordgo.ApplicationComm
 		case idOptionKey:
 			query.ID = o.Value.(primitive.ObjectID)
 		default:
-			slog.With(requestIDKey, ctx.Value(requestIDKey)).WarnContext(ctx, fmt.Sprintf("Invalid option for %s", o.Name))
+			slog.With(requestIDKey, ctx.Value(requestIDKey)).WarnContext(ctx, fmt.Sprintf("Invalid searchOption for %s", o.Name))
 		}
 	}
 

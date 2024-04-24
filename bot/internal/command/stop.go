@@ -16,7 +16,7 @@ func (ssc SpockStopCommand) Command() *discordgo.ApplicationCommand {
 	return &discordgo.ApplicationCommand{
 		Name:        SpockStopCommandName,
 		Description: "Stop playing song by discord",
-		GuildID:     os.Getenv("SERVER_GUID"),
+		GuildID:     os.Getenv(serverGuildKey),
 		Type:        discordgo.ChatApplicationCommand,
 	}
 }

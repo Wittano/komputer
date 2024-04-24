@@ -20,13 +20,14 @@ type SpockCommand struct {
 	SpockMusicStopChs map[string]chan struct{}
 	GuildVoiceChats   map[string]voice.ChatInfo
 	ApiClient         *api.WebClient
+	Storage           voice.BotLocalStorage
 }
 
 func (sc SpockCommand) Command() *discordgo.ApplicationCommand {
 	return &discordgo.ApplicationCommand{
 		Name:        SpockCommandName,
 		Description: "Say funny world",
-		GuildID:     os.Getenv("SERVER_GUID"),
+		GuildID:     os.Getenv(serverGuildKey),
 		Type:        discordgo.ChatApplicationCommand,
 		Options: []*discordgo.ApplicationCommandOption{
 			{
@@ -63,7 +64,8 @@ func (sc SpockCommand) Execute(ctx context.Context, s *discordgo.Session, i *dis
 		return nil, nil
 	}
 
-	if err = voice.CheckIfAudioIsDownloaded(audioID); err != nil && sc.ApiClient != nil {
+	query := voice.AudioSearch{Type: voice.IDType, Value: audioID}
+	if _, err = sc.Storage.Get(ctx, query); err != nil && sc.ApiClient != nil {
 		go func() {
 			logger.Info("download audio with id " + audioID)
 			_, err := sc.ApiClient.DownloadAudio(audioID)
@@ -77,6 +79,8 @@ func (sc SpockCommand) Execute(ctx context.Context, s *discordgo.Session, i *dis
 		}()
 
 		return SimpleMessageResponse{Msg: "Panie Kapitanie. Pobieram utwór. Proszę poczekać"}, nil
+	} else if err != nil && sc.ApiClient == nil {
+		return nil, err
 	} else {
 		go sc.playAudio(logger, s, i, info.ChannelID, audioID)
 	}
@@ -135,12 +139,12 @@ func audioID(data discordgo.ApplicationCommandInteractionData) (path string, err
 		case idOptionName:
 			path = o.Value.(string)
 		default:
-			path, err = voice.RandomAudio()
+			path, err = voice.RandomAudioID()
 		}
 	}
 
 	if path == "" && err == nil {
-		path, err = voice.RandomAudio()
+		path, err = voice.RandomAudioID()
 	}
 
 	return

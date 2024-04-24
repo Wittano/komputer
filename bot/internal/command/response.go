@@ -30,6 +30,7 @@ func (e ErrorResponse) Response() *discordgo.InteractionResponseData {
 type SimpleMessageResponse struct {
 	Msg    string
 	Hidden bool
+	// TODO Add "Przepraszam" button
 }
 
 func (s SimpleMessageResponse) Response() (msg *discordgo.InteractionResponseData) {
