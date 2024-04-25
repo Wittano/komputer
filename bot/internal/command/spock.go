@@ -19,7 +19,7 @@ type SpockCommand struct {
 	GlobalCtx         context.Context
 	SpockMusicStopChs map[string]chan struct{}
 	GuildVoiceChats   map[string]voice.ChatInfo
-	ApiClient         *api.WebClient
+	ApiClient         api.WebClient
 	Storage           voice.BotLocalStorage
 }
 
@@ -65,7 +65,7 @@ func (sc SpockCommand) Execute(ctx context.Context, s *discordgo.Session, i *dis
 	}
 
 	query := voice.AudioSearch{Type: voice.IDType, Value: audioID}
-	if _, err = sc.Storage.Get(ctx, query); err != nil && sc.ApiClient != nil {
+	if _, err = sc.Storage.Get(ctx, query); err != nil && sc.ApiClient.IsActive() {
 		go func() {
 			logger.Info("download audio with id " + audioID)
 			_, err := sc.ApiClient.DownloadAudio(audioID)
@@ -79,7 +79,7 @@ func (sc SpockCommand) Execute(ctx context.Context, s *discordgo.Session, i *dis
 		}()
 
 		return SimpleMessageResponse{Msg: "Panie Kapitanie. Pobieram utwór. Proszę poczekać"}, nil
-	} else if err != nil && sc.ApiClient == nil {
+	} else if err != nil && !sc.ApiClient.IsActive() {
 		return nil, err
 	} else {
 		go sc.playAudio(logger, s, i, info.ChannelID, audioID)

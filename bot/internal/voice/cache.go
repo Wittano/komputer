@@ -24,8 +24,10 @@ const (
 	IDType   AudioQueryType = 0x1
 )
 
+// TODO Added autocleaning cache after a few days
 type BotLocalStorage struct {
 	storagePath string
+	active      bool
 }
 
 func (b BotLocalStorage) Get(ctx context.Context, query AudioSearch) (path string, err error) {
@@ -102,6 +104,10 @@ func (b BotLocalStorage) Remove(ctx context.Context, query AudioSearch) error {
 	return os.Remove(path)
 }
 
+func (b BotLocalStorage) IsActive() bool {
+	return b.active
+}
+
 func (b BotLocalStorage) SearchAudio(ctx context.Context, option AudioSearch, page uint) ([]api.AudioFileInfo, error) {
 	select {
 	case <-ctx.Done():
@@ -154,5 +160,5 @@ func NewBotLocalStorage() BotLocalStorage {
 		return BotLocalStorage{}
 	}
 
-	return BotLocalStorage{dirPath}
+	return BotLocalStorage{dirPath, true}
 }

@@ -119,14 +119,15 @@ func createJokeGetServices(globalCtx context.Context, database *db.MongodbDataba
 	}
 }
 
-func createCommands(globalCtx context.Context, services []joke.GetService, spockVoiceChns map[string]chan struct{}, guildVoiceChats map[string]voice.ChatInfo) map[string]command.DiscordSlashCommandHandler {
-	var client *api.WebClient
-	if url, ok := os.LookupEnv(baseURLKey); ok && url != "" {
-		if client = api.NewClient(url); client == nil {
-			slog.WarnContext(globalCtx, "Failed connect with Web API. Web API is disabled")
-		}
-	} else {
-		slog.WarnContext(globalCtx, "BaseURL for Web API is empty. Web API is disabled")
+func createCommands(
+	globalCtx context.Context,
+	services []joke.GetService,
+	spockVoiceChns map[string]chan struct{},
+	guildVoiceChats map[string]voice.ChatInfo,
+) map[string]command.DiscordSlashCommandHandler {
+	client, err := api.NewClient(os.Getenv(baseURLKey))
+	if err != nil {
+		slog.WarnContext(globalCtx, "Failed connect with Web API. Web API is disabled", "error", err)
 	}
 
 	localStorage := voice.NewBotLocalStorage()
@@ -142,6 +143,7 @@ func createCommands(globalCtx context.Context, services []joke.GetService, spock
 		Storage:           localStorage,
 	}
 	stopSpockCmd := command.SpockStopCommand{SpockMusicStopChs: spockVoiceChns}
+	listCmd := command.NewListCommand(client, localStorage)
 
 	return map[string]command.DiscordSlashCommandHandler{
 		command.WelcomeCommandName:   welcomeCmd,
@@ -149,6 +151,7 @@ func createCommands(globalCtx context.Context, services []joke.GetService, spock
 		command.GetJokeCommandName:   jokeCmd,
 		command.SpockCommandName:     spockCmd,
 		command.SpockStopCommandName: stopSpockCmd,
+		command.ListCommandName:      listCmd,
 	}
 }
 

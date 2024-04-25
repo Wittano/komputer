@@ -3,9 +3,12 @@ package audio
 import (
 	"context"
 	"errors"
+	"fmt"
+	"github.com/wittano/komputer/api"
 	"github.com/wittano/komputer/db"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"os"
 	"path/filepath"
 	"strings"
@@ -13,6 +16,7 @@ import (
 
 const audioCollectionName = "audio"
 
+// TODO Change service into singleton
 type DatabaseService struct {
 	Database db.MongodbService
 }
@@ -57,6 +61,43 @@ func (a DatabaseService) Get(ctx context.Context, id string) (result db.AudioInf
 		Collection(audioCollectionName).
 		FindOne(ctx, bson.D{{"_id", hex}}).
 		Decode(&result)
+
+	return
+}
+
+func (a DatabaseService) AudioFilesInfo(ctx context.Context, searchType, value string, page int) (fileInfos []api.AudioFileInfo, err error) {
+	client, err := a.Database.Client(ctx)
+	if err != nil {
+		return []api.AudioFileInfo{}, err
+	}
+
+	keyName := "_id"
+	if searchType == "name" {
+		keyName = "original_name"
+	}
+
+	const maxPageSize = 10
+
+	filter := bson.D{{keyName, primitive.Regex{Pattern: fmt.Sprintf("^[\\w]*%s[\\w\\.]+", value)}}}
+	opts := options.Find().SetLimit(maxPageSize).SetSkip(int64(maxPageSize * page))
+	cursor, err := client.Database(db.DatabaseName).Collection(audioCollectionName).Find(ctx, filter, opts)
+	if err != nil {
+		return []api.AudioFileInfo{}, err
+	}
+	defer cursor.Close(ctx)
+
+	fileInfos = make([]api.AudioFileInfo, 0, maxPageSize)
+	for cursor.TryNext(ctx) {
+		var info db.AudioInfo
+		if err := bson.Unmarshal(cursor.Current, &info); err != nil {
+			return nil, err
+		}
+
+		fileInfos = append(fileInfos, info.ApiAudioFileInfo())
+		if len(fileInfos) == maxPageSize {
+			break
+		}
+	}
 
 	return
 }

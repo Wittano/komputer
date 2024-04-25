@@ -20,6 +20,7 @@ func NewWebConsoleServer(configPath string) (*echo.Echo, error) {
 	e.Use(middleware.BodyLimit(fmt.Sprintf("%dM", settings.Config.Upload.MaxFileSize)))
 
 	e.GET("/api/v1/audio/:id", handler.GetAudio)
+	e.GET("/api/v1/audio/fileinfo/:type/:value", handler.GetAudioFilesInfo)
 	e.POST("/api/v1/audio", handler.UploadNewAudio)
 	e.DELETE("/api/v1/audio/:id", handler.RemoveAudio)
 

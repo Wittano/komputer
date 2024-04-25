@@ -4,12 +4,14 @@ import (
 	"errors"
 	"fmt"
 	"github.com/labstack/echo/v4"
+	globalApi "github.com/wittano/komputer/api"
 	"github.com/wittano/komputer/db"
 	"github.com/wittano/komputer/web/internal/api"
 	"github.com/wittano/komputer/web/internal/audio"
 	"github.com/wittano/komputer/web/settings"
 	"mime/multipart"
 	"net/http"
+	"strconv"
 )
 
 func GetAudio(c echo.Context) error {
@@ -21,21 +23,40 @@ func GetAudio(c echo.Context) error {
 		return err
 	}
 
+	c.Response().Header().Add("filename", info.Original)
+
 	return c.File(info.Path)
 }
 
+func GetAudioFilesInfo(c echo.Context) error {
+	ctx := c.Request().Context()
+	page, err := strconv.Atoi(c.QueryParam("page"))
+	if err != nil {
+		return err
+	}
+
+	service := audio.DatabaseService{Database: db.Mongodb(ctx)}
+
+	ids, err := service.AudioFilesInfo(ctx, c.Param("type"), c.Param("value"), page)
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(http.StatusOK, globalApi.GetAudioIdsResponse{Files: ids})
+}
+
 func RemoveAudio(c echo.Context) error {
-	ctx := c.Request().Context
-	service := audio.DatabaseService{Database: db.Mongodb(ctx())}
+	ctx := c.Request().Context()
+	service := audio.DatabaseService{Database: db.Mongodb(ctx)}
 
 	id := c.Param("id")
-	if err := service.Delete(ctx(), id); errors.Is(err, audio.NotFoundErr) {
+	if err := service.Delete(ctx, id); errors.Is(err, audio.NotFoundErr) {
 		return echo.NewHTTPError(http.StatusNotFound, fmt.Sprintf("audio with id '%s' wasn't found", id))
 	} else if err != nil {
 		return err
 	}
 
-	return c.String(http.StatusOK, "")
+	return c.NoContent(http.StatusOK)
 }
 
 func UploadNewAudio(c echo.Context) (err error) {
@@ -69,5 +90,5 @@ func UploadNewAudio(c echo.Context) (err error) {
 		return err
 	}
 
-	return c.String(http.StatusCreated, "")
+	return c.NoContent(http.StatusCreated)
 }
