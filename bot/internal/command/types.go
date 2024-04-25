@@ -19,6 +19,10 @@ type DiscordEventHandler interface {
 	Execute(ctx context.Context, s *discordgo.Session, i *discordgo.InteractionCreate) (DiscordMessageReceiver, error)
 }
 
+type DiscordOptionMatcher interface {
+	MatchCustomID(customID string) bool
+}
+
 type DiscordMessageReceiver interface {
 	Response() *discordgo.InteractionResponseData
 }

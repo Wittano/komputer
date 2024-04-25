@@ -354,12 +354,20 @@ func createJokeFromOptions(data discordgo.ApplicationCommandInteractionData) (j 
 
 type ApologiesOption struct{}
 
+func (a ApologiesOption) MatchCustomID(customID string) bool {
+	return customID == ApologiesButtonName
+}
+
 func (a ApologiesOption) Execute(_ context.Context, _ *discordgo.Session, _ *discordgo.InteractionCreate) (DiscordMessageReceiver, error) {
 	return SimpleMessageResponse{Msg: "Przepraszam"}, nil
 }
 
 type NextJokeOption struct {
 	Services []joke.GetService
+}
+
+func (n NextJokeOption) MatchCustomID(customID string) bool {
+	return customID == NextJokeButtonName
 }
 
 func (n NextJokeOption) Execute(ctx context.Context, _ *discordgo.Session, i *discordgo.InteractionCreate) (DiscordMessageReceiver, error) {
@@ -387,6 +395,10 @@ func randJokeType() joke.Type {
 
 type SameJokeCategoryOption struct {
 	Services []joke.GetService
+}
+
+func (s SameJokeCategoryOption) MatchCustomID(customID string) bool {
+	return customID == SameJokeCategoryButtonName
 }
 
 func (s SameJokeCategoryOption) Execute(ctx context.Context, _ *discordgo.Session, i *discordgo.InteractionCreate) (DiscordMessageReceiver, error) {

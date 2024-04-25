@@ -31,7 +31,7 @@ const (
 type slashCommandHandler struct {
 	ctx      context.Context
 	commands map[string]command.DiscordSlashCommandHandler
-	options  map[string]command.DiscordEventHandler
+	options  []command.DiscordEventHandler
 }
 
 func (sc slashCommandHandler) handleSlashCommand(s *discordgo.Session, i *discordgo.InteractionCreate) {
@@ -47,12 +47,16 @@ func (sc slashCommandHandler) handleSlashCommand(s *discordgo.Session, i *discor
 	userID := i.Member.User.ID
 	// Handle options assigned to slash commands
 	if i.Type == discordgo.InteractionMessageComponent {
-		if option, ok := sc.options[i.Data.(discordgo.MessageComponentInteractionData).CustomID]; ok {
-			logger.InfoContext(ctx, fmt.Sprintf("user '%s' select '%s' option", userID, i.Data.(discordgo.MessageComponentInteractionData).CustomID))
+		customID := i.Data.(discordgo.MessageComponentInteractionData).CustomID
 
-			handleEventResponse(ctx, s, i, option)
+		for _, option := range sc.options {
+			if matcher, ok := option.(command.DiscordOptionMatcher); ok && matcher.MatchCustomID(customID) {
+				logger.InfoContext(ctx, fmt.Sprintf("user '%s' select '%s' option", userID, customID))
 
-			return
+				handleEventResponse(ctx, s, i, option)
+
+				return
+			}
 		}
 	}
 
@@ -155,15 +159,24 @@ func createCommands(
 	}
 }
 
-func createOptions(services []joke.GetService) map[string]command.DiscordEventHandler {
+func createOptions(
+	services []joke.GetService,
+	commands map[string]command.DiscordSlashCommandHandler,
+) []command.DiscordEventHandler {
 	apologiesOption := command.ApologiesOption{}
 	nextJokeOption := command.NextJokeOption{Services: services}
 	sameJokeCategoryOption := command.SameJokeCategoryOption{Services: services}
 
-	return map[string]command.DiscordEventHandler{
-		command.ApologiesButtonName:        apologiesOption,
-		command.NextJokeButtonName:         nextJokeOption,
-		command.SameJokeCategoryButtonName: sameJokeCategoryOption,
+	listCommand := commands[command.ListCommandName].(*command.ListCommand)
+	nextListOption := command.NextListCommandOption{Cmd: listCommand}
+	previousListOption := command.PreviousListCommandOption{Cmd: listCommand}
+
+	return []command.DiscordEventHandler{
+		apologiesOption,
+		nextJokeOption,
+		sameJokeCategoryOption,
+		nextListOption,
+		previousListOption,
 	}
 }
 
@@ -201,7 +214,7 @@ func NewDiscordBot(ctx context.Context) (*DiscordBot, error) {
 	}
 
 	// General handler for slash commands
-	handler := slashCommandHandler{ctx, commands, createOptions(getServices)}
+	handler := slashCommandHandler{ctx, commands, createOptions(getServices, commands)}
 
 	bot.AddHandler(handler.handleSlashCommand)
 
