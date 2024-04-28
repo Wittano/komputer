@@ -3,8 +3,8 @@ module github.com/wittano/komputer
 go 1.22.1
 
 require (
-	github.com/wittano/komputer/bot v0.0.0-20240425195028-7a9b43f258f4
-	github.com/wittano/komputer/web v0.0.0-20240425195028-7a9b43f258f4
+	github.com/wittano/komputer/bot v0.0.0-20240426040254-c1f265642f8a
+	github.com/wittano/komputer/web v0.0.0-20240426040254-c1f265642f8a
 	go.mongodb.org/mongo-driver v1.15.0
 )
 

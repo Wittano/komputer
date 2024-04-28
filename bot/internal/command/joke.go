@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
+	"github.com/wittano/komputer/bot/internal"
 	"github.com/wittano/komputer/bot/internal/joke"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"log/slog"
@@ -33,7 +34,7 @@ const (
 )
 
 type JokeCommand struct {
-	Services []joke.GetService
+	Services []joke.SearchService
 }
 
 func (j JokeCommand) Command() *discordgo.ApplicationCommand {
@@ -43,8 +44,8 @@ func (j JokeCommand) Command() *discordgo.ApplicationCommand {
 		GuildID:     os.Getenv(serverGuildKey),
 		Type:        discordgo.ChatApplicationCommand,
 		Options: []*discordgo.ApplicationCommandOption{
-			getJokeCategoryOption(false),
-			getJokeTypeOption(false),
+			jokeCategoryOption(false),
+			jokeTypeOption(false),
 			{
 				Name:        idOptionKey,
 				Description: "Joke ID",
@@ -56,7 +57,7 @@ func (j JokeCommand) Command() *discordgo.ApplicationCommand {
 }
 
 func (j JokeCommand) Execute(ctx context.Context, _ *discordgo.Session, i *discordgo.InteractionCreate) (DiscordMessageReceiver, error) {
-	searchQuery := getJokeSearchParameters(ctx, i.Data.(discordgo.ApplicationCommandInteractionData))
+	searchQuery := searchParams(ctx, i.Data.(discordgo.ApplicationCommandInteractionData))
 
 findJoke:
 	select {
@@ -65,50 +66,51 @@ findJoke:
 	default:
 	}
 
-	service, err := selectGetService(ctx, j.Services)
+	service, err := findService(ctx, j.Services)
 	if err != nil {
-		return nil, ErrorResponse{err, "Nie udało mi się, znaleść żadnego żartu"}
+		return nil, DiscordError{err, "Nie udało mi się, znaleść żadnego żartu"}
 	}
 
-	res, err := service.Get(ctx, searchQuery)
+	res, err := service.Joke(ctx, searchQuery)
 	if err != nil {
 		slog.With(requestIDKey, ctx.Value(requestIDKey)).ErrorContext(ctx, err.Error())
 		goto findJoke
 	}
 
-	return jokeResponse{
+	return discordJoke{
 		username: i.Member.User.Username,
 		joke:     res,
 	}, nil
 }
 
-func selectGetService(ctx context.Context, getServices []joke.GetService) (joke.GetService, error) {
-	if len(getServices) == 1 {
-		service := getServices[0]
+func findService(ctx context.Context, services []joke.SearchService) (joke.SearchService, error) {
+	if len(services) == 1 {
+		service := services[0]
 
-		if activeService, ok := service.(joke.ActiveService); ok && !activeService.Active(ctx) {
+		if checker, ok := service.(internal.ActiveChecker); ok && !checker.Active(ctx) {
 			return nil, errors.New("all joke services is disabled")
 		}
 
 		return service, nil
 	}
 
-	i := rand.Int() % len(getServices)
-	service := getServices[uint8(i)]
+	i := rand.Int() % len(services)
+	service := services[uint8(i)]
 	if service == nil {
-		getServices = slices.Delete(getServices, i, i+1)
-		return selectGetService(ctx, getServices)
+		services = slices.Delete(services, i, i+1)
+		return findService(ctx, services)
 	}
 
-	if activeService, ok := service.(joke.ActiveService); ok && !activeService.Active(ctx) {
-		getServices = slices.Delete(getServices, i, i+1)
-		return selectGetService(ctx, getServices)
+	if activeService, ok := service.(internal.ActiveChecker); ok && !activeService.Active(ctx) {
+		services = slices.Delete(services, i, i+1)
+		return findService(ctx, services)
 	}
 
 	return service, nil
 }
 
-func getJokeSearchParameters(ctx context.Context, data discordgo.ApplicationCommandInteractionData) (query joke.SearchParameters) {
+// Get joke.SearchParams from Discord options
+func searchParams(ctx context.Context, data discordgo.ApplicationCommandInteractionData) (query joke.SearchParams) {
 	query.Type, query.Category = joke.Single, joke.Any
 
 	for _, o := range data.Options {
@@ -127,7 +129,7 @@ func getJokeSearchParameters(ctx context.Context, data discordgo.ApplicationComm
 	return
 }
 
-func getJokeCategoryOption(required bool) *discordgo.ApplicationCommandOption {
+func jokeCategoryOption(required bool) *discordgo.ApplicationCommandOption {
 	return &discordgo.ApplicationCommandOption{
 		Type:        discordgo.ApplicationCommandOptionString,
 		Name:        categoryOptionKey,
@@ -154,7 +156,7 @@ func getJokeCategoryOption(required bool) *discordgo.ApplicationCommandOption {
 	}
 }
 
-func getJokeTypeOption(required bool) *discordgo.ApplicationCommandOption {
+func jokeTypeOption(required bool) *discordgo.ApplicationCommandOption {
 	return &discordgo.ApplicationCommandOption{
 		Type:        discordgo.ApplicationCommandOptionString,
 		Name:        typeOptionKey,
@@ -174,23 +176,23 @@ func getJokeTypeOption(required bool) *discordgo.ApplicationCommandOption {
 	}
 }
 
-type jokeResponse struct {
+type discordJoke struct {
 	username string
 	joke     joke.Joke
 }
 
-func (j jokeResponse) Response() (msg *discordgo.InteractionResponseData) {
+func (j discordJoke) Response() (msg *discordgo.InteractionResponseData) {
 	switch j.joke.Type {
 	case joke.Single:
-		msg = j.createSingleTypeJoke()
+		msg = j.singleTypeJoke()
 	case joke.TwoPart:
-		msg = j.createTwoPartJoke()
+		msg = j.twoPartJoke()
 	}
 
 	return
 }
 
-func (j jokeResponse) createSingleTypeJoke() (msg *discordgo.InteractionResponseData) {
+func (j discordJoke) singleTypeJoke() (msg *discordgo.InteractionResponseData) {
 	embeds := []*discordgo.MessageEmbed{
 		{
 			Type:        discordgo.EmbedTypeRich,
@@ -219,12 +221,12 @@ func (j jokeResponse) createSingleTypeJoke() (msg *discordgo.InteractionResponse
 
 	return &discordgo.InteractionResponseData{
 		Content:    fmt.Sprintf("BEEP BOOP, Tak jest kapitanie %s!", j.username),
-		Components: createButtonReactions(),
+		Components: buttonReactions(),
 		Embeds:     embeds,
 	}
 }
 
-func (j jokeResponse) createTwoPartJoke() *discordgo.InteractionResponseData {
+func (j discordJoke) twoPartJoke() *discordgo.InteractionResponseData {
 	embeds := []*discordgo.MessageEmbed{
 		{
 			Type:  discordgo.EmbedTypeRich,
@@ -260,12 +262,12 @@ func (j jokeResponse) createTwoPartJoke() *discordgo.InteractionResponseData {
 
 	return &discordgo.InteractionResponseData{
 		Content:    fmt.Sprintf("BEEP BOOP, Tak jest Panie kapitanie %s!", j.username),
-		Components: createButtonReactions(),
+		Components: buttonReactions(),
 		Embeds:     embeds,
 	}
 }
 
-func createButtonReactions() []discordgo.MessageComponent {
+func buttonReactions() []discordgo.MessageComponent {
 	return []discordgo.MessageComponent{
 		discordgo.ActionsRow{
 			Components: []discordgo.MessageComponent{
@@ -300,8 +302,8 @@ func (a AddJokeCommand) Command() *discordgo.ApplicationCommand {
 		GuildID:     os.Getenv("SERVER_GUID"),
 		Type:        discordgo.ChatApplicationCommand,
 		Options: []*discordgo.ApplicationCommandOption{
-			getJokeCategoryOption(true),
-			getJokeTypeOption(true),
+			jokeCategoryOption(true),
+			jokeTypeOption(true),
 			{
 				Name:        answerOptionKey,
 				Description: "Main part of joke",
@@ -319,10 +321,10 @@ func (a AddJokeCommand) Command() *discordgo.ApplicationCommand {
 }
 
 func (a AddJokeCommand) Execute(ctx context.Context, _ *discordgo.Session, i *discordgo.InteractionCreate) (DiscordMessageReceiver, error) {
-	newJoke := createJokeFromOptions(i.Data.(discordgo.ApplicationCommandInteractionData))
+	newJoke := jokeFromOptions(i.Data.(discordgo.ApplicationCommandInteractionData))
 
 	if newJoke.Answer == "" {
-		return nil, ErrorResponse{Err: errors.New("joke: missing answer"), Msg: "Zrujnowałeś ten żart, Panie Kapitanie"}
+		return nil, DiscordError{Err: errors.New("joke: missing answer"), Msg: "Zrujnowałeś ten żart, Panie Kapitanie"}
 	}
 
 	newJoke.ID = primitive.NewObjectID()
@@ -332,10 +334,10 @@ func (a AddJokeCommand) Execute(ctx context.Context, _ *discordgo.Session, i *di
 		return nil, err
 	}
 
-	return SimpleMessageResponse{Msg: fmt.Sprintf("BEEP BOOP. Dodałem twój żart panie Kapitanie. Jego ID to `%s`", id), Hidden: true}, nil
+	return SimpleMessage{Msg: fmt.Sprintf("BEEP BOOP. Dodałem twój żart panie Kapitanie. Jego ID to `%s`", id), Hidden: true}, nil
 }
 
-func createJokeFromOptions(data discordgo.ApplicationCommandInteractionData) (j joke.Joke) {
+func jokeFromOptions(data discordgo.ApplicationCommandInteractionData) (j joke.Joke) {
 	for _, o := range data.Options {
 		switch o.Name {
 		case categoryOptionKey:
@@ -354,34 +356,34 @@ func createJokeFromOptions(data discordgo.ApplicationCommandInteractionData) (j 
 
 type ApologiesOption struct{}
 
-func (a ApologiesOption) MatchCustomID(customID string) bool {
+func (a ApologiesOption) Match(customID string) bool {
 	return customID == ApologiesButtonName
 }
 
 func (a ApologiesOption) Execute(_ context.Context, _ *discordgo.Session, _ *discordgo.InteractionCreate) (DiscordMessageReceiver, error) {
-	return SimpleMessageResponse{Msg: "Przepraszam"}, nil
+	return SimpleMessage{Msg: "Przepraszam"}, nil
 }
 
 type NextJokeOption struct {
-	Services []joke.GetService
+	Services []joke.SearchService
 }
 
-func (n NextJokeOption) MatchCustomID(customID string) bool {
+func (n NextJokeOption) Match(customID string) bool {
 	return customID == NextJokeButtonName
 }
 
 func (n NextJokeOption) Execute(ctx context.Context, _ *discordgo.Session, i *discordgo.InteractionCreate) (DiscordMessageReceiver, error) {
-	service, err := selectGetService(ctx, n.Services)
+	service, err := findService(ctx, n.Services)
 	if err != nil {
 		return nil, err
 	}
 
-	res, err := service.Get(ctx, joke.SearchParameters{Type: randJokeType()})
+	res, err := service.Joke(ctx, joke.SearchParams{Type: randJokeType()})
 	if err != nil {
 		return nil, err
 	}
 
-	return jokeResponse{i.Member.User.Username, res}, nil
+	return discordJoke{i.Member.User.Username, res}, nil
 }
 
 func randJokeType() joke.Type {
@@ -394,26 +396,26 @@ func randJokeType() joke.Type {
 }
 
 type SameJokeCategoryOption struct {
-	Services []joke.GetService
+	Services []joke.SearchService
 }
 
-func (s SameJokeCategoryOption) MatchCustomID(customID string) bool {
+func (s SameJokeCategoryOption) Match(customID string) bool {
 	return customID == SameJokeCategoryButtonName
 }
 
 func (s SameJokeCategoryOption) Execute(ctx context.Context, _ *discordgo.Session, i *discordgo.InteractionCreate) (DiscordMessageReceiver, error) {
-	embedFields := i.Message.Embeds[0].Fields
-	category := joke.Category(embedFields[len(embedFields)-1].Value)
+	fields := i.Message.Embeds[0].Fields
+	category := joke.Category(fields[len(fields)-1].Value)
 
-	service, err := selectGetService(ctx, s.Services)
+	service, err := findService(ctx, s.Services)
 	if err != nil {
 		return nil, err
 	}
 
-	res, err := service.Get(ctx, joke.SearchParameters{Type: randJokeType(), Category: category})
+	res, err := service.Joke(ctx, joke.SearchParams{Type: randJokeType(), Category: category})
 	if err != nil {
 		return nil, err
 	}
 
-	return jokeResponse{i.Member.User.Username, res}, nil
+	return discordJoke{i.Member.User.Username, res}, nil
 }

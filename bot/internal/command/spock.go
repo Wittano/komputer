@@ -16,11 +16,11 @@ const (
 )
 
 type SpockCommand struct {
-	GlobalCtx         context.Context
-	SpockMusicStopChs map[string]chan struct{}
-	GuildVoiceChats   map[string]voice.ChatInfo
-	ApiClient         api.WebClient
-	Storage           voice.BotLocalStorage
+	GlobalCtx       context.Context
+	MusicStopChs    map[string]chan struct{}
+	GuildVoiceChats map[string]voice.ChatInfo
+	WebAPI          api.WebClient
+	Storage         voice.BotLocalStorage
 }
 
 func (sc SpockCommand) Command() *discordgo.ApplicationCommand {
@@ -40,19 +40,23 @@ func (sc SpockCommand) Command() *discordgo.ApplicationCommand {
 	}
 }
 
-func (sc SpockCommand) Execute(ctx context.Context, s *discordgo.Session, i *discordgo.InteractionCreate) (DiscordMessageReceiver, error) {
+func (sc SpockCommand) Execute(
+	ctx context.Context,
+	s *discordgo.Session,
+	i *discordgo.InteractionCreate,
+) (DiscordMessageReceiver, error) {
 	const spockQuote = "Kurwa Spock"
-	defaultMsg := SimpleMessageResponse{spockQuote, false}
+	msg := SimpleMessage{spockQuote, false}
 
 	if _, ok := s.VoiceConnections[i.GuildID]; ok {
-		return defaultMsg, nil
+		return msg, nil
 	}
 
 	info, ok := sc.GuildVoiceChats[i.GuildID]
 	if !ok || info.UserCount == 0 {
 		slog.With(requestIDKey, ctx.Value(requestIDKey)).ErrorContext(ctx, fmt.Sprintf(fmt.Sprintf("user with ID '%s' wasn't found on any voice chat on '%s' server", i.Member.User.ID, i.GuildID)))
 
-		return SimpleMessageResponse{Msg: "Kapitanie gdzie jesteś? Wejdź na kanał głosowy a ja dołącze"}, nil
+		return SimpleMessage{Msg: "Kapitanie gdzie jesteś? Wejdź na kanał głosowy a ja dołącze"}, nil
 	}
 
 	logger := slog.With(requestIDKey, ctx.Value(requestIDKey))
@@ -64,11 +68,11 @@ func (sc SpockCommand) Execute(ctx context.Context, s *discordgo.Session, i *dis
 		return nil, nil
 	}
 
-	query := voice.AudioSearch{Type: voice.IDType, Value: audioID}
-	if _, err = sc.Storage.Get(ctx, query); err != nil && sc.ApiClient.IsActive() {
+	query := voice.SearchParams{Type: voice.IDType, Value: audioID}
+	if _, err = sc.Storage.Get(ctx, query); err != nil && sc.WebAPI.Active(ctx) {
 		go func() {
 			logger.Info("download audio with id " + audioID)
-			_, err := sc.ApiClient.DownloadAudio(audioID)
+			_, err := sc.WebAPI.DownloadAudio(audioID)
 			if err != nil {
 				logger.Error(fmt.Sprintf("failed download audio. %s", err))
 				return
@@ -78,17 +82,23 @@ func (sc SpockCommand) Execute(ctx context.Context, s *discordgo.Session, i *dis
 			sc.playAudio(logger, s, i, info.ChannelID, audioID)
 		}()
 
-		return SimpleMessageResponse{Msg: "Panie Kapitanie. Pobieram utwór. Proszę poczekać"}, nil
-	} else if err != nil && !sc.ApiClient.IsActive() {
+		return SimpleMessage{Msg: "Panie Kapitanie. Pobieram utwór. Proszę poczekać"}, nil
+	} else if err != nil && !sc.WebAPI.Active(ctx) {
 		return nil, err
 	} else {
 		go sc.playAudio(logger, s, i, info.ChannelID, audioID)
 	}
 
-	return defaultMsg, nil
+	return msg, nil
 }
 
-func (sc SpockCommand) playAudio(l *slog.Logger, s *discordgo.Session, i *discordgo.InteractionCreate, channelID string, audioID string) {
+func (sc SpockCommand) playAudio(
+	l *slog.Logger,
+	s *discordgo.Session,
+	i *discordgo.InteractionCreate,
+	channelID string,
+	audioID string,
+) {
 	s.Identify.Intents = discordgo.MakeIntent(discordgo.IntentsGuildVoiceStates)
 
 	voiceChat, err := s.ChannelVoiceJoin(i.GuildID, channelID, false, true)
@@ -104,7 +114,7 @@ func (sc SpockCommand) playAudio(l *slog.Logger, s *discordgo.Session, i *discor
 	}(voiceChat)
 	defer voiceChat.Close()
 
-	stopCh, ok := sc.SpockMusicStopChs[i.GuildID]
+	stopCh, ok := sc.MusicStopChs[i.GuildID]
 	if !ok {
 		l.Error(fmt.Sprintf("failed find user on voice channels on '%s' server", i.Member.GuildID), "error", fmt.Errorf("user with ID '%s' wasn't found on any voice chat on '%s' server", i.Member.User.ID, i.GuildID))
 
@@ -112,24 +122,21 @@ func (sc SpockCommand) playAudio(l *slog.Logger, s *discordgo.Session, i *discor
 	}
 
 	var (
-		playingCtx context.Context
-		cancel     context.CancelFunc
+		playCtx context.Context
+		cancel  context.CancelFunc
 	)
 
-	voiceCtx := context.Background()
 	if audioDuration, err := voice.Duration(audioID); err != nil {
-		l.WarnContext(voiceCtx, "failed calculated audio duration", "error", err)
+		l.Warn("failed calculated audio duration", "error", err)
 
-		playingCtx, cancel = context.WithCancel(voiceCtx)
+		playCtx, cancel = context.WithCancel(context.Background())
 	} else {
-		playingCtx, cancel = context.WithTimeout(voiceCtx, audioDuration)
+		playCtx, cancel = context.WithTimeout(context.Background(), audioDuration)
 	}
 	defer cancel()
 
-	path := voice.Path(audioID)
-
-	if err = voice.Play(playingCtx, voiceChat, path, stopCh); err != nil {
-		l.ErrorContext(playingCtx, fmt.Sprintf("failed play '%s' audioID", audioID), "error", err)
+	if err = voice.Play(playCtx, voiceChat, voice.Path(audioID), stopCh); err != nil {
+		l.ErrorContext(playCtx, fmt.Sprintf("failed play '%s' audioID", audioID), "error", err)
 	}
 }
 

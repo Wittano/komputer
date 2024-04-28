@@ -6,7 +6,9 @@ import (
 	"testing"
 )
 
-func createOldAndNewSourceDir(t *testing.T, tempName string) (old string, new string, err error) {
+// Create temporary dictionary with one nested directory, that will be a new destination.
+// Optional, if temp parameter isn't empty, then creates file in original source directory
+func createOldAndNewSourceDir(t *testing.T, temp string) (old string, new string, err error) {
 	old = t.TempDir()
 	new = filepath.Join(old, "newDir")
 
@@ -14,8 +16,8 @@ func createOldAndNewSourceDir(t *testing.T, tempName string) (old string, new st
 		return
 	}
 
-	if tempName != "" {
-		f, err := os.CreateTemp(old, tempName)
+	if temp != "" {
+		f, err := os.CreateTemp(old, temp)
 		if err != nil {
 			return "", "", err
 		}
@@ -26,34 +28,34 @@ func createOldAndNewSourceDir(t *testing.T, tempName string) (old string, new st
 }
 
 func TestMoveToNewLocation(t *testing.T) {
-	oldSrc, newDest, err := createOldAndNewSourceDir(t, "test*.mp3")
+	src, dest, err := createOldAndNewSourceDir(t, "test*.mp3")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if err = moveToNewLocation(oldSrc, newDest); err != nil {
+	if err = moveToNewLocation(src, dest); err != nil {
 		t.Fatal(err)
 	}
 }
 
-func TestMoveToNewLocationButSourceHasOnlyNonMp3Files(t *testing.T) {
-	oldSrc, newDest, err := createOldAndNewSourceDir(t, "test*.yml")
+func TestMoveToNewLocation_SrcDoesNotHaveMp3Files(t *testing.T) {
+	src, dest, err := createOldAndNewSourceDir(t, "test*.yml")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if err = moveToNewLocation(oldSrc, newDest); err != nil {
+	if err = moveToNewLocation(src, dest); err != nil {
 		t.Fatal(err)
 	}
 }
 
-func TestMoveToNewLocationButSourceIsEmpty(t *testing.T) {
-	oldSrc, newDest, err := createOldAndNewSourceDir(t, "")
+func TestMoveToNewLocation_SourceIsEmpty(t *testing.T) {
+	src, dest, err := createOldAndNewSourceDir(t, "")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if err = moveToNewLocation(oldSrc, newDest); err != nil {
+	if err = moveToNewLocation(src, dest); err != nil {
 		t.Fatal(err)
 	}
 }

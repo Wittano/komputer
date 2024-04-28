@@ -1,4 +1,4 @@
-package audio
+package handler
 
 import (
 	"github.com/wittano/komputer/test"
@@ -15,13 +15,12 @@ func TestValidRequestedFile(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	multipartFileHeader, err := test.CreateMultipartFileHeader(path)
+	header, err := test.CreateMultipartFileHeader(path)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	err = validRequestedFile(*multipartFileHeader)
-	if err != nil {
+	if err = validRequestedFile(*header); err != nil {
 		t.Fatal(err)
 	}
 }

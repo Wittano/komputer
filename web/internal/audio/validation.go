@@ -7,21 +7,18 @@ import (
 	"strings"
 )
 
-func ValidMp3File(file *multipart.FileHeader) (err error) {
-	if !strings.HasSuffix(file.Filename, "mp3") {
+func ValidMp3File(header *multipart.FileHeader) (err error) {
+	if !strings.HasSuffix(header.Filename, "mp3") {
 		return errors.New("invalid audio extension")
 	}
 
-	f, err := file.Open()
+	f, err := header.Open()
 	if err != nil {
 		return
 	}
 	defer f.Close()
 
-	if err = checkAudioFileBinary(f); err != nil {
-		return
-	}
-	return nil
+	return checkAudioFileBinary(f)
 }
 
 func checkAudioFileBinary(f multipart.File) (err error) {
@@ -36,8 +33,9 @@ func checkAudioFileBinary(f multipart.File) (err error) {
 		return
 	}
 
-	mp3MagicNumbersHeader := []byte{0xff, 0xfb}
-	if len(buf) != headerBytesSize && bytes.Equal(buf, mp3MagicNumbersHeader) {
+	// Magic numbers, that MP3 starts them
+	headers := []byte{0xff, 0xfb}
+	if len(buf) != headerBytesSize && bytes.Equal(buf, headers) {
 		return
 	}
 

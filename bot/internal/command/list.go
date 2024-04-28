@@ -18,18 +18,18 @@ const (
 	audioNameOption = "name"
 	audioIdOption   = "id"
 
-	nextIdsButtonID     = "nextIds"
-	previousIdsButtonID = "previousIds"
+	nextIdsButtonID     = "nextIDs"
+	previousIdsButtonID = "previousIDs"
 )
 
 const ListCommandName = "list"
 
-type pageContentDirection int8
+type pageDirection int8
 
 const (
-	left  pageContentDirection = -1
-	none  pageContentDirection = 0
-	right pageContentDirection = 1
+	left  pageDirection = -1
+	none  pageDirection = 0
+	right pageDirection = 1
 )
 
 type buttonPosition uint8
@@ -39,14 +39,14 @@ const (
 	next     buttonPosition = 1
 )
 
-type listContentResponse struct {
+type listContent struct {
 	content []api.AudioFileInfo
-	pattern voice.AudioSearch
+	pattern voice.SearchParams
 }
 
-func (l listContentResponse) Response() *discordgo.InteractionResponseData {
+func (l listContent) Response() *discordgo.InteractionResponseData {
 	if len(l.content) == 0 {
-		return SimpleMessageResponse{Msg: "Nie znalazłem żadnego takiego pliku"}.Response()
+		return SimpleMessage{Msg: "Nie znalazłem żadnego takiego pliku"}.Response()
 	}
 
 	var msg strings.Builder
@@ -90,51 +90,47 @@ func (l listContentResponse) Response() *discordgo.InteractionResponseData {
 }
 
 type NextListCommandOption struct {
-	Cmd *ListCommand
+	CMD *ListCommand
 }
 
-func (n NextListCommandOption) MatchCustomID(customID string) bool {
-	reg := regexp.MustCompile(fmt.Sprintf("^%s_([0-1])_(a-z0-9)*", nextIdsButtonID))
-
-	return reg.MatchString(customID)
+func (n NextListCommandOption) Match(customID string) bool {
+	return regexp.MustCompile(fmt.Sprintf("^%s_([0-1])_(a-z0-9)*", nextIdsButtonID)).MatchString(customID)
 }
 
-func (n NextListCommandOption) Execute(ctx context.Context, s *discordgo.Session, i *discordgo.InteractionCreate) (DiscordMessageReceiver, error) {
+func (n NextListCommandOption) Execute(ctx context.Context, _ *discordgo.Session, i *discordgo.InteractionCreate) (DiscordMessageReceiver, error) {
 	select {
 	case <-ctx.Done():
 		return nil, context.Canceled
 	default:
 	}
 
-	customerID, err := getCustomIDFromOptionIntegration(*i, next)
+	customID, err := CustomID(*i, next)
 	if err != nil {
 		return nil, err
 	}
 
-	option, err := getOptionFromCustomID(customerID)
+	option, err := paramsFromCustomID(customID)
 	if err != nil {
 		return nil, err
 	}
 
 	userID := i.Member.User.ID
-	result, err := n.Cmd.audioFileInfo(ctx, userID, option)
+	result, err := n.CMD.audioFileInfo(ctx, userID, option)
 	if err != nil {
 		return nil, err
 	}
 
-	n.Cmd.updatePageCounter(len(result), userID, right)
+	n.CMD.update(len(result), userID, right)
 
-	return listContentResponse{result, option}, nil
+	return listContent{result, option}, nil
 }
 
 type PreviousListCommandOption struct {
 	Cmd *ListCommand
 }
 
-func (p PreviousListCommandOption) MatchCustomID(customID string) bool {
-	reg := regexp.MustCompile(fmt.Sprintf("^%s_([0-1])_(a-z0-9)*", previousIdsButtonID))
-
-	return reg.MatchString(customID)
+func (p PreviousListCommandOption) Match(customID string) bool {
+	return regexp.MustCompile(fmt.Sprintf("^%s_([0-1])_(a-z0-9)*", previousIdsButtonID)).MatchString(customID)
 }
 
 func (p PreviousListCommandOption) Execute(ctx context.Context, s *discordgo.Session, i *discordgo.InteractionCreate) (DiscordMessageReceiver, error) {
@@ -144,12 +140,12 @@ func (p PreviousListCommandOption) Execute(ctx context.Context, s *discordgo.Ses
 	default:
 	}
 
-	customerID, err := getCustomIDFromOptionIntegration(*i, previous)
+	customerID, err := CustomID(*i, previous)
 	if err != nil {
 		return nil, err
 	}
 
-	option, err := getOptionFromCustomID(customerID)
+	option, err := paramsFromCustomID(customerID)
 	if err != nil {
 		return nil, err
 	}
@@ -160,13 +156,15 @@ func (p PreviousListCommandOption) Execute(ctx context.Context, s *discordgo.Ses
 		return nil, err
 	}
 
-	p.Cmd.updatePageCounter(len(result), userID, left)
+	p.Cmd.update(len(result), userID, left)
 
-	return listContentResponse{result, option}, nil
+	return listContent{result, option}, nil
 }
 
 type ListCommand struct {
 	// TODO Clean up pageCounter after a few minutes
+
+	// map of pages number, which user should see
 	pageCounter map[string]int
 	services    []voice.AudioSearchService
 }
@@ -196,27 +194,32 @@ func (l ListCommand) Command() *discordgo.ApplicationCommand {
 	}
 }
 
-func (l ListCommand) Execute(ctx context.Context, _ *discordgo.Session, i *discordgo.InteractionCreate) (DiscordMessageReceiver, error) {
+func (l ListCommand) Execute(
+	ctx context.Context,
+	_ *discordgo.Session,
+	i *discordgo.InteractionCreate,
+) (DiscordMessageReceiver, error) {
 	userID := i.Member.User.ID
-	option := getOption(i.Data.(discordgo.ApplicationCommandInteractionData))
+	option := paramsFromDiscord(i.Data.(discordgo.ApplicationCommandInteractionData))
 	result, err := l.audioFileInfo(ctx, userID, option)
 	if err != nil {
 		return nil, err
 	}
 
-	l.updatePageCounter(len(result), userID, none)
+	l.update(len(result), userID, none)
 
-	return listContentResponse{result, option}, nil
+	return listContent{result, option}, nil
 }
 
-func (l *ListCommand) updatePageCounter(resultSize int, userID string, direction pageContentDirection) {
+// Update pageCounter
+func (l *ListCommand) update(size int, userID string, direction pageDirection) {
 	if _, ok := l.pageCounter[userID]; !ok {
 		l.pageCounter[userID] = 0
 	}
 
-	if resultSize == 0 || l.pageCounter[userID] < 0 {
+	if size == 0 || l.pageCounter[userID] < 0 {
 		l.pageCounter[userID] = 0
-	} else if resultSize != 0 && l.pageCounter[userID] >= 0 {
+	} else if size != 0 && l.pageCounter[userID] >= 0 {
 		l.pageCounter[userID] += int(direction)
 	}
 }
@@ -224,14 +227,14 @@ func (l *ListCommand) updatePageCounter(resultSize int, userID string, direction
 func (l ListCommand) audioFileInfo(
 	ctx context.Context,
 	userID string,
-	option voice.AudioSearch,
+	option voice.SearchParams,
 ) (result []api.AudioFileInfo, err error) {
-	for _, service := range l.services {
-		if !service.IsActive() {
+	for _, s := range l.services {
+		if !s.Active(ctx) {
 			continue
 		}
 
-		result, err = service.SearchAudio(ctx, option, uint(l.pageCounter[userID]))
+		result, err = s.AudioFileInfo(ctx, option, uint(l.pageCounter[userID]))
 		if err == nil {
 			break
 		} else {
@@ -242,20 +245,20 @@ func (l ListCommand) audioFileInfo(
 	return result, err
 }
 
-func getOption(data discordgo.ApplicationCommandInteractionData) (query voice.AudioSearch) {
-	query = voice.AudioSearch{Type: voice.IDType}
+func paramsFromDiscord(data discordgo.ApplicationCommandInteractionData) (s voice.SearchParams) {
+	s = voice.SearchParams{Type: voice.IDType}
 
 	for _, o := range data.Options {
 		switch o.Name {
 		case audioNameOption:
-			query.Type = voice.NameType
+			s.Type = voice.NameType
 		case audioIdOption:
-			query.Type = voice.IDType
+			s.Type = voice.IDType
 		default:
 			continue
 		}
 
-		query.Value = o.Value.(string)
+		s.Value = o.Value.(string)
 
 		return
 	}
@@ -263,27 +266,27 @@ func getOption(data discordgo.ApplicationCommandInteractionData) (query voice.Au
 	return
 }
 
-func getOptionFromCustomID(customID string) (query voice.AudioSearch, err error) {
+func paramsFromCustomID(customID string) (s voice.SearchParams, err error) {
 	data := strings.Split(customID, "_")[1:]
-	query.Value = data[1]
+	s.Value = data[1]
 
 	typeNum, err := strconv.Atoi(data[0])
 	if err != nil {
 		return
 	}
 
-	query.Type = voice.AudioQueryType(typeNum)
+	s.Type = voice.AudioQueryType(typeNum)
 
 	return
 }
 
-func getCustomIDFromOptionIntegration(i discordgo.InteractionCreate, buttonPosition buttonPosition) (string, error) {
+func CustomID(i discordgo.InteractionCreate, pos buttonPosition) (string, error) {
 	actionRow, ok := i.Message.Components[0].(*discordgo.ActionsRow)
 	if !ok {
 		return "", errors.New("failed cast component to *discordgo.ActionsRow")
 	}
 
-	button, ok := actionRow.Components[buttonPosition].(*discordgo.Button)
+	button, ok := actionRow.Components[pos].(*discordgo.Button)
 	if !ok {
 		return "", errors.New("failed cast component to *discordgo.Button")
 	}

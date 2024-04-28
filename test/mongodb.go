@@ -7,19 +7,19 @@ import (
 )
 
 // TestMongodbService This service is mock. It shouldn't use in production code
-type TestMongodbService struct {
+type MongodbService struct {
 	client *mongo.Client
 	ctx    context.Context
 }
 
-func (t TestMongodbService) Close() error {
+func (t MongodbService) Close() error {
 	return t.client.Disconnect(t.ctx)
 }
 
-func (t TestMongodbService) Client(_ context.Context) (*mongo.Client, error) {
+func (t MongodbService) Client(_ context.Context) (*mongo.Client, error) {
 	return t.client, nil
 }
 
-func NewMockedMognodbService(ctx context.Context, client *mongo.Client) db.MongodbService {
-	return &TestMongodbService{client, ctx}
+func NewMockedMongodbService(ctx context.Context, client *mongo.Client) db.MongodbService {
+	return &MongodbService{client, ctx}
 }

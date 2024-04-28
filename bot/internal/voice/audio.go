@@ -34,13 +34,11 @@ func Play(ctx context.Context, vc *discordgo.VoiceConnection, path string, stop 
 		Setpgid: true,
 	}
 
-	output, err := cmd.StdoutPipe()
+	out, err := cmd.StdoutPipe()
 	if err != nil {
 		return
 	}
-	defer output.Close()
-
-	buf := bufio.NewReaderSize(output, audioBufSize)
+	defer out.Close()
 
 	// Starts the ffmpeg command
 	if err = cmd.Start(); err != nil {
@@ -66,12 +64,12 @@ func Play(ctx context.Context, vc *discordgo.VoiceConnection, path string, stop 
 	pcm := make(chan []int16, 2)
 	defer close(pcm)
 
-	stopPlaying := make(chan struct{})
+	stopCh := make(chan struct{})
 	go func(ctx context.Context, vs *discordgo.VoiceConnection, pcm <-chan []int16) {
-		defer close(stopPlaying)
+		defer close(stopCh)
 
 		sendPCM(ctx, vc, pcm)
-		stopPlaying <- struct{}{}
+		stopCh <- struct{}{}
 	}(ctx, vc, pcm)
 
 	//when stop is sent, kill ffmpeg
@@ -81,10 +79,12 @@ func Play(ctx context.Context, vc *discordgo.VoiceConnection, path string, stop 
 			case <-stop:
 			case <-ctx.Done():
 				cmd.Process.Kill()
-				stopPlaying <- struct{}{}
+				stopCh <- struct{}{}
 			}
 		}
 	}()
+
+	buf := bufio.NewReaderSize(out, audioBufSize)
 
 	for {
 		// read data from ffmpeg stdout
@@ -97,7 +97,7 @@ func Play(ctx context.Context, vc *discordgo.VoiceConnection, path string, stop 
 		select {
 		case <-ctx.Done():
 		case pcm <- audioBuf:
-		case <-stopPlaying:
+		case <-stopCh:
 			return
 		}
 	}
@@ -113,13 +113,13 @@ func Duration(path string) (duration time.Duration, err error) {
 		return
 	}
 
-	output, err := cmd.StdoutPipe()
+	out, err := cmd.StdoutPipe()
 	if err != nil {
 		return
 	}
-	defer output.Close()
+	defer out.Close()
 
-	rawTime, err := io.ReadAll(output)
+	rawTime, err := io.ReadAll(out)
 	if err != nil {
 		return
 	}

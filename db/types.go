@@ -19,7 +19,7 @@ type AudioInfo struct {
 	Original string             `bson:"original_name"`
 }
 
-func (a AudioInfo) ApiAudioFileInfo() api.AudioFileInfo {
+func (a AudioInfo) AudioFileInfo() api.AudioFileInfo {
 	return api.AudioFileInfo{
 		ID:       a.ID.Hex(),
 		Filename: strings.TrimSuffix(a.Original, ".mp3"),

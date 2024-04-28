@@ -9,7 +9,7 @@ import (
 	"testing"
 )
 
-func TestAudioIDsButDirectoryHasEmptyDirs(t *testing.T) {
+func TestAudioIDs_AssetDirHasEmptyDirs(t *testing.T) {
 	dir := t.TempDir()
 
 	for i := 0; i < 5; i++ {
@@ -56,9 +56,9 @@ func TestAudioIDs(t *testing.T) {
 	}
 
 	for i, id := range ids {
-		fixedID := strings.Split(id, ".")[0]
+		fileID := strings.Split(id, ".")[0]
 
-		if fixedID != strconv.Itoa(i) {
+		if fileID != strconv.Itoa(i) {
 			t.Fatalf("invalid ID. Expected: '%d', Result: '%s'", i, id)
 		}
 	}

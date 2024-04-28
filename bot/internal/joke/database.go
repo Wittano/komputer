@@ -45,28 +45,28 @@ type Joke struct {
 	GuildID  string             `bson:"guild_id"`
 }
 
-type SearchParameters struct {
+type SearchParams struct {
 	Type     Type
 	Category Category
 	ID       primitive.ObjectID
 }
 
-type DatabaseJokeService struct {
+type DatabaseService struct {
 	mongodb db.MongodbService
 }
 
-func (d DatabaseJokeService) Active(ctx context.Context) bool {
+func (d DatabaseService) Active(ctx context.Context) bool {
 	const maxTimeoutTime = 500
 
-	timeoutCtx, cancel := context.WithTimeout(ctx, maxTimeoutTime*time.Millisecond)
+	ctx, cancel := context.WithTimeout(ctx, maxTimeoutTime*time.Millisecond)
 	defer cancel()
 
-	client, err := d.mongodb.Client(timeoutCtx)
+	client, err := d.mongodb.Client(ctx)
 	if err != nil {
 		return false
 	}
 
-	err = client.Ping(timeoutCtx, readpref.Nearest(readpref.WithMaxStaleness(maxTimeoutTime)))
+	err = client.Ping(ctx, readpref.Nearest(readpref.WithMaxStaleness(maxTimeoutTime)))
 	if err != nil {
 		return false
 	}
@@ -74,7 +74,7 @@ func (d DatabaseJokeService) Active(ctx context.Context) bool {
 	return true
 }
 
-func (d DatabaseJokeService) Add(ctx context.Context, joke Joke) (string, error) {
+func (d DatabaseService) Add(ctx context.Context, joke Joke) (string, error) {
 	select {
 	case <-ctx.Done():
 		return "", context.Canceled
@@ -94,7 +94,8 @@ func (d DatabaseJokeService) Add(ctx context.Context, joke Joke) (string, error)
 	return res.InsertedID.(primitive.ObjectID).Hex(), nil
 }
 
-func (d DatabaseJokeService) Get(ctx context.Context, search SearchParameters) (Joke, error) {
+// Joke Try to find Joke from Mongodb database. If SearchParams is empty, then function will find 1 random joke
+func (d DatabaseService) Joke(ctx context.Context, search SearchParams) (Joke, error) {
 	select {
 	case <-ctx.Done():
 		return Joke{}, context.Canceled
@@ -154,7 +155,7 @@ func (d DatabaseJokeService) Get(ctx context.Context, search SearchParameters) (
 		}})
 	}
 
-	// SearchParameters
+	// SearchParams
 	res, err := mongodb.Database(db.DatabaseName).Collection(collectionName).Aggregate(ctx, pipeline)
 	if err != nil {
 		return Joke{}, err
@@ -178,10 +179,15 @@ func unlockService(ctx context.Context, activeFlag *bool, resetTime time.Time) {
 	defer cancel()
 
 	for {
+		if *activeFlag {
+			return
+		}
+
 		select {
 		case <-deadlineCtx.Done():
 			*activeFlag = true
 			return
+		default:
 		}
 	}
 }

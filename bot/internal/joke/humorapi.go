@@ -19,7 +19,7 @@ const (
 )
 
 type humorAPIResponse struct {
-	JokeRes string `json:"joke"`
+	Content string `json:"joke"`
 	ID      int64  `json:"id"`
 }
 
@@ -42,7 +42,7 @@ func (h HumorAPIService) Active(ctx context.Context) (active bool) {
 	return
 }
 
-func (h *HumorAPIService) Get(ctx context.Context, search SearchParameters) (Joke, error) {
+func (h *HumorAPIService) Joke(ctx context.Context, search SearchParams) (Joke, error) {
 	select {
 	case <-ctx.Done():
 		return Joke{}, context.Canceled
@@ -58,7 +58,7 @@ func (h *HumorAPIService) Get(ctx context.Context, search SearchParameters) (Jok
 		return Joke{}, errors.New("humorAPI: missing " + humorAPIKey)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, humorApiURL+toHumorAPICategory(search.Category), nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, humorApiURL+humorAPICategory(search.Category), nil)
 	if err != nil {
 		return Joke{}, err
 	}
@@ -72,9 +72,9 @@ func (h *HumorAPIService) Get(ctx context.Context, search SearchParameters) (Jok
 	}
 	defer res.Body.Close()
 
-	isLimitExceeded := len(res.Header[xAPIQuotaLeftHeaderName]) > 0 && res.Header[xAPIQuotaLeftHeaderName][0] == "0"
+	limitExceeded := len(res.Header[xAPIQuotaLeftHeaderName]) > 0 && res.Header[xAPIQuotaLeftHeaderName][0] == "0"
 
-	if res.StatusCode == http.StatusTooManyRequests || res.StatusCode == http.StatusPaymentRequired || isLimitExceeded {
+	if res.StatusCode == http.StatusTooManyRequests || res.StatusCode == http.StatusPaymentRequired || limitExceeded {
 		h.active = false
 		resetTime := time.Now().Add(time.Hour * 24)
 
@@ -104,20 +104,18 @@ func (h *HumorAPIService) Get(ctx context.Context, search SearchParameters) (Jok
 	}
 
 	var joke humorAPIResponse
-
-	err = json.Unmarshal(resBody, &joke)
-	if err != nil {
+	if err = json.Unmarshal(resBody, &joke); err != nil {
 		return Joke{}, err
 	}
 
 	return Joke{
 		Category: search.Category,
 		Type:     Single,
-		Answer:   joke.JokeRes,
+		Answer:   joke.Content,
 	}, nil
 }
 
-func toHumorAPICategory(category Category) (res string) {
+func humorAPICategory(category Category) (res string) {
 	switch category {
 	case PROGRAMMING:
 		res = "nerdy"

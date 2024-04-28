@@ -42,6 +42,7 @@ func (sc slashCommandHandler) handleSlashCommand(s *discordgo.Session, i *discor
 	ctx := context.WithValue(requestIDCtx, joke.GuildIDKey, i.GuildID)
 	defer cancel()
 
+	// FIXME Reusing one logger across commands
 	logger := slog.With(requestIDKey, ctx.Value(requestIDKey))
 
 	userID := i.Member.User.ID
@@ -50,7 +51,7 @@ func (sc slashCommandHandler) handleSlashCommand(s *discordgo.Session, i *discor
 		customID := i.Data.(discordgo.MessageComponentInteractionData).CustomID
 
 		for _, option := range sc.options {
-			if matcher, ok := option.(command.DiscordOptionMatcher); ok && matcher.MatchCustomID(customID) {
+			if matcher, ok := option.(command.DiscordOptionMatcher); ok && matcher.Match(customID) {
 				logger.InfoContext(ctx, fmt.Sprintf("user '%s' select '%s' option", userID, customID))
 
 				handleEventResponse(ctx, s, i, option)
@@ -61,13 +62,13 @@ func (sc slashCommandHandler) handleSlashCommand(s *discordgo.Session, i *discor
 	}
 
 	// Handle slash commands
-	cmdName := i.ApplicationCommandData().Name
-	if cmd, ok := sc.commands[cmdName]; ok {
-		logger.InfoContext(ctx, fmt.Sprintf("user '%s' execute slash command '%s'", userID, cmdName))
+	name := i.ApplicationCommandData().Name
+	if cmd, ok := sc.commands[name]; ok {
+		logger.InfoContext(ctx, fmt.Sprintf("user '%s' execute slash command '%s'", userID, name))
 
 		handleEventResponse(ctx, s, i, cmd)
 	} else {
-		msg := command.SimpleMessageResponse{Msg: "Kapitanie co chcesz zrobić?", Hidden: true}
+		msg := command.SimpleMessage{Msg: "Kapitanie co chcesz zrobić?", Hidden: true}
 
 		logger.WarnContext(ctx, "someone try execute unknown command")
 		command.CreateDiscordInteractionResponse(ctx, i, s, msg)
@@ -77,12 +78,12 @@ func (sc slashCommandHandler) handleSlashCommand(s *discordgo.Session, i *discor
 func handleEventResponse(ctx context.Context, s *discordgo.Session, i *discordgo.InteractionCreate, event command.DiscordEventHandler) {
 	msg, err := event.Execute(ctx, s, i)
 
-	if errors.Is(err, command.ErrorResponse{}) {
+	if errors.Is(err, command.DiscordError{}) {
 		errors.As(err, &msg)
 	} else if err != nil {
 		slog.With(requestIDKey, ctx.Value(requestIDKey)).ErrorContext(ctx, err.Error())
 
-		msg = command.ErrorResponse{
+		msg = command.DiscordError{
 			Err: err,
 		}
 	}
@@ -107,6 +108,7 @@ func (d *DiscordBot) Start() (err error) {
 	return
 }
 
+// TODO Close everything, that has Closer interface
 func (d *DiscordBot) Close() (err error) {
 	err = d.spockVoiceChs.Close()
 	err = d.mongodb.Close()
@@ -115,8 +117,8 @@ func (d *DiscordBot) Close() (err error) {
 	return
 }
 
-func createJokeGetServices(globalCtx context.Context, database *db.MongodbDatabase) []joke.GetService {
-	return []joke.GetService{
+func createJokeGetServices(globalCtx context.Context, database *db.MongodbDatabase) []joke.SearchService {
+	return []joke.SearchService{
 		jokeDevServiceID:  joke.NewJokeDevService(globalCtx),
 		humorAPIServiceID: joke.NewHumorAPIService(globalCtx),
 		databaseServiceID: joke.NewDatabaseJokeService(database),
@@ -125,58 +127,58 @@ func createJokeGetServices(globalCtx context.Context, database *db.MongodbDataba
 
 func createCommands(
 	globalCtx context.Context,
-	services []joke.GetService,
-	spockVoiceChns map[string]chan struct{},
+	services []joke.SearchService,
+	spockVoice map[string]chan struct{},
 	guildVoiceChats map[string]voice.ChatInfo,
 ) map[string]command.DiscordSlashCommandHandler {
 	client, err := api.NewClient(os.Getenv(baseURLKey))
 	if err != nil {
-		slog.WarnContext(globalCtx, "Failed connect with Web API. Web API is disabled", "error", err)
+		slog.WarnContext(globalCtx, "Failed connect with WebAPI API. WebAPI API is disabled", "error", err)
 	}
 
-	localStorage := voice.NewBotLocalStorage()
+	storage := voice.NewBotLocalStorage()
 
-	welcomeCmd := command.WelcomeCommand{}
-	addJokeCmd := command.AddJokeCommand{Service: services[databaseServiceID].(joke.DatabaseJokeService)}
-	jokeCmd := command.JokeCommand{Services: services}
-	spockCmd := command.SpockCommand{
-		GlobalCtx:         globalCtx,
-		SpockMusicStopChs: spockVoiceChns,
-		GuildVoiceChats:   guildVoiceChats,
-		ApiClient:         client,
-		Storage:           localStorage,
+	welcome := command.WelcomeCommand{}
+	addJoke := command.AddJokeCommand{Service: services[databaseServiceID].(joke.DatabaseService)}
+	getJoke := command.JokeCommand{Services: services}
+	spock := command.SpockCommand{
+		GlobalCtx:       globalCtx,
+		MusicStopChs:    spockVoice,
+		GuildVoiceChats: guildVoiceChats,
+		WebAPI:          client,
+		Storage:         storage,
 	}
-	stopSpockCmd := command.SpockStopCommand{SpockMusicStopChs: spockVoiceChns}
-	listCmd := command.NewListCommand(client, localStorage)
+	stop := command.StopCommand{spockVoice}
+	list := command.NewListCommand(client, storage)
 
 	return map[string]command.DiscordSlashCommandHandler{
-		command.WelcomeCommandName:   welcomeCmd,
-		command.AddJokeCommandName:   addJokeCmd,
-		command.GetJokeCommandName:   jokeCmd,
-		command.SpockCommandName:     spockCmd,
-		command.SpockStopCommandName: stopSpockCmd,
-		command.ListCommandName:      listCmd,
+		command.WelcomeCommandName: welcome,
+		command.AddJokeCommandName: addJoke,
+		command.GetJokeCommandName: getJoke,
+		command.SpockCommandName:   spock,
+		command.StopCommandName:    stop,
+		command.ListCommandName:    list,
 	}
 }
 
 func createOptions(
-	services []joke.GetService,
+	services []joke.SearchService,
 	commands map[string]command.DiscordSlashCommandHandler,
 ) []command.DiscordEventHandler {
-	apologiesOption := command.ApologiesOption{}
-	nextJokeOption := command.NextJokeOption{Services: services}
-	sameJokeCategoryOption := command.SameJokeCategoryOption{Services: services}
+	apologies := command.ApologiesOption{}
+	nextJoke := command.NextJokeOption{Services: services}
+	sameJokeCategory := command.SameJokeCategoryOption{Services: services}
 
 	listCommand := commands[command.ListCommandName].(*command.ListCommand)
-	nextListOption := command.NextListCommandOption{Cmd: listCommand}
-	previousListOption := command.PreviousListCommandOption{Cmd: listCommand}
+	nextList := command.NextListCommandOption{CMD: listCommand}
+	previousList := command.PreviousListCommandOption{Cmd: listCommand}
 
 	return []command.DiscordEventHandler{
-		apologiesOption,
-		nextJokeOption,
-		sameJokeCategoryOption,
-		nextListOption,
-		previousListOption,
+		apologies,
+		nextJoke,
+		sameJokeCategory,
+		nextList,
+		previousList,
 	}
 }
 
@@ -194,14 +196,14 @@ func NewDiscordBot(ctx context.Context) (*DiscordBot, error) {
 	// Update list of current user on voice channels
 	spockVoiceChns := make(voice.SpockVoiceChannels)
 	guildVoiceChats := make(map[string]voice.ChatInfo)
-	vcHander := voice.ChatHandler{Ctx: ctx, SpockVoiceChns: spockVoiceChns, GuildVoiceChats: guildVoiceChats}
+	vcHandler := voice.ChatHandler{Ctx: ctx, SpockVoiceChns: spockVoiceChns, GuildVoiceChats: guildVoiceChats}
 
-	bot.AddHandler(vcHander.HandleVoiceChannelUpdate)
+	bot.AddHandler(vcHandler.HandleVoiceChannelUpdate)
 
 	// Register slash commands
 	database := db.Mongodb(ctx)
-	getServices := createJokeGetServices(ctx, database)
-	commands := createCommands(ctx, getServices, spockVoiceChns, guildVoiceChats)
+	services := createJokeGetServices(ctx, database)
+	commands := createCommands(ctx, services, spockVoiceChns, guildVoiceChats)
 	for _, c := range commands {
 		discordCmd := c.Command()
 		if _, err := bot.ApplicationCommandCreate(
@@ -214,7 +216,7 @@ func NewDiscordBot(ctx context.Context) (*DiscordBot, error) {
 	}
 
 	// General handler for slash commands
-	handler := slashCommandHandler{ctx, commands, createOptions(getServices, commands)}
+	handler := slashCommandHandler{ctx, commands, createOptions(services, commands)}
 
 	bot.AddHandler(handler.handleSlashCommand)
 

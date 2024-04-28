@@ -8,9 +8,9 @@ import (
 
 func LoadDefaultConfig(t *testing.T) error {
 	const defaultConfigFileName = "config.yml"
-	configFile := filepath.Join(t.TempDir(), defaultConfigFileName)
+	path := filepath.Join(t.TempDir(), defaultConfigFileName)
 
-	if err := settings.Load(configFile); err != nil {
+	if err := settings.Load(path); err != nil {
 		return err
 	}
 

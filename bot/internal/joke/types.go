@@ -2,6 +2,7 @@ package joke
 
 import (
 	"context"
+	"github.com/wittano/komputer/bot/internal"
 	"github.com/wittano/komputer/db"
 	"net/http"
 	"os"
@@ -12,22 +13,18 @@ type AddService interface {
 	Add(ctx context.Context, joke Joke) (string, error)
 }
 
-type GetService interface {
-	Get(ctx context.Context, search SearchParameters) (Joke, error)
-	ActiveService
+type SearchService interface {
+	Joke(ctx context.Context, search SearchParams) (Joke, error)
+	internal.ActiveChecker
 }
 
-type ActiveService interface {
-	Active(ctx context.Context) bool
-}
-
-func NewJokeDevService(globalCtx context.Context) GetService {
+func NewJokeDevService(globalCtx context.Context) SearchService {
 	client := http.Client{Timeout: time.Second * 1}
 
 	return &DevService{client, true, globalCtx}
 }
 
-func NewHumorAPIService(globalCtx context.Context) GetService {
+func NewHumorAPIService(globalCtx context.Context) SearchService {
 	client := http.Client{Timeout: time.Second * 1}
 
 	env, ok := os.LookupEnv(humorAPIKey)
@@ -36,6 +33,6 @@ func NewHumorAPIService(globalCtx context.Context) GetService {
 	return &HumorAPIService{client, active, globalCtx}
 }
 
-func NewDatabaseJokeService(database db.MongodbService) DatabaseJokeService {
-	return DatabaseJokeService{mongodb: database}
+func NewDatabaseJokeService(database db.MongodbService) DatabaseService {
+	return DatabaseService{mongodb: database}
 }

@@ -33,16 +33,16 @@ func (v *ChatHandler) HandleVoiceChannelUpdate(_ *discordgo.Session, vc *discord
 	default:
 	}
 
-	userCount := uint(1)
+	count := uint(1)
 	info, ok := v.GuildVoiceChats[vc.GuildID]
 
 	if vc.UserID != "" && vc.ChannelID != "" { // User joined to voice channel
 		if !ok {
-			userCount = info.UserCount + 1
+			count = info.UserCount + 1
 		}
 
 		v.GuildVoiceChats[vc.GuildID] = ChatInfo{
-			userCount,
+			count,
 			vc.ChannelID,
 		}
 
@@ -51,10 +51,10 @@ func (v *ChatHandler) HandleVoiceChannelUpdate(_ *discordgo.Session, vc *discord
 		}
 	} else if vc.UserID != "" && vc.ChannelID == "" { // User left the voice channel
 		if !ok {
-			userCount = info.UserCount - 1
+			count = info.UserCount - 1
 		}
 
-		if userCount == 0 {
+		if count == 0 {
 			close(v.SpockVoiceChns[vc.GuildID])
 			delete(v.GuildVoiceChats, vc.GuildID)
 		}

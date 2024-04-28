@@ -20,13 +20,13 @@ func (d dumpMongoService) Client(_ context.Context) (*mongo.Client, error) {
 
 func TestSelectGetService(t *testing.T) {
 	ctx := context.Background()
-	testServices := []joke.GetService{
+	testServices := []joke.SearchService{
 		joke.NewJokeDevService(ctx),
 		joke.NewHumorAPIService(ctx),
 		joke.NewDatabaseJokeService(dumpMongoService{}),
 	}
 
-	service, err := selectGetService(ctx, testServices)
+	service, err := findService(ctx, testServices)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -37,30 +37,30 @@ func TestSelectGetService(t *testing.T) {
 		}
 	}
 
-	t.Fatal("GetService wasn't found")
+	t.Fatal("SearchService wasn't found")
 }
 
-func TestSelectGetServiceButContextCancelled(t *testing.T) {
+func TestFindJokeService_ContextCancelled(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	testServices := []joke.GetService{
+	testServices := []joke.SearchService{
 		joke.NewJokeDevService(ctx),
 		joke.NewHumorAPIService(ctx),
 		joke.NewDatabaseJokeService(dumpMongoService{}),
 	}
 
-	if _, err := selectGetService(ctx, testServices); err == nil {
+	if _, err := findService(ctx, testServices); err == nil {
 		t.Fatal("Some services was found, but shouldn't")
 	}
 }
 
-func TestSelectGetServiceButServicesIsDeactivated(t *testing.T) {
+func TestFindJokeService_ServicesIsDeactivated(t *testing.T) {
 	ctx := context.Background()
-	testServices := []joke.GetService{
+	services := []joke.SearchService{
 		joke.NewDatabaseJokeService(dumpMongoService{}),
 	}
 
-	if _, err := selectGetService(ctx, testServices); err == nil {
+	if _, err := findService(ctx, services); err == nil {
 		t.Fatal("Some services was found, but shouldn't")
 	}
 }

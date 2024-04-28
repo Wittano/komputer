@@ -8,16 +8,16 @@ import (
 
 const komputerMsgPrefix = "BEEP BOOP. "
 
-type ErrorResponse struct {
+type DiscordError struct {
 	Err error
 	Msg string
 }
 
-func (e ErrorResponse) Error() string {
+func (e DiscordError) Error() string {
 	return e.Err.Error()
 }
 
-func (e ErrorResponse) Response() *discordgo.InteractionResponseData {
+func (e DiscordError) Response() *discordgo.InteractionResponseData {
 	if e.Msg == "" {
 		e.Msg = komputerMsgPrefix + "Coś poszło nie tak :("
 	} else {
@@ -27,13 +27,13 @@ func (e ErrorResponse) Response() *discordgo.InteractionResponseData {
 	return &discordgo.InteractionResponseData{Content: e.Msg}
 }
 
-type SimpleMessageResponse struct {
+type SimpleMessage struct {
 	Msg    string
 	Hidden bool
 	// TODO Add "Przepraszam" button
 }
 
-func (s SimpleMessageResponse) Response() (msg *discordgo.InteractionResponseData) {
+func (s SimpleMessage) Response() (msg *discordgo.InteractionResponseData) {
 	msg = &discordgo.InteractionResponseData{
 		Content: s.Msg,
 	}

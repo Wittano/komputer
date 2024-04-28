@@ -20,7 +20,7 @@ type DiscordEventHandler interface {
 }
 
 type DiscordOptionMatcher interface {
-	MatchCustomID(customID string) bool
+	Match(customID string) bool
 }
 
 type DiscordMessageReceiver interface {

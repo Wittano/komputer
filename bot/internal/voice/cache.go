@@ -14,7 +14,7 @@ import (
 
 type AudioQueryType byte
 
-type AudioSearch struct {
+type SearchParams struct {
 	Type  AudioQueryType
 	Value string
 }
@@ -26,12 +26,12 @@ const (
 
 // TODO Added autocleaning cache after a few days
 type BotLocalStorage struct {
-	storagePath string
-	active      bool
+	path   string
+	active bool
 }
 
-func (b BotLocalStorage) Get(ctx context.Context, query AudioSearch) (path string, err error) {
-	dir, err := os.ReadDir(b.storagePath)
+func (b BotLocalStorage) Get(ctx context.Context, params SearchParams) (path string, err error) {
+	dir, err := os.ReadDir(b.path)
 	if err != nil {
 		return "", err
 	}
@@ -43,13 +43,13 @@ func (b BotLocalStorage) Get(ctx context.Context, query AudioSearch) (path strin
 		default:
 		}
 
-		name := strings.Split(f.Name(), "-")
-		if len(name) >= 2 && strings.HasPrefix(name[query.Type], query.Value) {
-			return filepath.Join(b.storagePath, f.Name()), nil
+		data := strings.Split(f.Name(), "-")
+		if len(data) >= 2 && strings.HasPrefix(data[params.Type], params.Value) {
+			return filepath.Join(b.path, f.Name()), nil
 		}
 	}
 
-	return "", fmt.Errorf("song with search value '%s' wasn't found", query.Value)
+	return "", fmt.Errorf("song with search value '%s' wasn't found", params.Value)
 }
 
 func (b BotLocalStorage) Add(ctx context.Context, file io.Reader, id, name string) (string, error) {
@@ -67,36 +67,36 @@ func (b BotLocalStorage) Add(ctx context.Context, file io.Reader, id, name strin
 		return "", errors.New("audio ID is empty")
 	}
 
-	destPath := filepath.Join(b.storagePath, fmt.Sprintf("%s-%s.mp3", name, id))
-	if _, err := os.Stat(destPath); err == nil {
+	path := filepath.Join(b.path, fmt.Sprintf("%s-%s.mp3", name, id))
+	if _, err := os.Stat(path); err == nil {
 		return "", os.ErrExist
 	}
 
-	destFile, err := os.Create(destPath)
+	f, err := os.Create(path)
 	if err != nil {
 		return "", err
 	}
-	defer destFile.Close()
+	defer f.Close()
 
 	for {
 		select {
 		case <-ctx.Done():
-			os.Remove(destFile.Name())
+			os.Remove(f.Name())
 			return "", context.Canceled
 		default:
 			const oneMegaByteBuf = 1 << 20
-			if n, err := io.CopyN(destFile, file, oneMegaByteBuf); errors.Is(err, io.EOF) && n != 0 {
-				return destFile.Name(), nil
+			if n, err := io.CopyN(f, file, oneMegaByteBuf); errors.Is(err, io.EOF) && n != 0 {
+				return f.Name(), nil
 			} else if err != nil {
-				os.Remove(destFile.Name())
+				os.Remove(f.Name())
 				return "", err
 			}
 		}
 	}
 }
 
-func (b BotLocalStorage) Remove(ctx context.Context, query AudioSearch) error {
-	path, err := b.Get(ctx, query)
+func (b BotLocalStorage) Remove(ctx context.Context, params SearchParams) error {
+	path, err := b.Get(ctx, params)
 	if err != nil {
 		return err
 	}
@@ -104,31 +104,32 @@ func (b BotLocalStorage) Remove(ctx context.Context, query AudioSearch) error {
 	return os.Remove(path)
 }
 
-func (b BotLocalStorage) IsActive() bool {
+func (b BotLocalStorage) Active(_ context.Context) bool {
 	return b.active
 }
 
-func (b BotLocalStorage) SearchAudio(ctx context.Context, option AudioSearch, page uint) ([]api.AudioFileInfo, error) {
+func (b BotLocalStorage) AudioFileInfo(ctx context.Context, params SearchParams, page uint) ([]api.AudioFileInfo, error) {
 	select {
 	case <-ctx.Done():
 		return nil, context.Canceled
 	default:
 	}
 
-	dirs, err := os.ReadDir(b.storagePath)
+	dirs, err := os.ReadDir(b.path)
 	if err != nil {
 		return nil, err
 	}
 
-	index := page * 10
-	if int(index) > len(dirs) {
+	// number of files, that will be skipped
+	skip := page * 10
+	if int(skip) > len(dirs) {
 		return []api.AudioFileInfo{}, nil
 	}
 
 	result := make([]api.AudioFileInfo, 0, 10)
 	i := 0
 
-	for _, dir := range dirs[index:] {
+	for _, dir := range dirs[skip:] {
 		if i == 10 {
 			break
 		}
@@ -138,12 +139,12 @@ func (b BotLocalStorage) SearchAudio(ctx context.Context, option AudioSearch, pa
 			continue
 		}
 
-		value := split[option.Type]
-		if option.Type == IDType {
-			value = strings.TrimSuffix(value, ".mp3")
+		data := split[params.Type]
+		if params.Type == IDType {
+			data = strings.TrimSuffix(data, ".mp3")
 		}
 
-		if strings.Contains(value, option.Value) {
+		if strings.Contains(data, params.Value) {
 			result = append(result, api.AudioFileInfo{Filename: split[NameType], ID: split[IDType]})
 			i++
 		}
@@ -153,12 +154,12 @@ func (b BotLocalStorage) SearchAudio(ctx context.Context, option AudioSearch, pa
 }
 
 func NewBotLocalStorage() BotLocalStorage {
-	dirPath := assertDir()
+	dir := assertDir()
 
-	if err := os.MkdirAll(dirPath, 0700); err != nil {
+	if err := os.MkdirAll(dir, 0700); err != nil {
 		log.Fatalln("failed create directory for bot cache. " + err.Error())
 		return BotLocalStorage{}
 	}
 
-	return BotLocalStorage{dirPath, true}
+	return BotLocalStorage{dir, true}
 }

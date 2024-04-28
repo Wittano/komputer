@@ -7,15 +7,15 @@ import (
 )
 
 func UpdateSettings(c echo.Context) error {
-	var newSetting settings.Settings
+	var setting settings.Settings
 
-	if err := c.Bind(&newSetting); err != nil {
+	if err := c.Bind(&setting); err != nil {
 		return err
 	}
 
-	return settings.Config.Update(newSetting)
+	return settings.Config.Update(setting)
 }
 
-func GetSettings(c echo.Context) error {
+func Settings(c echo.Context) error {
 	return c.JSON(http.StatusOK, settings.Config)
 }

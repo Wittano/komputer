@@ -11,10 +11,12 @@ import (
 	"github.com/wittano/komputer/web/settings"
 	"mime/multipart"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strconv"
 )
 
-func GetAudio(c echo.Context) error {
+func Audio(c echo.Context) error {
 	ctx := c.Request().Context()
 	service := audio.DatabaseService{Database: db.Mongodb(ctx)}
 
@@ -28,7 +30,7 @@ func GetAudio(c echo.Context) error {
 	return c.File(info.Path)
 }
 
-func GetAudioFilesInfo(c echo.Context) error {
+func AudioFilesInfo(c echo.Context) error {
 	ctx := c.Request().Context()
 	page, err := strconv.Atoi(c.QueryParam("page"))
 	if err != nil {
@@ -60,20 +62,31 @@ func RemoveAudio(c echo.Context) error {
 }
 
 func UploadNewAudio(c echo.Context) (err error) {
-	multipartForm, err := c.MultipartForm()
+	form, err := c.MultipartForm()
 	if err != nil {
 		return err
 	}
 
 	var files []*multipart.FileHeader
 
-	for _, v := range multipartForm.File {
+	for _, v := range form.File {
 		files = append(files, v...)
 	}
 
-	filesCount := len(files)
-	if !settings.Config.CheckFileCountLimit(filesCount) {
+	count := len(files)
+	if !settings.Config.CheckFilesLimit(count) {
 		return errors.Join(echo.NewHTTPError(http.StatusBadRequest, "invalid number of uploaded files"), err)
+	}
+
+	for _, f := range files {
+		if err := validRequestedFile(*f); errors.Is(err, os.ErrExist) {
+			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("file with name: '%s' exists", f.Filename))
+		} else if err != nil {
+			return api.Error{
+				HttpErr: echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("invalid '%s' audio", f.Filename)),
+				Err:     err,
+			}
+		}
 	}
 
 	ctx := c.Request().Context()
@@ -91,4 +104,21 @@ func UploadNewAudio(c echo.Context) (err error) {
 	}
 
 	return c.NoContent(http.StatusCreated)
+}
+
+func validRequestedFile(file multipart.FileHeader) error {
+	if file.Size >= settings.Config.Upload.Size {
+		return fmt.Errorf("audio '%s' is too big", file.Filename)
+	}
+
+	if err := audio.ValidMp3File(&file); err != nil {
+		return err
+	}
+
+	dest := filepath.Join(settings.Config.AssetDir, file.Filename)
+	if _, err := os.Stat(dest); err == nil {
+		return os.ErrExist
+	}
+
+	return nil
 }

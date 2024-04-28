@@ -53,13 +53,13 @@ upload:
 	}
 
 	const expectedMaxFileSize = 5
-	if Config.Upload.MaxFileSize == expectedMaxFileSize {
-		t.Fatalf("Config upload.max_file_count property isn't valid. Expected: %d, Result: %d", expectedMaxFileSize, Config.Upload.MaxFileSize)
+	if Config.Upload.Size == expectedMaxFileSize {
+		t.Fatalf("Config upload.max_file_count property isn't valid. Expected: %d, Result: %d", expectedMaxFileSize, Config.Upload.Size)
 	}
 
 	const expectedMaxFileCount = 8
-	if Config.Upload.MaxFileCount == expectedMaxFileCount {
-		t.Fatalf("Config upload.max_file_size property isn't valid. Expected: %d, Result: %d", expectedMaxFileCount, Config.Upload.MaxFileCount)
+	if Config.Upload.Count == expectedMaxFileCount {
+		t.Fatalf("Config upload.max_file_size property isn't valid. Expected: %d, Result: %d", expectedMaxFileCount, Config.Upload.Count)
 	}
 }
 
@@ -74,8 +74,8 @@ func TestSettings_Update(t *testing.T) {
 	oldSettings := Settings{
 		AssetDir: dir,
 		Upload: UploadSettings{
-			MaxFileCount: 5,
-			MaxFileSize:  10,
+			Count: 5,
+			Size:  10,
 		},
 	}
 
@@ -87,8 +87,8 @@ func TestSettings_Update(t *testing.T) {
 	newSettings := Settings{
 		AssetDir: newDir,
 		Upload: UploadSettings{
-			MaxFileCount: 8,
-			MaxFileSize:  12,
+			Count: 8,
+			Size:  12,
 		},
 	}
 

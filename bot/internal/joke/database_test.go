@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	testJokeSearch = SearchParameters{
+	testParams = SearchParams{
 		Type:     Single,
 		Category: Any,
 	}
@@ -32,16 +32,16 @@ func createMTest(t *testing.T) *mtest.T {
 		DatabaseName(db.DatabaseName))
 }
 
-func TestJokeService_Add(t *testing.T) {
+func TestDatabaseService_Add(t *testing.T) {
 	mt := createMTest(t)
 
 	mt.Run("add new joke", func(t *mtest.T) {
-		t.AddMockResponses(mtest.CreateSuccessResponse(bson.E{"ok", "1"},
-			bson.E{"_id", primitive.NewObjectID()}))
+		t.AddMockResponses(mtest.CreateSuccessResponse(bson.E{Key: "ok", Value: "1"},
+			bson.E{Key: "_id", Value: primitive.NewObjectID()}))
 
 		ctx := context.Background()
 
-		service := DatabaseJokeService{test.NewMockedMognodbService(ctx, t.Client)}
+		service := DatabaseService{test.NewMockedMongodbService(ctx, t.Client)}
 
 		if _, err := service.Add(ctx, testJoke); err != nil {
 			mt.Fatal(err)
@@ -49,29 +49,29 @@ func TestJokeService_Add(t *testing.T) {
 	})
 }
 
-func TestJokeService_AddButContextCancelled(t *testing.T) {
+func TestDatabaseService_AddWithContextCancelled(t *testing.T) {
 	ctx, cancel := context.WithDeadline(context.Background(), time.Now())
 	cancel()
 
-	service := DatabaseJokeService{test.NewMockedMognodbService(ctx, nil)}
+	service := DatabaseService{test.NewMockedMongodbService(ctx, nil)}
 
 	if _, err := service.Add(ctx, testJoke); err == nil {
 		t.Fatal("Context wasn't cancelled")
 	}
 }
 
-func TestJokeService_SearchButContextWasCancelled(t *testing.T) {
+func TestDatabaseService_JokeWithContextCancelled(t *testing.T) {
 	ctx, cancel := context.WithDeadline(context.Background(), time.Now())
 	cancel()
 
-	service := DatabaseJokeService{test.NewMockedMognodbService(ctx, nil)}
+	service := DatabaseService{test.NewMockedMongodbService(ctx, nil)}
 
-	if _, err := service.Get(ctx, testJokeSearch); err == nil {
+	if _, err := service.Joke(ctx, testParams); err == nil {
 		t.Fatal("Context wasn't cancelled")
 	}
 }
 
-func TestJokeService_SearchButNotingFound(t *testing.T) {
+func TestDatabaseService_JokeReturnEmptyWithoutError(t *testing.T) {
 	mt := createMTest(t)
 
 	mt.Run("get new joke, but nothing was found", func(t *mtest.T) {
@@ -79,15 +79,15 @@ func TestJokeService_SearchButNotingFound(t *testing.T) {
 
 		ctx := context.Background()
 
-		service := DatabaseJokeService{test.NewMockedMognodbService(ctx, t.Client)}
+		service := DatabaseService{test.NewMockedMongodbService(ctx, t.Client)}
 
-		if _, err := service.Get(ctx, testJokeSearch); err == nil {
+		if _, err := service.Joke(ctx, testParams); err == nil {
 			mt.Fatal("Something was found in database, but it shouldn't")
 		}
 	})
 }
 
-func TestJokeService_SearchButFindRandomJoke(t *testing.T) {
+func TestDatabaseService_FindRandomJoke(t *testing.T) {
 	mt := createMTest(t)
 
 	mt.Run("get new joke, but nothing was found", func(t *mtest.T) {
@@ -104,9 +104,9 @@ func TestJokeService_SearchButFindRandomJoke(t *testing.T) {
 
 		ctx := context.Background()
 
-		service := DatabaseJokeService{test.NewMockedMognodbService(ctx, t.Client)}
+		service := DatabaseService{test.NewMockedMongodbService(ctx, t.Client)}
 
-		joke, err := service.Get(ctx, SearchParameters{})
+		joke, err := service.Joke(ctx, SearchParams{})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -129,13 +129,13 @@ func TestJokeService_SearchButFindRandomJoke(t *testing.T) {
 	})
 }
 
-func TestDatabaseJokeService_ActiveButContextCancelled(t *testing.T) {
+func TestDatabaseService_ActiveWithContextCancelled(t *testing.T) {
 	mt := createMTest(t)
 	mt.Run("testing active database", func(t *mtest.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		cancel()
 
-		service := DatabaseJokeService{test.NewMockedMognodbService(ctx, t.Client)}
+		service := DatabaseService{test.NewMockedMongodbService(ctx, t.Client)}
 
 		if service.Active(ctx) {
 			t.Fatal("service can still running and handle new requests")
@@ -143,15 +143,15 @@ func TestDatabaseJokeService_ActiveButContextCancelled(t *testing.T) {
 	})
 }
 
-func TestDatabaseJokeService_Active(t *testing.T) {
+func TestDatabaseService_Active(t *testing.T) {
 	mt := createMTest(t)
 	mt.Run("testing active database", func(t *mtest.T) {
-		t.AddMockResponses(mtest.CreateSuccessResponse(bson.E{"ok", "1"},
-			bson.E{"_id", primitive.NewObjectID()}))
+		t.AddMockResponses(mtest.CreateSuccessResponse(bson.E{Key: "ok", Value: "1"},
+			bson.E{Key: "_id", Value: primitive.NewObjectID()}))
 
 		ctx := context.Background()
 
-		service := DatabaseJokeService{test.NewMockedMognodbService(ctx, t.Client)}
+		service := DatabaseService{test.NewMockedMongodbService(ctx, t.Client)}
 
 		if !service.Active(ctx) {
 			t.Fatal("service isn't responding")
@@ -172,7 +172,7 @@ func TestUnlockService(t *testing.T) {
 	}
 }
 
-func TestUnlockServiceButParentContextCancelled(t *testing.T) {
+func TestUnlockService_ParentContextCancelled(t *testing.T) {
 	testFlag := false
 	ctx, cancel := context.WithCancel(context.Background())
 	resetTime := time.Now().Add(1 * time.Hour)

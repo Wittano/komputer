@@ -119,8 +119,12 @@ github.com/valyala/fasttemplate v1.2.2 h1:lxLXG0uE3Qnshl9QyaK6XJxMXlQZELvChBOCmQ
 github.com/valyala/fasttemplate v1.2.2/go.mod h1:KHLXt3tVN2HBp8eijSv/kGJopbvo7S+qRAEEKiv+SiQ=
 github.com/wittano/komputer/bot v0.0.0-20240425195028-7a9b43f258f4 h1:LbrhB22n8Xh6KjyQJEia+tlFoKumWX2Zbo2KbkUD0kc=
 github.com/wittano/komputer/bot v0.0.0-20240425195028-7a9b43f258f4/go.mod h1:1ChPTXCZbDpKt4cUES7hSzcKX1Y3pnlMOboXRTYu64E=
+github.com/wittano/komputer/bot v0.0.0-20240426040254-c1f265642f8a h1:slD5KI/qeTnTv+XQ/YzKKuf/eGBmXa8JFZ1ytIoCCU8=
+github.com/wittano/komputer/bot v0.0.0-20240426040254-c1f265642f8a/go.mod h1:uyVk/qIFrLCjC2NPDP5RfLBilqFK9D7UQ6YMPIH1cjk=
 github.com/wittano/komputer/web v0.0.0-20240425195028-7a9b43f258f4 h1:RN/cQ0KxO7Df22bJYkFlRVErfCDM+vS0kEkBpddqp4s=
 github.com/wittano/komputer/web v0.0.0-20240425195028-7a9b43f258f4/go.mod h1:TjYVarCINIdPYE5LvDudUMcCyPjq+iQFVuKsHoLG0FY=
+github.com/wittano/komputer/web v0.0.0-20240426040254-c1f265642f8a h1:83e1/p/z9C9HyKpz/dsYQaC0gMkNYZC/M96PDzRJQO8=
+github.com/wittano/komputer/web v0.0.0-20240426040254-c1f265642f8a/go.mod h1:TjYVarCINIdPYE5LvDudUMcCyPjq+iQFVuKsHoLG0FY=
 github.com/xdg-go/pbkdf2 v1.0.0 h1:Su7DPu48wXMwC3bs7MCNG+z4FhcyEuz5dlvchbq0B0c=
 github.com/xdg-go/pbkdf2 v1.0.0/go.mod h1:jrpuAogTd400dnrH08LKmI/xc1MbPOebTwRqcT5RDeI=
 github.com/xdg-go/scram v1.1.2 h1:FHX5I5B4i4hKRVRBCFRxq1iQRej7WO3hhBuJf+UUySY=

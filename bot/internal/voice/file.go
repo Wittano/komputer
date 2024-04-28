@@ -14,39 +14,39 @@ const (
 	CacheDirAudioKey     = "CACHE_AUDIO_DIR"
 )
 
+// FIXME added name of files or searching file in local storage by ID
 func Path(id string) string {
 	return filepath.Join(assertDir(), id+".mp3")
 }
 
-func assertDir() (cachePath string) {
-	cachePath = defaultCacheDirAudio
+func assertDir() (path string) {
+	path = defaultCacheDirAudio
 	if cacheDir, ok := os.LookupEnv(CacheDirAudioKey); ok && cacheDir != "" {
-		cachePath = cacheDir
+		path = cacheDir
 	}
 
 	return
 }
 
 func AudioIDs() ([]string, error) {
-	assertsPath := assertDir()
-	files, err := os.ReadDir(assertsPath)
+	dirs, err := os.ReadDir(assertDir())
 	if err != nil {
 		return nil, err
 	}
 
-	if len(files) <= 0 {
+	if len(dirs) <= 0 {
 		return nil, errors.New("assert directory is empty")
 	}
 
-	ids := make([]string, 0, len(files))
-	for _, f := range files {
+	ids := make([]string, 0, len(dirs))
+	for _, dir := range dirs {
 		const suffix = ".mp3"
 
-		if f.Type() == fs.ModeDir || !strings.HasSuffix(f.Name(), suffix) {
+		if dir.Type() == fs.ModeDir || !strings.HasSuffix(dir.Name(), suffix) {
 			continue
 		}
 
-		filename := strings.Split(f.Name(), "-")
+		filename := strings.Split(dir.Name(), "-")
 		ids = append(ids, strings.TrimSuffix(filename[1], suffix))
 	}
 

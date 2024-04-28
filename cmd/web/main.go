@@ -9,10 +9,10 @@ import (
 const defaultConfigPath = "settings.yml"
 
 func main() {
-	configPath := flag.String("config", defaultConfigPath, "Path to web console configuration audio")
+	path := flag.String("config", defaultConfigPath, "Path to web console configuration audio")
 	flag.Parse()
 
-	e, err := web.NewWebConsoleServer(*configPath)
+	e, err := web.NewWebConsoleServer(*path)
 	if err != nil {
 		log.Fatal(err)
 	}

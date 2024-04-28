@@ -24,7 +24,7 @@ func TestUploadRequestedFile(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	multipartFileHeader, err := test.CreateMultipartFileHeader(filePath)
+	header, err := test.CreateMultipartFileHeader(filePath)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -37,9 +37,9 @@ func TestUploadRequestedFile(t *testing.T) {
 		t.AddMockResponses(mtest.CreateSuccessResponse(bson.E{Key: "ok", Value: "1"},
 			bson.E{Key: "_id", Value: primitive.NewObjectID()}))
 
-		service := UploadService{Db: test.NewMockedMognodbService(ctx, t.Client)}
+		service := UploadService{Db: test.NewMockedMongodbService(ctx, t.Client)}
 
-		if err := service.Upload(ctx, []*multipart.FileHeader{multipartFileHeader}); err != nil {
+		if err := service.Upload(ctx, []*multipart.FileHeader{header}); err != nil {
 			t.Fatal(err)
 		}
 	})

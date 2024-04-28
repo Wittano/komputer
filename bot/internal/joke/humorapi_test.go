@@ -12,7 +12,7 @@ import (
 )
 
 var testHumorAPIResponse = humorAPIResponse{
-	JokeRes: "testJokeRes",
+	Content: "testJokeRes",
 	ID:      213,
 }
 
@@ -26,76 +26,82 @@ func TestHumorAPIService_Get(t *testing.T) {
 	}
 
 	httpmock.RegisterResponder("GET",
-		humorApiURL+toHumorAPICategory(testJokeSearch.Category),
+		humorApiURL+humorAPICategory(testParams.Category),
 		httpmock.NewBytesResponder(http.StatusOK, response))
 
-	os.Setenv(humorAPIKey, "123")
+	if err = os.Setenv(humorAPIKey, "123"); err != nil {
+		t.Fatal(err)
+	}
 
 	ctx := context.Background()
 	service := NewHumorAPIService(ctx)
 
-	joke, err := service.Get(ctx, testJokeSearch)
+	joke, err := service.Joke(ctx, testParams)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if joke.Answer != testHumorAPIResponse.JokeRes {
-		t.Fatalf("Invalid joke response. Expected: '%s', Result: '%s'", testHumorAPIResponse.JokeRes, joke.Answer)
+	if joke.Answer != testHumorAPIResponse.Content {
+		t.Fatalf("Invalid joke response. Expected: '%s', Result: '%s'", testHumorAPIResponse.Content, joke.Answer)
 	}
 
-	if joke.Category != testJokeSearch.Category {
-		t.Fatalf("Invalid category. Expected: '%s', Result: '%s'", testJokeSearch, joke.Category)
+	if joke.Category != testParams.Category {
+		t.Fatalf("Invalid category. Expected: '%s', Result: '%s'", testParams, joke.Category)
 	}
 }
 
-func TestHumorAPIService_GetButMissingApiKey(t *testing.T) {
+func TestHumorAPIService_GetWithMissingApiKey(t *testing.T) {
 	ctx := context.Background()
 	service := NewHumorAPIService(ctx)
-	if _, err := service.Get(ctx, testJokeSearch); err == nil {
+	if _, err := service.Joke(ctx, testParams); err == nil {
 		t.Fatal("service found API key, but it didn't set")
 	}
 }
 
-func TestHumorAPIService_GetButApiReturnInvalidStatus(t *testing.T) {
+func TestHumorAPIService_GetWithApiReturnInvalidStatus(t *testing.T) {
 	httpmock.Activate()
 	defer httpmock.DeactivateAndReset()
 
-	badResponses := []int{http.StatusTooManyRequests, http.StatusPaymentRequired, http.StatusBadRequest, http.StatusForbidden, http.StatusInternalServerError}
+	responses := []int{http.StatusTooManyRequests, http.StatusPaymentRequired, http.StatusBadRequest, http.StatusForbidden, http.StatusInternalServerError}
 
 	httpmock.RegisterResponder("GET",
-		humorApiURL+toHumorAPICategory(testJokeSearch.Category),
+		humorApiURL+humorAPICategory(testParams.Category),
 		httpmock.NewStringResponder(http.StatusOK, ""))
 
-	os.Setenv(humorAPIKey, "123")
+	if err := os.Setenv(humorAPIKey, "123"); err != nil {
+		return
+	}
 
-	for _, status := range badResponses {
+	for _, status := range responses {
 		t.Run("API responses status "+strconv.Itoa(status), func(t *testing.T) {
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
 
 			service := NewHumorAPIService(ctx)
 
-			if _, err := service.Get(ctx, testJokeSearch); err == nil {
+			if _, err := service.Joke(ctx, testParams); err == nil {
 				t.Fatal("service didn't handle correct a bad/invalid http status")
 			}
 		})
 	}
 }
 
-func TestHumorAPIService_GetButApiLimitWasExceeded(t *testing.T) {
+func TestHumorAPIService_GetWithApiLimitExceeded(t *testing.T) {
 	httpmock.Activate()
 	defer httpmock.DeactivateAndReset()
 
 	httpmock.RegisterResponder("GET",
-		humorApiURL+toHumorAPICategory(testJokeSearch.Category),
+		humorApiURL+humorAPICategory(testParams.Category),
 		httpmock.NewStringResponder(http.StatusPaymentRequired, "").HeaderAdd(http.Header{xAPIQuotaLeftHeaderName: []string{"0"}}))
 
-	os.Setenv(humorAPIKey, "123")
+	if err := os.Setenv(humorAPIKey, "123"); err != nil {
+		return
+	}
 
 	ctx := context.Background()
 	service := NewHumorAPIService(ctx)
 
-	if _, err := service.Get(ctx, testJokeSearch); !errors.Is(err, HumorAPILimitExceededErr) {
+	if _, err := service.Joke(ctx, testParams); !errors.Is(err, HumorAPILimitExceededErr) {
 		t.Fatal(err)
 	}
 }
@@ -105,21 +111,23 @@ func TestHumorAPIService_Active(t *testing.T) {
 	defer httpmock.DeactivateAndReset()
 
 	httpmock.RegisterResponder("GET",
-		humorApiURL+toHumorAPICategory(testJokeSearch.Category),
+		humorApiURL+humorAPICategory(testParams.Category),
 		httpmock.NewStringResponder(http.StatusPaymentRequired, "").HeaderAdd(http.Header{xAPIQuotaLeftHeaderName: []string{"0"}}))
 
-	os.Setenv(humorAPIKey, "123")
+	if err := os.Setenv(humorAPIKey, "123"); err != nil {
+		return
+	}
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	service := NewHumorAPIService(ctx)
 
-	if _, err := service.Get(ctx, testJokeSearch); !errors.Is(err, HumorAPILimitExceededErr) {
+	if _, err := service.Joke(ctx, testParams); !errors.Is(err, HumorAPILimitExceededErr) {
 		t.Fatal(err)
 	}
 
-	if _, err := service.Get(ctx, testJokeSearch); !errors.Is(err, HumorAPILimitExceededErr) {
+	if _, err := service.Joke(ctx, testParams); !errors.Is(err, HumorAPILimitExceededErr) {
 		t.Fatal(err)
 	}
 

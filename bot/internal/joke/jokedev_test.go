@@ -12,18 +12,18 @@ import (
 	"testing"
 )
 
-var testSingleJokeDev = jokeApiSingleResponse{
+var testSingleJokeDev = singleResponse{
 	Error:    false,
 	Category: "Any",
 	Type:     "single",
-	Flags:    jokeApiFlags{},
+	Flags:    flags{},
 	Id:       0,
 	Safe:     false,
 	Lang:     "",
 	Content:  "testContent",
 }
 
-var testJokeDevUrl = fmt.Sprintf(jokeDevAPIUrlTemplate, testJokeSearch.Category, testJokeSearch.Type)
+var testJokeDevUrl = fmt.Sprintf(jokeDevAPIUrlTemplate, testParams.Category, testParams.Type)
 
 func TestDevService_Get(t *testing.T) {
 	httpmock.Activate()
@@ -38,12 +38,14 @@ func TestDevService_Get(t *testing.T) {
 		testJokeDevUrl,
 		httpmock.NewBytesResponder(http.StatusOK, response))
 
-	os.Setenv(humorAPIKey, "123")
+	if err = os.Setenv(humorAPIKey, "123"); err != nil {
+		return
+	}
 
 	ctx := context.Background()
 	service := NewJokeDevService(ctx)
 
-	joke, err := service.Get(ctx, testJokeSearch)
+	joke, err := service.Joke(ctx, testParams)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -53,11 +55,11 @@ func TestDevService_Get(t *testing.T) {
 	}
 
 	if joke.Category != Category(testSingleJokeDev.Category) {
-		t.Fatalf("Invalid category. Expected: '%s', Result: '%s'", testJokeSearch, joke.Category)
+		t.Fatalf("Invalid category. Expected: '%s', Result: '%s'", testParams, joke.Category)
 	}
 }
 
-func TestDevService_GetButApiReturnInvalidStatus(t *testing.T) {
+func TestDevService_GetAndApiReturnInvalidStatus(t *testing.T) {
 	httpmock.Activate()
 	defer httpmock.DeactivateAndReset()
 
@@ -67,7 +69,9 @@ func TestDevService_GetButApiReturnInvalidStatus(t *testing.T) {
 		testJokeDevUrl,
 		httpmock.NewStringResponder(http.StatusOK, ""))
 
-	os.Setenv(humorAPIKey, "123")
+	if err := os.Setenv(humorAPIKey, "123"); err != nil {
+		return
+	}
 
 	for _, status := range badResponses {
 		t.Run("API responses status "+strconv.Itoa(status), func(t *testing.T) {
@@ -76,14 +80,14 @@ func TestDevService_GetButApiReturnInvalidStatus(t *testing.T) {
 
 			service := NewJokeDevService(ctx)
 
-			if _, err := service.Get(ctx, testJokeSearch); err == nil {
+			if _, err := service.Joke(ctx, testParams); err == nil {
 				t.Fatal("service didn't handle correct a bad/invalid http status")
 			}
 		})
 	}
 }
 
-func TestDevService_GetButApiLimitWasExceeded(t *testing.T) {
+func TestDevService_GetWithApiLimitExceeded(t *testing.T) {
 	httpmock.Activate()
 	defer httpmock.DeactivateAndReset()
 
@@ -91,12 +95,14 @@ func TestDevService_GetButApiLimitWasExceeded(t *testing.T) {
 		testJokeDevUrl,
 		httpmock.NewStringResponder(http.StatusTooManyRequests, "").HeaderAdd(http.Header{xAPIQuotaLeftHeaderName: []string{"0"}}))
 
-	os.Setenv(humorAPIKey, "123")
+	if err := os.Setenv(humorAPIKey, "123"); err != nil {
+		return
+	}
 
 	ctx := context.Background()
 	service := NewJokeDevService(ctx)
 
-	if _, err := service.Get(ctx, testJokeSearch); !errors.Is(err, DevServiceLimitExceededErr) {
+	if _, err := service.Joke(ctx, testParams); !errors.Is(err, DevServiceLimitExceededErr) {
 		t.Fatal(err)
 	}
 }
@@ -116,11 +122,11 @@ func TestDevService_Active(t *testing.T) {
 
 	service := NewJokeDevService(ctx)
 
-	if _, err := service.Get(ctx, testJokeSearch); !errors.Is(err, DevServiceLimitExceededErr) {
+	if _, err := service.Joke(ctx, testParams); !errors.Is(err, DevServiceLimitExceededErr) {
 		t.Fatal(err)
 	}
 
-	if _, err := service.Get(ctx, testJokeSearch); !errors.Is(err, DevServiceLimitExceededErr) {
+	if _, err := service.Joke(ctx, testParams); !errors.Is(err, DevServiceLimitExceededErr) {
 		t.Fatal(err)
 	}
 

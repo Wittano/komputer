@@ -14,8 +14,8 @@ const (
 const defaultMaxFileSize = 8 * (1 << 20) // 8MB in bytes
 
 type UploadSettings struct {
-	MaxFileCount int64 `yaml:"max_file_count" json:"max_file_count"`
-	MaxFileSize  int64 `yaml:"max_file_size" json:"max_file_size"`
+	Count int64 `yaml:"max_file_count" json:"max_file_count"`
+	Size  int64 `yaml:"max_file_size" json:"max_file_size"`
 }
 
 type Settings struct {
@@ -37,39 +37,40 @@ func (s *Settings) Update(new Settings) error {
 		s.AssetDir = new.AssetDir
 	}
 
-	if new.Upload.MaxFileCount != 0 && s.Upload.MaxFileCount != new.Upload.MaxFileCount {
-		s.Upload.MaxFileCount = new.Upload.MaxFileCount
+	if new.Upload.Count != 0 && s.Upload.Count != new.Upload.Count {
+		s.Upload.Count = new.Upload.Count
 	}
 
-	if new.Upload.MaxFileSize != 0 && s.Upload.MaxFileSize != new.Upload.MaxFileSize {
-		s.Upload.MaxFileSize = new.Upload.MaxFileSize
+	if new.Upload.Size != 0 && s.Upload.Size != new.Upload.Size {
+		s.Upload.Size = new.Upload.Size
 	}
 
 	return nil
 }
 
-func (s Settings) CheckFileCountLimit(count int) bool {
-	return count >= 1 && int64(count) <= s.Upload.MaxFileCount
+func (s Settings) CheckFilesLimit(c int) bool {
+	return c >= 1 && int64(c) <= s.Upload.Count
 }
 
 var Config *Settings
 
+// TODO Remove global variable/singleton
 func Load(path string) error {
 	if Config != nil {
 		return nil
 	}
 
-	settingPath := DefaultSettingsPath
+	destPath := DefaultSettingsPath
 	if path != "" {
-		settingPath = path
+		destPath = path
 	}
 
-	if _, err := os.Stat(settingPath); errors.Is(err, os.ErrNotExist) {
-		Config, err = defaultSettings(settingPath)
+	if _, err := os.Stat(destPath); errors.Is(err, os.ErrNotExist) {
+		Config, err = defaultSettings(destPath)
 		return err
 	}
 
-	f, err := os.Open(settingPath)
+	f, err := os.Open(destPath)
 	if err != nil {
 		return err
 	}
@@ -91,24 +92,24 @@ func defaultSettings(path string) (*Settings, error) {
 	defer f.Close()
 
 	const cacheDirKey = "CACHE_AUDIO_DIR"
-	assetDir := DefaultAssertDir
+	dir := DefaultAssertDir
 	if assetDirPath, ok := os.LookupEnv(cacheDirKey); ok && assetDirPath != "" {
-		assetDir = assetDirPath
+		dir = assetDirPath
 	}
 
-	defaultSettings := Settings{
-		AssetDir: assetDir,
+	def := Settings{
+		AssetDir: dir,
 		Upload: UploadSettings{
-			MaxFileCount: 5,
-			MaxFileSize:  defaultMaxFileSize,
+			Count: 5,
+			Size:  defaultMaxFileSize,
 		},
 	}
 
 	e := yaml.NewEncoder(f)
 	defer e.Close()
-	if err = e.Encode(&defaultSettings); err != nil {
+	if err = e.Encode(&def); err != nil {
 		return nil, err
 	}
 
-	return &defaultSettings, nil
+	return &def, nil
 }

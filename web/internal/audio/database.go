@@ -24,7 +24,7 @@ type DatabaseService struct {
 var NotFoundErr = errors.New("audio not found")
 
 func (a DatabaseService) save(ctx context.Context, filename string) (primitive.ObjectID, error) {
-	client, err := a.Database.Client(ctx)
+	c, err := a.Database.Client(ctx)
 	if err != nil {
 		return primitive.ObjectID{}, err
 	}
@@ -38,7 +38,7 @@ func (a DatabaseService) save(ctx context.Context, filename string) (primitive.O
 		Path:     realPath,
 	}
 
-	result, err := client.Database(db.DatabaseName).Collection(audioCollectionName).InsertOne(ctx, info)
+	result, err := c.Database(db.DatabaseName).Collection(audioCollectionName).InsertOne(ctx, info)
 	if err != nil {
 		return primitive.ObjectID{}, err
 	}
@@ -52,12 +52,12 @@ func (a DatabaseService) Get(ctx context.Context, id string) (result db.AudioInf
 		return
 	}
 
-	client, err := a.Database.Client(ctx)
+	c, err := a.Database.Client(ctx)
 	if err != nil {
 		return db.AudioInfo{}, err
 	}
 
-	err = client.Database(db.DatabaseName).
+	err = c.Database(db.DatabaseName).
 		Collection(audioCollectionName).
 		FindOne(ctx, bson.D{{"_id", hex}}).
 		Decode(&result)
@@ -65,8 +65,8 @@ func (a DatabaseService) Get(ctx context.Context, id string) (result db.AudioInf
 	return
 }
 
-func (a DatabaseService) AudioFilesInfo(ctx context.Context, searchType, value string, page int) (fileInfos []api.AudioFileInfo, err error) {
-	client, err := a.Database.Client(ctx)
+func (a DatabaseService) AudioFilesInfo(ctx context.Context, searchType, value string, page int) (info []api.AudioFileInfo, err error) {
+	c, err := a.Database.Client(ctx)
 	if err != nil {
 		return []api.AudioFileInfo{}, err
 	}
@@ -80,21 +80,22 @@ func (a DatabaseService) AudioFilesInfo(ctx context.Context, searchType, value s
 
 	filter := bson.D{{keyName, primitive.Regex{Pattern: fmt.Sprintf("^[\\w]*%s[\\w\\.]+", value)}}}
 	opts := options.Find().SetLimit(maxPageSize).SetSkip(int64(maxPageSize * page))
-	cursor, err := client.Database(db.DatabaseName).Collection(audioCollectionName).Find(ctx, filter, opts)
+
+	cursor, err := c.Database(db.DatabaseName).Collection(audioCollectionName).Find(ctx, filter, opts)
 	if err != nil {
 		return []api.AudioFileInfo{}, err
 	}
 	defer cursor.Close(ctx)
 
-	fileInfos = make([]api.AudioFileInfo, 0, maxPageSize)
+	info = make([]api.AudioFileInfo, 0, maxPageSize)
 	for cursor.TryNext(ctx) {
-		var info db.AudioInfo
-		if err := bson.Unmarshal(cursor.Current, &info); err != nil {
+		var res db.AudioInfo
+		if err := bson.Unmarshal(cursor.Current, &res); err != nil {
 			return nil, err
 		}
 
-		fileInfos = append(fileInfos, info.ApiAudioFileInfo())
-		if len(fileInfos) == maxPageSize {
+		info = append(info, res.AudioFileInfo())
+		if len(info) == maxPageSize {
 			break
 		}
 	}
@@ -113,12 +114,12 @@ func (a DatabaseService) Delete(ctx context.Context, id string) (err error) {
 		return errors.Join(NotFoundErr, err)
 	}
 
-	client, err := a.Database.Client(ctx)
+	c, err := a.Database.Client(ctx)
 	if err != nil {
 		return
 	}
 
-	_, err = client.Database(db.DatabaseName).
+	_, err = c.Database(db.DatabaseName).
 		Collection(audioCollectionName).
 		DeleteOne(ctx, bson.D{{"_id", hex}})
 	if err != nil {

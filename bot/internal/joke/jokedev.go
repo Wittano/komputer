@@ -15,11 +15,11 @@ const (
 	jokeDevAPIUrlTemplate        = "https://v2.jokeapi.dev/joke/%s?type=%s"
 )
 
-type jokeMapper interface {
+type mapper interface {
 	Joke() Joke
 }
 
-type jokeApiFlags struct {
+type flags struct {
 	Nsfw      bool `json:"nsfw"`
 	Religious bool `json:"religious"`
 	Political bool `json:"political"`
@@ -28,18 +28,18 @@ type jokeApiFlags struct {
 	Explicit  bool `json:"explicit"`
 }
 
-type jokeApiSingleResponse struct {
-	Error    bool         `json:"error"`
-	Category string       `json:"category"`
-	Type     string       `json:"type"`
-	Flags    jokeApiFlags `json:"flags"`
-	Id       int          `json:"id"`
-	Safe     bool         `json:"safe"`
-	Lang     string       `json:"lang"`
-	Content  string       `json:"joke"`
+type singleResponse struct {
+	Error    bool   `json:"error"`
+	Category string `json:"category"`
+	Type     string `json:"type"`
+	Flags    flags  `json:"flags"`
+	Id       int    `json:"id"`
+	Safe     bool   `json:"safe"`
+	Lang     string `json:"lang"`
+	Content  string `json:"joke"`
 }
 
-func (j jokeApiSingleResponse) Joke() Joke {
+func (j singleResponse) Joke() Joke {
 	return Joke{
 		Answer:   j.Content,
 		Type:     Single,
@@ -47,19 +47,19 @@ func (j jokeApiSingleResponse) Joke() Joke {
 	}
 }
 
-type jokeApiTwoPartResponse struct {
-	Error    bool         `json:"error"`
-	Category string       `json:"category"`
-	Type     string       `json:"type"`
-	Flags    jokeApiFlags `json:"flags"`
-	Id       int          `json:"id"`
-	Safe     bool         `json:"safe"`
-	Lang     string       `json:"lang"`
-	Setup    string       `json:"setup"`
-	Delivery string       `json:"delivery"`
+type twoPartResponse struct {
+	Error    bool   `json:"error"`
+	Category string `json:"category"`
+	Type     string `json:"type"`
+	Flags    flags  `json:"flags"`
+	Id       int    `json:"id"`
+	Safe     bool   `json:"safe"`
+	Lang     string `json:"lang"`
+	Setup    string `json:"setup"`
+	Delivery string `json:"delivery"`
 }
 
-func (j jokeApiTwoPartResponse) Joke() Joke {
+func (j twoPartResponse) Joke() Joke {
 	return Joke{
 		Question: j.Setup,
 		Answer:   j.Delivery,
@@ -87,7 +87,7 @@ func (d DevService) Active(ctx context.Context) (active bool) {
 	return
 }
 
-func (d *DevService) Get(ctx context.Context, search SearchParameters) (Joke, error) {
+func (d *DevService) Joke(ctx context.Context, params SearchParams) (Joke, error) {
 	select {
 	case <-ctx.Done():
 		return Joke{}, context.Canceled
@@ -98,12 +98,12 @@ func (d *DevService) Get(ctx context.Context, search SearchParameters) (Joke, er
 		return Joke{}, DevServiceLimitExceededErr
 	}
 
-	if search.Category == YOMAMA || search.Category == "" {
-		search.Category = Any
+	if params.Category == YOMAMA || params.Category == "" {
+		params.Category = Any
 	}
 
-	jokeDevApiURL := fmt.Sprintf(jokeDevAPIUrlTemplate, search.Category, search.Type)
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, jokeDevApiURL, nil)
+	url := fmt.Sprintf(jokeDevAPIUrlTemplate, params.Category, params.Type)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return Joke{}, err
 	}
@@ -115,11 +115,12 @@ func (d *DevService) Get(ctx context.Context, search SearchParameters) (Joke, er
 	defer res.Body.Close()
 
 	// Check if daily limit exceeded
-	isLimitExceeded := len(res.Header[rateLimitRemainingHeaderName]) > 0 && res.Header[rateLimitRemainingHeaderName][0] == "0"
+	isLimitExceeded := len(res.Header[rateLimitRemainingHeaderName]) > 0 &&
+		res.Header[rateLimitRemainingHeaderName][0] == "0"
 
 	if res.StatusCode == http.StatusTooManyRequests || isLimitExceeded {
 		const rateLimitReset = "RateLimit-Reset"
-		resetTime := prepareResetTime(res.Header[rateLimitReset])
+		resetTime := resetTime(res.Header[rateLimitReset])
 		d.active = false
 
 		go unlockService(d.globalCtx, &d.active, resetTime)
@@ -136,39 +137,39 @@ func (d *DevService) Get(ctx context.Context, search SearchParameters) (Joke, er
 		return Joke{}, err
 	}
 
-	var jokeMapper jokeMapper
-	switch search.Type {
+	var mapper mapper
+	switch params.Type {
 	case Single:
-		singleRes := jokeApiSingleResponse{}
+		singleRes := singleResponse{}
 
 		err = json.Unmarshal(resBody, &singleRes)
 
-		jokeMapper = singleRes
+		mapper = singleRes
 	case TwoPart:
-		twoPartRes := &jokeApiTwoPartResponse{}
+		twoPartRes := &twoPartResponse{}
 
 		err = json.Unmarshal(resBody, &twoPartRes)
 
-		jokeMapper = twoPartRes
+		mapper = twoPartRes
 	}
 
 	if err != nil {
 		return Joke{}, err
 	}
 
-	return jokeMapper.Joke(), nil
+	return mapper.Joke(), nil
 }
 
-func prepareResetTime(rateLimitReset []string) (resetTime time.Time) {
-	var err error
+// Prepare reset time after that service should be activated
+func resetTime(rateLimitReset []string) (t time.Time) {
 	if len(rateLimitReset) > 0 {
-		resetTime, err = time.Parse("Sun, 06 Nov 1994 08:49:37 GMT", rateLimitReset[0])
-		if err != nil {
-			resetTime = time.Now().Add(24 * time.Hour)
+		var err error
+		if t, err = time.Parse("Sun, 06 Nov 1994 08:49:37 GMT", rateLimitReset[0]); err != nil {
+			t = time.Now().Add(24 * time.Hour)
 		}
 	} else {
-		resetTime = time.Now().Add(24 * time.Hour)
+		t = time.Now().Add(24 * time.Hour)
 	}
 
-	return resetTime
+	return t
 }

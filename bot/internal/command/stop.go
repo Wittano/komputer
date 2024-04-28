@@ -6,30 +6,34 @@ import (
 	"os"
 )
 
-const SpockStopCommandName = "stop"
+const StopCommandName = "stop"
 
-type SpockStopCommand struct {
-	SpockMusicStopChs map[string]chan struct{}
+type StopCommand struct {
+	MusicStopChs map[string]chan struct{}
 }
 
-func (ssc SpockStopCommand) Command() *discordgo.ApplicationCommand {
+func (sc StopCommand) Command() *discordgo.ApplicationCommand {
 	return &discordgo.ApplicationCommand{
-		Name:        SpockStopCommandName,
+		Name:        StopCommandName,
 		Description: "Stop playing song by discord",
 		GuildID:     os.Getenv(serverGuildKey),
 		Type:        discordgo.ChatApplicationCommand,
 	}
 }
 
-func (ssc SpockStopCommand) Execute(ctx context.Context, s *discordgo.Session, i *discordgo.InteractionCreate) (res DiscordMessageReceiver, _ error) {
-	res = SimpleMessageResponse{Msg: "Przepraszam"}
+func (sc StopCommand) Execute(
+	ctx context.Context,
+	s *discordgo.Session,
+	i *discordgo.InteractionCreate,
+) (res DiscordMessageReceiver, _ error) {
+	res = SimpleMessage{Msg: "Przepraszam"}
 
 	select {
 	case <-ctx.Done():
 		return
 	default:
 		if _, ok := s.VoiceConnections[i.GuildID]; ok {
-			ssc.SpockMusicStopChs[i.GuildID] <- struct{}{}
+			sc.MusicStopChs[i.GuildID] <- struct{}{}
 		}
 	}
 

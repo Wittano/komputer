@@ -3,14 +3,10 @@ package audio
 import (
 	"context"
 	"errors"
-	"fmt"
-	"github.com/labstack/echo/v4"
 	"github.com/wittano/komputer/db"
-	"github.com/wittano/komputer/web/internal/api"
 	"github.com/wittano/komputer/web/settings"
 	"io"
 	"mime/multipart"
-	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -28,20 +24,11 @@ func (u UploadService) Upload(ctx context.Context, files []*multipart.FileHeader
 	defer close(errCh)
 	defer close(successCh)
 
-	filesCount := len(files)
 	for _, f := range files {
-		if err := validRequestedFile(*f); errors.Is(err, os.ErrExist) {
-			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("file with name: '%s' exists", f.Filename))
-		} else if err != nil {
-			return api.Error{
-				HttpErr: echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("invalid '%s' audio", f.Filename)),
-				Err:     err,
-			}
-		}
-
 		go u.save(ctx, f, errCh, successCh)
 	}
 
+	count := len(files)
 	for {
 		select {
 		case <-ctx.Done():
@@ -49,11 +36,11 @@ func (u UploadService) Upload(ctx context.Context, files []*multipart.FileHeader
 		case err := <-errCh:
 			return err
 		case <-successCh:
-			filesCount -= 1
+			count -= 1
 			break
 		}
 
-		if filesCount <= 0 {
+		if count <= 0 {
 			break
 		}
 	}
@@ -86,6 +73,7 @@ func (u UploadService) save(ctx context.Context, file *multipart.FileHeader, err
 	}
 	defer dest.Close()
 
+	service := DatabaseService{u.Db}
 	for {
 		select {
 		case <-ctx.Done():
@@ -97,14 +85,12 @@ func (u UploadService) save(ctx context.Context, file *multipart.FileHeader, err
 
 			_, err := io.CopyN(dest, src, bufSize)
 			if errors.Is(err, io.EOF) {
-				audioService := DatabaseService{u.Db}
-
-				id, err := audioService.save(ctx, dest.Name())
+				id, err := service.save(ctx, dest.Name())
 				if err != nil {
 					errCh <- err
 				} else {
-					renameFile := strings.ReplaceAll(dest.Name(), file.Filename, id.Hex()+".mp3")
-					if err = os.Rename(destPath, renameFile); err != nil {
+					newPath := strings.ReplaceAll(dest.Name(), file.Filename, id.Hex()+".mp3")
+					if err = os.Rename(destPath, newPath); err != nil {
 						errCh <- err
 						os.Remove(destPath)
 
@@ -124,21 +110,4 @@ func (u UploadService) save(ctx context.Context, file *multipart.FileHeader, err
 			}
 		}
 	}
-}
-
-func validRequestedFile(file multipart.FileHeader) error {
-	if file.Size >= settings.Config.Upload.MaxFileSize {
-		return fmt.Errorf("audio '%s' is too big", file.Filename)
-	}
-
-	if err := ValidMp3File(&file); err != nil {
-		return err
-	}
-
-	destFile := filepath.Join(settings.Config.AssetDir, file.Filename)
-	if _, err := os.Stat(destFile); err == nil {
-		return os.ErrExist
-	}
-
-	return nil
 }

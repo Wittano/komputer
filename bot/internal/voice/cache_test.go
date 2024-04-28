@@ -11,13 +11,13 @@ import (
 	"time"
 )
 
-func TestNewBotLocalStorageGet(t *testing.T) {
+func TestNewBotLocalStorage_Get(t *testing.T) {
 	dir := t.TempDir()
 	if err := os.Setenv(CacheDirAudioKey, dir); err != nil {
 		t.Fatal(err)
 	}
 
-	cache := NewBotLocalStorage()
+	s := NewBotLocalStorage()
 	const (
 		fileID   = "1"
 		filename = "file"
@@ -29,14 +29,14 @@ func TestNewBotLocalStorageGet(t *testing.T) {
 	}
 	f.Close()
 
-	args := []AudioSearch{
+	args := []SearchParams{
 		{IDType, fileID},
 		{NameType, filename},
 	}
 
 	for _, data := range args {
-		t.Run("get file from cache with query value "+data.Value, func(t *testing.T) {
-			path, err := cache.Get(context.Background(), data)
+		t.Run("get file from s with query value "+data.Value, func(t *testing.T) {
+			path, err := s.Get(context.Background(), data)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -48,60 +48,58 @@ func TestNewBotLocalStorageGet(t *testing.T) {
 	}
 }
 
-func TestNewBotLocalStorageGetButFileMissing(t *testing.T) {
+func TestNewBotLocalStorage_GetWithFileMissing(t *testing.T) {
 	dir := t.TempDir()
 	if err := os.Setenv(CacheDirAudioKey, dir); err != nil {
 		t.Fatal(err)
 	}
 
-	cache := NewBotLocalStorage()
-	query := AudioSearch{Type: IDType, Value: "1123412"}
-
-	if _, err := cache.Get(context.Background(), query); err == nil {
+	s := NewBotLocalStorage()
+	if _, err := s.Get(context.Background(), (SearchParams{Type: IDType, Value: "1123412"})); err == nil {
 		t.Fatal(err)
 	}
 }
 
-func TestNewBotLocalStorageRemoveButFileMissing(t *testing.T) {
+func TestNewBotLocalStorage_RemoveWithFileMissing(t *testing.T) {
 	dir := t.TempDir()
 	if err := os.Setenv(CacheDirAudioKey, dir); err != nil {
 		t.Fatal(err)
 	}
 
-	cache := NewBotLocalStorage()
-	query := AudioSearch{Type: IDType, Value: "142308579as"}
+	s := NewBotLocalStorage()
+	params := SearchParams{Type: IDType, Value: "142308579as"}
 
-	if err := cache.Remove(context.Background(), query); err == nil {
-		t.Fatal("random file was removed, but cache service shouldn't remove anything")
+	if err := s.Remove(context.Background(), params); err == nil {
+		t.Fatal("random file was removed, but s service shouldn't remove anything")
 	}
 }
 
-func TestNewBotLocalStorageRemove(t *testing.T) {
+func TestNewBotLocalStorage_Remove(t *testing.T) {
 	dir := t.TempDir()
 	if err := os.Setenv(CacheDirAudioKey, dir); err != nil {
 		t.Fatal(err)
 	}
 
-	cache := NewBotLocalStorage()
+	s := NewBotLocalStorage()
 	const (
 		fileID   = "1"
 		filename = "file"
 	)
 
-	args := []AudioSearch{
+	params := []SearchParams{
 		{IDType, fileID},
 		{NameType, filename},
 	}
 
-	for _, data := range args {
-		t.Run("remove file from cache with query value "+data.Value, func(t *testing.T) {
+	for _, data := range params {
+		t.Run("remove file from s with query value "+data.Value, func(t *testing.T) {
 			f, err := os.CreateTemp(dir, fmt.Sprintf("%s-%s.mp3", filename, fileID))
 			if err != nil {
 				t.Fatal(err)
 			}
 			defer f.Close()
 
-			if err := cache.Remove(context.Background(), data); err != nil {
+			if err := s.Remove(context.Background(), data); err != nil {
 				t.Fatal(err)
 			}
 
@@ -112,12 +110,12 @@ func TestNewBotLocalStorageRemove(t *testing.T) {
 	}
 }
 
-func TestNewBotLocalStorageAdd(t *testing.T) {
+func TestNewBotLocalStorage_Add(t *testing.T) {
 	if err := os.Setenv(CacheDirAudioKey, filepath.Join(t.TempDir(), "assets")); err != nil {
 		t.Fatal(err)
 	}
 
-	cache := NewBotLocalStorage()
+	s := NewBotLocalStorage()
 	const (
 		fileID      = "1"
 		filename    = "file"
@@ -127,7 +125,7 @@ func TestNewBotLocalStorageAdd(t *testing.T) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-	path, err := cache.Add(ctx, buf, fileID, filename)
+	path, err := s.Add(ctx, buf, fileID, filename)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -137,12 +135,12 @@ func TestNewBotLocalStorageAdd(t *testing.T) {
 	}
 }
 
-func TestNewBotLocalStorageAddButFilenameIsMissing(t *testing.T) {
+func TestNewBotLocalStorage_AddWithEmptySource(t *testing.T) {
 	if err := os.Setenv(CacheDirAudioKey, filepath.Join(t.TempDir(), "assets")); err != nil {
 		t.Fatal(err)
 	}
 
-	cache := NewBotLocalStorage()
+	s := NewBotLocalStorage()
 	const (
 		fileID      = "1"
 		fileContent = "test data"
@@ -151,7 +149,7 @@ func TestNewBotLocalStorageAddButFilenameIsMissing(t *testing.T) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-	path, err := cache.Add(ctx, buf, fileID, "")
+	path, err := s.Add(ctx, buf, fileID, "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -161,12 +159,12 @@ func TestNewBotLocalStorageAddButFilenameIsMissing(t *testing.T) {
 	}
 }
 
-func TestNewBotLocalStorageAddButMissingFileID(t *testing.T) {
+func TestNewBotLocalStorage_AddWithMissingFileID(t *testing.T) {
 	if err := os.Setenv(CacheDirAudioKey, filepath.Join(t.TempDir(), "assets")); err != nil {
 		t.Fatal(err)
 	}
 
-	cache := NewBotLocalStorage()
+	s := NewBotLocalStorage()
 	const (
 		filename    = "file"
 		fileContent = "test data"
@@ -176,18 +174,18 @@ func TestNewBotLocalStorageAddButMissingFileID(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
-	path, err := cache.Add(ctx, buf, "", filename)
+	path, err := s.Add(ctx, buf, "", filename)
 	if err == nil {
 		t.Fatalf("file %s was created, but ID is missing", path)
 	}
 }
 
-func TestNewBotLocalStorageAddButContextCanceled(t *testing.T) {
+func TestNewBotLocalStorage_AddWithContextCanceled(t *testing.T) {
 	if err := os.Setenv(CacheDirAudioKey, filepath.Join(t.TempDir(), "assets")); err != nil {
 		t.Fatal(err)
 	}
 
-	cache := NewBotLocalStorage()
+	s := NewBotLocalStorage()
 	const (
 		fileID   = "1"
 		filename = "file"
@@ -199,26 +197,26 @@ func TestNewBotLocalStorageAddButContextCanceled(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 
-	path, err := cache.Add(ctx, buf, fileID, filename)
+	path, err := s.Add(ctx, buf, fileID, filename)
 	if !errors.Is(err, context.Canceled) {
 		t.Fatalf("file %s was created, but context was canceled. %s", path, err)
 	}
 }
 
 func TestNewBotLocalStorageAddButFileExists(t *testing.T) {
-	destDir := filepath.Join(t.TempDir(), "assets")
-	if err := os.Setenv(CacheDirAudioKey, destDir); err != nil {
+	dir := filepath.Join(t.TempDir(), "assets")
+	if err := os.Setenv(CacheDirAudioKey, dir); err != nil {
 		t.Fatal(err)
 	}
 
-	cache := NewBotLocalStorage()
+	s := NewBotLocalStorage()
 	const (
 		filename    = "file"
 		fileID      = "1"
 		fileContent = "test data"
 	)
 	buf := strings.NewReader(fileContent)
-	f, err := os.Create(filepath.Join(destDir, fmt.Sprintf("%s-%s.mp3", filename, fileID)))
+	f, err := os.Create(filepath.Join(dir, fmt.Sprintf("%s-%s.mp3", filename, fileID)))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -227,7 +225,7 @@ func TestNewBotLocalStorageAddButFileExists(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
-	path, err := cache.Add(ctx, buf, fileID, filename)
+	path, err := s.Add(ctx, buf, fileID, filename)
 	if !errors.Is(err, os.ErrExist) {
 		t.Fatalf("file %s was created, but file was existed previous. %s", path, err)
 	}

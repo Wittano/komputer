@@ -8,8 +8,8 @@ import (
 	"github.com/wittano/komputer/web/settings"
 )
 
-func NewWebConsoleServer(configPath string) (*echo.Echo, error) {
-	if err := settings.Load(configPath); err != nil {
+func NewWebConsoleServer(path string) (*echo.Echo, error) {
+	if err := settings.Load(path); err != nil {
 		return nil, err
 	}
 
@@ -17,14 +17,14 @@ func NewWebConsoleServer(configPath string) (*echo.Echo, error) {
 
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
-	e.Use(middleware.BodyLimit(fmt.Sprintf("%dM", settings.Config.Upload.MaxFileSize)))
+	e.Use(middleware.BodyLimit(fmt.Sprintf("%dM", settings.Config.Upload.Size)))
 
-	e.GET("/api/v1/audio/:id", handler.GetAudio)
-	e.GET("/api/v1/audio/fileinfo/:type/:value", handler.GetAudioFilesInfo)
+	e.GET("/api/v1/audio/:id", handler.Audio)
+	e.GET("/api/v1/audio/fileinfo/:type/:value", handler.AudioFilesInfo)
 	e.POST("/api/v1/audio", handler.UploadNewAudio)
 	e.DELETE("/api/v1/audio/:id", handler.RemoveAudio)
 
-	e.GET("/api/v1/setting", handler.GetSettings)
+	e.GET("/api/v1/setting", handler.Settings)
 	e.PUT("/api/v1/setting", handler.UpdateSettings)
 
 	e.GET("/api/v1/health", handler.HealthChecker)

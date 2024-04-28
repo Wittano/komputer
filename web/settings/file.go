@@ -7,8 +7,8 @@ import (
 	"sync"
 )
 
-func moveToNewLocation(oldSrc string, destDir string) (err error) {
-	dirs, err := os.ReadDir(oldSrc)
+func moveToNewLocation(old string, new string) (err error) {
+	dirs, err := os.ReadDir(old)
 	if err != nil {
 		return nil
 	}
@@ -21,18 +21,18 @@ func moveToNewLocation(oldSrc string, destDir string) (err error) {
 		}
 
 		wg.Add(1)
-		go func(wg *sync.WaitGroup, oldSrc string, file os.DirEntry) {
+		go func(wg *sync.WaitGroup, old string, dir os.DirEntry) {
 			defer wg.Done()
 
 			if err != nil {
 				return
 			}
 
-			oldPath, newPath := filepath.Join(oldSrc, file.Name()), filepath.Join(destDir, file.Name())
-			if err = os.Rename(oldPath, newPath); err != nil {
+			src, dest := filepath.Join(old, dir.Name()), filepath.Join(new, dir.Name())
+			if err = os.Rename(src, dest); err != nil {
 				return
 			}
-		}(&wg, oldSrc, dir)
+		}(&wg, old, dir)
 	}
 
 	wg.Wait()

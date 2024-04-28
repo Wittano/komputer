@@ -35,31 +35,29 @@ func CreateMultipartFileHeader(path string) (*multipart.FileHeader, error) {
 
 	var buf bytes.Buffer
 
-	formWriter := multipart.NewWriter(&buf)
+	w := multipart.NewWriter(&buf)
 	filename := filepath.Base(path)
-	formPart, err := formWriter.CreateFormFile(filename, filepath.Base(path))
+	formWriter, err := w.CreateFormFile(filename, filepath.Base(path))
 	if err != nil {
 		return nil, err
 	}
 
-	if _, err = io.Copy(formPart, f); err != nil {
+	if _, err = io.Copy(formWriter, f); err != nil {
 		return nil, err
 	}
 
-	err = formWriter.Close()
+	err = w.Close()
 	if err != nil {
 		return nil, err
 	}
 
-	reader := bytes.NewReader(buf.Bytes())
-	formReader := multipart.NewReader(reader, formWriter.Boundary())
-
-	multipartForm, err := formReader.ReadForm(1 << 20)
+	r := multipart.NewReader(bytes.NewReader(buf.Bytes()), w.Boundary())
+	form, err := r.ReadForm(1 << 20)
 	if err != nil {
 		return nil, err
 	}
 
-	if file, ok := multipartForm.File[filename]; !ok || len(file) <= 0 {
+	if file, ok := form.File[filename]; !ok || len(file) <= 0 {
 		return nil, errors.New("failed create multipart audio")
 	} else {
 		return file[0], nil

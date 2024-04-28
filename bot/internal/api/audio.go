@@ -46,11 +46,11 @@ func (c WebClient) DownloadAudio(id string) (path string, err error) {
 	return c.cache.Add(context.Background(), res.Body, id, res.Header.Get("filename"))
 }
 
-func (c WebClient) IsActive() bool {
+func (c WebClient) Active(_ context.Context) bool {
 	return c.active
 }
 
-func (c WebClient) SearchAudio(ctx context.Context, option voice.AudioSearch, page uint) ([]api.AudioFileInfo, error) {
+func (c WebClient) AudioFileInfo(ctx context.Context, option voice.SearchParams, page uint) ([]api.AudioFileInfo, error) {
 	searchType := "id"
 	if option.Type == voice.NameType {
 		searchType = "name"
@@ -94,12 +94,12 @@ func (c WebClient) ping() error {
 
 	c.client.Timeout = time.Millisecond * 500
 
-	response, err := c.client.Do(req)
+	res, err := c.client.Do(req)
 	if err != nil {
 		return err
 	}
 
-	if response.StatusCode != 200 {
+	if res.StatusCode != 200 {
 		return errors.New("web api isn;t healthy")
 	}
 
@@ -117,19 +117,19 @@ func NewClient(baseURL string) (WebClient, error) {
 		return WebClient{}, err
 	}
 
-	client := WebClient{
+	c := WebClient{
 		baseURL: baseURL,
 		client: http.Client{
 			Timeout: time.Second * 5,
 		},
 	}
 
-	slog.Info("Testing connection with Web API")
-	if err := client.ping(); err != nil {
+	slog.Info("Testing connection with WebAPI API")
+	if err := c.ping(); err != nil {
 		return WebClient{}, err
 	}
 
-	client.active = true
+	c.active = true
 
-	return client, nil
+	return c, nil
 }

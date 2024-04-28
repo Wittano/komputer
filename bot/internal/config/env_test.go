@@ -32,7 +32,7 @@ func TestLoadBotVariables(t *testing.T) {
 	}
 }
 
-func TestLoadBotVariablesButDiscordTokenIsMissing(t *testing.T) {
+func TestLoadBotVariables_DiscordTokenMissing(t *testing.T) {
 	os.Setenv("DISCORD_BOT_TOKEN", "")
 	os.Setenv("APPLICATION_ID", appID)
 
@@ -41,7 +41,7 @@ func TestLoadBotVariablesButDiscordTokenIsMissing(t *testing.T) {
 	}
 }
 
-func TestLoadBotVariablesButAppIDIsMissing(t *testing.T) {
+func TestLoadBotVariables_AppIDMissing(t *testing.T) {
 	os.Setenv("DISCORD_BOT_TOKEN", discordToken)
 	os.Setenv("APPLICATION_ID", "")
 
