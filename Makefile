@@ -17,7 +17,7 @@ prod:
 test:
 	go test -race ./bot/...
 
-install: prod
+install: prod test
 	mkdir -p $(DEST_DIR)
 	cp -r assets $(DEST_DIR)
 	cp $(OUTPUT_DIR)/komputer $(DEST_DIR)

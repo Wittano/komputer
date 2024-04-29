@@ -31,6 +31,10 @@ in
           Your token never shouldn't be publish on any public git repository e.g. Github or Gitlab
         '';
       };
+      mongodbURI = mkOption {
+        type = types.str;
+        description = "Connection URI to your instance of mongodb";
+      };
     };
   };
 
@@ -48,6 +52,10 @@ in
         assertion = cfg.applicationID != "";
         message = "Option komputer.applicationID is empty";
       }
+      {
+        assertion = cfg.mongodb != "";
+        message = "Option komputer.mongodbURI is empty";
+      }
     ];
 
     systemd.services.komputer = {
@@ -57,6 +65,7 @@ in
         DISCORD_BOT_TOKEN = cfg.token;
         APPLICATION_ID = cfg.applicationID;
         SERVER_GUID = cfg.guildID;
+        MONGODB_URI = cfg.mongodbURI;
       };
       script = "${cfg.package}/bin/komputer";
     };

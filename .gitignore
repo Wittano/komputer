@@ -29,7 +29,6 @@ assets
 # Web files
 *.mp3
 *.mp4
-*.yml
 
 # Nix
 result
