@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package komputer;
+
+enum Option {
+  ENABLE_JOKE_DEV = 0;
+  ENABLE_HUMOR_API = 1;
+}
+
+message UpdateOption {
+  Option option = 1;
+  bool value = 2;
+}
+
+service ConfigService {
+  rpc Update(UpdateOption) returns (UpdateOption);
+}

@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+import "google/protobuf/empty.proto";
+package komputer;
+
+enum Type {
+  SINGLE = 0;
+  TWO_PART = 1;
+}
+
+enum Category {
+  PROGRAMMING = 0;
+  MISC = 1;
+  DARK = 2;
+  YOMAMA = 3;
+  Any = 4;
+}
+
+message SearchParams {
+  optional uint64 id = 1;
+}
+
+message Joke {
+  uint64 id = 1;
+  string answer = 2;
+  optional string question = 3;
+  Type type = 4;
+  Category category = 5;
+  string guildID = 6;
+}
+
+message JokeID {
+  uint64 id = 1;
+}
+
+service JokeService {
+  rpc Find(SearchParams) returns (Joke);
+  rpc Add(Joke) returns (JokeID);
+  rpc Remove(JokeID) returns (google.protobuf.Empty);
+}

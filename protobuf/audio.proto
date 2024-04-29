@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+import "google/protobuf/empty.proto";
+package komputer;
+
+enum FileFormat {
+  MP3 = 0;
+  MP4 = 1;
+}
+
+message AudioInfo {
+  string name = 1;
+  FileFormat type = 2;
+}
+
+message Audio {
+  oneof request {
+    AudioInfo info = 1;
+    bytes file = 2;
+  }
+}
+
+message UploadAudioResponse {
+  string id = 1;
+  uint32 size = 2;
+}
+
+message RemoveAudioRequest {
+  optional string id = 1;
+  optional string name = 2;
+}
+
+service AudioService {
+  rpc Add(stream Audio) returns (UploadAudioResponse);
+  rpc Remove(RemoveAudioRequest) returns (google.protobuf.Empty);
+}
