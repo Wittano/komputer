@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"github.com/wittano/komputer/joke"
+	"github.com/wittano/komputer/log"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"log/slog"
 	"math/rand"
@@ -58,6 +59,8 @@ func (j JokeCommand) Command() *discordgo.ApplicationCommand {
 func (j JokeCommand) Execute(ctx context.Context, _ *discordgo.Session, i *discordgo.InteractionCreate) (DiscordMessageReceiver, error) {
 	searchQuery := searchParams(ctx, i.Data.(discordgo.ApplicationCommandInteractionData))
 
+	loggerCtx := ctx.(log.Context)
+
 findJoke:
 	select {
 	case <-ctx.Done():
@@ -72,7 +75,7 @@ findJoke:
 
 	res, err := service.Joke(ctx, searchQuery)
 	if err != nil {
-		slog.With(requestIDKey, ctx.Value(requestIDKey)).ErrorContext(ctx, err.Error())
+		loggerCtx.Logger.Error(err.Error())
 		goto findJoke
 	}
 
@@ -121,7 +124,9 @@ func searchParams(ctx context.Context, data discordgo.ApplicationCommandInteract
 		case idOptionKey:
 			query.ID = o.Value.(primitive.ObjectID)
 		default:
-			slog.With(requestIDKey, ctx.Value(requestIDKey)).WarnContext(ctx, fmt.Sprintf("Invalid searchOption for %s", o.Name))
+			log.Log(ctx, func(log slog.Logger) {
+				log.Warn(fmt.Sprintf("Invalid searchOption for %s", o.Name))
+			})
 		}
 	}
 

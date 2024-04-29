@@ -3,6 +3,7 @@ package command
 import (
 	"context"
 	"github.com/bwmarrin/discordgo"
+	"github.com/wittano/komputer/log"
 	"log/slog"
 )
 
@@ -30,7 +31,6 @@ func (e DiscordError) Response() *discordgo.InteractionResponseData {
 type SimpleMessage struct {
 	Msg    string
 	Hidden bool
-	// TODO Add "Przepraszam" button
 }
 
 func (s SimpleMessage) Response() (msg *discordgo.InteractionResponseData) {
@@ -50,6 +50,8 @@ func CreateDiscordInteractionResponse(ctx context.Context, i *discordgo.Interact
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: msg.Response(),
 	}); err != nil {
-		slog.With(requestIDKey, ctx.Value(requestIDKey)).ErrorContext(ctx, "failed send response to discord user", "error", err)
+		log.Log(ctx, func(l slog.Logger) {
+			l.Error("failed send response to discord user", "error", err)
+		})
 	}
 }

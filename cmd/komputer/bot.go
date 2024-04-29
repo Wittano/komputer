@@ -10,6 +10,7 @@ import (
 	"github.com/wittano/komputer/config"
 	"github.com/wittano/komputer/db"
 	"github.com/wittano/komputer/joke"
+	"github.com/wittano/komputer/log"
 	"github.com/wittano/komputer/voice"
 	"log/slog"
 	"time"
@@ -21,11 +22,6 @@ const (
 	databaseServiceID = 2
 )
 
-const (
-	baseURLKey   = "WEB_API_BASE_URL"
-	requestIDKey = "requestID"
-)
-
 type slashCommandHandler struct {
 	ctx      context.Context
 	commands map[string]command.DiscordSlashCommandHandler
@@ -35,13 +31,11 @@ type slashCommandHandler struct {
 func (sc slashCommandHandler) handleSlashCommand(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	const cmdTimeout = time.Second * 2
 
-	deadlineCtx, cancel := context.WithTimeout(sc.ctx, cmdTimeout)
-	requestIDCtx := context.WithValue(deadlineCtx, requestIDKey, uuid.New().String())
-	ctx := context.WithValue(requestIDCtx, joke.GuildIDKey, i.GuildID)
+	requestID := uuid.New().String()
+	loggerCtx := log.NewContext(requestID)
+	deadlineCtx, cancel := context.WithTimeout(loggerCtx, cmdTimeout)
+	ctx := context.WithValue(deadlineCtx, joke.GuildIDKey, i.GuildID)
 	defer cancel()
-
-	// FIXME Reusing one logger across commands
-	logger := slog.With(requestIDKey, ctx.Value(requestIDKey))
 
 	userID := i.Member.User.ID
 	// Handle options assigned to slash commands
@@ -50,7 +44,9 @@ func (sc slashCommandHandler) handleSlashCommand(s *discordgo.Session, i *discor
 
 		for _, option := range sc.options {
 			if matcher, ok := option.(command.DiscordOptionMatcher); ok && matcher.Match(customID) {
-				logger.InfoContext(ctx, fmt.Sprintf("user '%s' select '%s' option", userID, customID))
+				log.Log(ctx, func(log slog.Logger) {
+					log.InfoContext(ctx, fmt.Sprintf("user '%s' select '%s' option", userID, customID))
+				})
 
 				handleEventResponse(ctx, s, i, option)
 
@@ -61,20 +57,27 @@ func (sc slashCommandHandler) handleSlashCommand(s *discordgo.Session, i *discor
 
 	defer func() {
 		if r := recover(); r != nil {
-			logger.Error("unexpected error during handle command", r)
+			cancel()
+			log.Log(ctx, func(log slog.Logger) {
+				log.Error("unexpected error during handle command", r)
+			})
 		}
 	}()
 
 	// Handle slash commands
 	name := i.ApplicationCommandData().Name
 	if cmd, ok := sc.commands[name]; ok {
-		logger.InfoContext(ctx, fmt.Sprintf("user '%s' execute slash command '%s'", userID, name))
+		log.Log(ctx, func(l slog.Logger) {
+			l.InfoContext(ctx, fmt.Sprintf("user '%s' execute slash command '%s'", userID, name))
+		})
 
 		handleEventResponse(ctx, s, i, cmd)
 	} else {
 		msg := command.SimpleMessage{Msg: "Kapitanie co chcesz zrobić?", Hidden: true}
 
-		logger.WarnContext(ctx, "someone try execute unknown command")
+		log.Log(ctx, func(l slog.Logger) {
+			l.WarnContext(ctx, "someone try execute unknown command")
+		})
 		command.CreateDiscordInteractionResponse(ctx, i, s, msg)
 	}
 }
@@ -85,7 +88,7 @@ func handleEventResponse(ctx context.Context, s *discordgo.Session, i *discordgo
 	if errors.Is(err, command.DiscordError{}) {
 		errors.As(err, &msg)
 	} else if err != nil {
-		slog.With(requestIDKey, ctx.Value(requestIDKey)).ErrorContext(ctx, err.Error())
+		ctx.(log.Context).Logger.ErrorContext(ctx, err.Error())
 
 		msg = command.DiscordError{
 			Err: err,
@@ -112,7 +115,6 @@ func (d *DiscordBot) Start() (err error) {
 	return
 }
 
-// TODO Close everything, that has Closer interface
 func (d *DiscordBot) Close() (err error) {
 	err = d.spockVoiceChs.Close()
 	err = d.mongodb.Close()

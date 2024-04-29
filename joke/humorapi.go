@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/wittano/komputer/log"
 	"io"
 	"log/slog"
 	"net/http"
@@ -84,8 +85,9 @@ func (h *HumorAPIService) Joke(ctx context.Context, search SearchParams) (Joke, 
 	} else if res.StatusCode != http.StatusOK {
 		msg, err := io.ReadAll(res.Body)
 		if err != nil {
-			const requestIDKey = "requestID"
-			slog.With(requestIDKey, ctx.Value(requestIDKey)).ErrorContext(ctx, "humorAPI: failed read response body", "error", err)
+			log.Log(ctx, func(l slog.Logger) {
+				l.ErrorContext(ctx, "humorAPI: failed read response body", "error", err)
+			})
 			msg = []byte{}
 		}
 

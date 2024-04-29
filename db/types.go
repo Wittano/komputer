@@ -9,10 +9,8 @@ import (
 	"strings"
 )
 
-// TODO Added option to custom NameType of database
 const DatabaseName = "komputer"
 
-// TODO Added custom title for audio
 type AudioInfo struct {
 	ID       primitive.ObjectID `bson:"_id"`
 	Path     string             `bson:"path"`
