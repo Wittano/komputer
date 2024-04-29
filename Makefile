@@ -14,16 +14,8 @@ dev:
 prod:
 	CGO_ENABLED=1 GOOS=linux GOARCH=$(GOARCH) go build -o $(OUTPUT_DIR)/komputer ./cmd/komputer/main.go
 
-api:
-	GOARCH=$(GOARCH) go build -o $(OUTPUT_DIR)/api ./cmd/web/main.go
-
-test-bot:
+test:
 	go test -race ./bot/...
-
-test-web:
-	go test -race ./web/...
-
-test: test-bot test-web
 
 install: prod
 	mkdir -p $(DEST_DIR)

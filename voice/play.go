@@ -6,12 +6,10 @@ import (
 	"encoding/binary"
 	"errors"
 	"github.com/bwmarrin/discordgo"
-	"io"
 	"layeh.com/gopus"
 	"os/exec"
 	"strconv"
 	"syscall"
-	"time"
 )
 
 const (
@@ -101,30 +99,6 @@ func Play(ctx context.Context, vc *discordgo.VoiceConnection, path string, stop 
 			return
 		}
 	}
-}
-
-func Duration(path string) (duration time.Duration, err error) {
-	cmd := exec.Command("ffprobe", "-i", path, "-show_entries", "format=duration", "-v", "quiet", "-of", "csv='p=0'")
-	cmd.SysProcAttr = &syscall.SysProcAttr{
-		Setpgid: true,
-	}
-
-	if err = cmd.Start(); err != nil {
-		return
-	}
-
-	out, err := cmd.StdoutPipe()
-	if err != nil {
-		return
-	}
-	defer out.Close()
-
-	rawTime, err := io.ReadAll(out)
-	if err != nil {
-		return
-	}
-
-	return time.ParseDuration(string(rawTime) + "s")
 }
 
 func sendPCM(ctx context.Context, v *discordgo.VoiceConnection, pcm <-chan []int16) error {

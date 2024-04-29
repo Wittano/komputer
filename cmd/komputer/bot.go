@@ -1,4 +1,4 @@
-package bot
+package main
 
 import (
 	"context"
@@ -6,14 +6,12 @@ import (
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"github.com/google/uuid"
-	"github.com/wittano/komputer/bot/internal/api"
-	"github.com/wittano/komputer/bot/internal/command"
-	"github.com/wittano/komputer/bot/internal/config"
-	"github.com/wittano/komputer/bot/internal/joke"
-	"github.com/wittano/komputer/bot/internal/voice"
+	"github.com/wittano/komputer/command"
+	"github.com/wittano/komputer/config"
 	"github.com/wittano/komputer/db"
+	"github.com/wittano/komputer/joke"
+	"github.com/wittano/komputer/voice"
 	"log/slog"
-	"os"
 	"time"
 )
 
@@ -60,6 +58,12 @@ func (sc slashCommandHandler) handleSlashCommand(s *discordgo.Session, i *discor
 			}
 		}
 	}
+
+	defer func() {
+		if r := recover(); r != nil {
+			logger.Error("unexpected error during handle command", r)
+		}
+	}()
 
 	// Handle slash commands
 	name := i.ApplicationCommandData().Name
@@ -131,13 +135,6 @@ func createCommands(
 	spockVoice map[string]chan struct{},
 	guildVoiceChats map[string]voice.ChatInfo,
 ) map[string]command.DiscordSlashCommandHandler {
-	client, err := api.NewClient(os.Getenv(baseURLKey))
-	if err != nil {
-		slog.WarnContext(globalCtx, "Failed connect with WebAPI API. WebAPI API is disabled", "error", err)
-	}
-
-	storage := voice.NewBotLocalStorage()
-
 	welcome := command.WelcomeCommand{}
 	addJoke := command.AddJokeCommand{Service: services[databaseServiceID].(joke.DatabaseService)}
 	getJoke := command.JokeCommand{Services: services}
@@ -145,11 +142,9 @@ func createCommands(
 		GlobalCtx:       globalCtx,
 		MusicStopChs:    spockVoice,
 		GuildVoiceChats: guildVoiceChats,
-		WebAPI:          client,
-		Storage:         storage,
 	}
 	stop := command.StopCommand{spockVoice}
-	list := command.NewListCommand(client, storage)
+	list := command.NewListCommand()
 
 	return map[string]command.DiscordSlashCommandHandler{
 		command.WelcomeCommandName: welcome,
@@ -182,7 +177,7 @@ func createOptions(
 	}
 }
 
-func NewDiscordBot(ctx context.Context) (*DiscordBot, error) {
+func newDiscordBot(ctx context.Context) (*DiscordBot, error) {
 	prop, err := config.LoadBotVariables()
 	if err != nil {
 		return nil, err

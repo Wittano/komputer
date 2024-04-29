@@ -5,8 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
-	"github.com/wittano/komputer/bot/internal"
-	"github.com/wittano/komputer/bot/internal/joke"
+	"github.com/wittano/komputer/joke"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"log/slog"
 	"math/rand"
@@ -87,7 +86,7 @@ func findService(ctx context.Context, services []joke.SearchService) (joke.Searc
 	if len(services) == 1 {
 		service := services[0]
 
-		if checker, ok := service.(internal.ActiveChecker); ok && !checker.Active(ctx) {
+		if checker, ok := service.(joke.ActiveChecker); ok && !checker.Active(ctx) {
 			return nil, errors.New("all joke services is disabled")
 		}
 
@@ -101,7 +100,7 @@ func findService(ctx context.Context, services []joke.SearchService) (joke.Searc
 		return findService(ctx, services)
 	}
 
-	if activeService, ok := service.(internal.ActiveChecker); ok && !activeService.Active(ctx) {
+	if activeService, ok := service.(joke.ActiveChecker); ok && !activeService.Active(ctx) {
 		services = slices.Delete(services, i, i+1)
 		return findService(ctx, services)
 	}

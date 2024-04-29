@@ -1,4 +1,4 @@
-package voice
+package audio
 
 import (
 	"fmt"
@@ -20,12 +20,12 @@ func TestAudioIDs_AssetDirHasEmptyDirs(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	ids, err := AudioIDs()
+	paths, err := Paths()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if len(ids) != 0 {
+	if len(paths) != 0 {
 		t.Fatal("something was found in empty directory")
 	}
 }
@@ -46,20 +46,20 @@ func TestAudioIDs(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	ids, err := AudioIDs()
+	paths, err := Paths()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if len(ids) != expectedFilesNumber {
-		t.Fatalf("missing audios IDs. Expected '%d', Result: '%d'", expectedFilesNumber, len(ids))
+	if len(paths) != expectedFilesNumber {
+		t.Fatalf("missing audios IDs. Expected '%d', Result: '%d'", expectedFilesNumber, len(paths))
 	}
 
-	for i, id := range ids {
+	for i, id := range paths {
 		fileID := strings.Split(id, ".")[0]
 
-		if fileID != strconv.Itoa(i) {
-			t.Fatalf("invalid ID. Expected: '%d', Result: '%s'", i, id)
+		if fileID != "test-"+strconv.Itoa(i) {
+			t.Fatalf("invalid ID. Expected: '%d', Result: '%s'", i, fileID)
 		}
 	}
 }

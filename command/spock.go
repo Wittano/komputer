@@ -4,23 +4,21 @@ import (
 	"context"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
-	"github.com/wittano/komputer/bot/internal/api"
-	"github.com/wittano/komputer/bot/internal/voice"
+	"github.com/wittano/komputer/audio"
+	"github.com/wittano/komputer/voice"
 	"log/slog"
 	"os"
 )
 
 const (
 	SpockCommandName = "spock"
-	idOptionName     = "id"
+	nameOptionName   = "name"
 )
 
 type SpockCommand struct {
 	GlobalCtx       context.Context
 	MusicStopChs    map[string]chan struct{}
 	GuildVoiceChats map[string]voice.ChatInfo
-	WebAPI          api.WebClient
-	Storage         voice.BotLocalStorage
 }
 
 func (sc SpockCommand) Command() *discordgo.ApplicationCommand {
@@ -33,7 +31,7 @@ func (sc SpockCommand) Command() *discordgo.ApplicationCommand {
 			{
 				Required:    false,
 				Type:        discordgo.ApplicationCommandOptionString,
-				Name:        idOptionName,
+				Name:        nameOptionName,
 				Description: "ID of audio asset",
 			},
 		},
@@ -61,33 +59,14 @@ func (sc SpockCommand) Execute(
 
 	logger := slog.With(requestIDKey, ctx.Value(requestIDKey))
 
-	audioID, err := audioID(i.Data.(discordgo.ApplicationCommandInteractionData))
+	path, err := audioPath(i.Data.(discordgo.ApplicationCommandInteractionData))
 	if err != nil {
 		logger.ErrorContext(ctx, "failed find song path", "error", err)
 
-		return nil, nil
+		return SimpleMessage{Msg: "Panie kapitanie, nie znalazłem utworu"}, nil
 	}
 
-	query := voice.SearchParams{Type: voice.IDType, Value: audioID}
-	if _, err = sc.Storage.Get(ctx, query); err != nil && sc.WebAPI.Active(ctx) {
-		go func() {
-			logger.Info("download audio with id " + audioID)
-			_, err := sc.WebAPI.DownloadAudio(audioID)
-			if err != nil {
-				logger.Error(fmt.Sprintf("failed download audio. %s", err))
-				return
-			}
-
-			logger.Info("success download audio with id " + audioID)
-			sc.playAudio(logger, s, i, info.ChannelID, audioID)
-		}()
-
-		return SimpleMessage{Msg: "Panie Kapitanie. Pobieram utwór. Proszę poczekać"}, nil
-	} else if err != nil && !sc.WebAPI.Active(ctx) {
-		return nil, err
-	} else {
-		go sc.playAudio(logger, s, i, info.ChannelID, audioID)
-	}
+	go sc.playAudio(logger, s, i, info.ChannelID, path)
 
 	return msg, nil
 }
@@ -97,7 +76,7 @@ func (sc SpockCommand) playAudio(
 	s *discordgo.Session,
 	i *discordgo.InteractionCreate,
 	channelID string,
-	audioID string,
+	path string,
 ) {
 	s.Identify.Intents = discordgo.MakeIntent(discordgo.IntentsGuildVoiceStates)
 
@@ -126,7 +105,7 @@ func (sc SpockCommand) playAudio(
 		cancel  context.CancelFunc
 	)
 
-	if audioDuration, err := voice.Duration(audioID); err != nil {
+	if audioDuration, err := audio.Duration(path); err != nil {
 		l.Warn("failed calculated audio duration", "error", err)
 
 		playCtx, cancel = context.WithCancel(context.Background())
@@ -135,23 +114,25 @@ func (sc SpockCommand) playAudio(
 	}
 	defer cancel()
 
-	if err = voice.Play(playCtx, voiceChat, voice.Path(audioID), stopCh); err != nil {
-		l.ErrorContext(playCtx, fmt.Sprintf("failed play '%s' audioID", audioID), "error", err)
+	if err = voice.Play(playCtx, voiceChat, path, stopCh); err != nil {
+		l.ErrorContext(playCtx, fmt.Sprintf("failed play '%s' audioPath", path), "error", err)
 	}
 }
 
-func audioID(data discordgo.ApplicationCommandInteractionData) (path string, err error) {
+func audioPath(data discordgo.ApplicationCommandInteractionData) (path string, err error) {
+	var name string
 	for _, o := range data.Options {
 		switch o.Name {
-		case idOptionName:
-			path = o.Value.(string)
+		case nameOptionName:
+			name = o.Value.(string)
 		default:
-			path, err = voice.RandomAudioID()
 		}
 	}
 
-	if path == "" && err == nil {
-		path, err = voice.RandomAudioID()
+	if name == "" && err == nil {
+		path, err = audio.RandomPath()
+	} else {
+		path = audio.Path(path)
 	}
 
 	return

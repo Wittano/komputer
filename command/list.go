@@ -5,12 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
-	"github.com/wittano/komputer/api"
-	"github.com/wittano/komputer/bot/internal/voice"
-	"log/slog"
+	"github.com/wittano/komputer/audio"
 	"os"
 	"regexp"
-	"strconv"
 	"strings"
 )
 
@@ -40,8 +37,8 @@ const (
 )
 
 type listContent struct {
-	content []api.AudioFileInfo
-	pattern voice.SearchParams
+	content []string
+	pattern string
 }
 
 func (l listContent) Response() *discordgo.InteractionResponseData {
@@ -52,10 +49,10 @@ func (l listContent) Response() *discordgo.InteractionResponseData {
 	var msg strings.Builder
 
 	for _, info := range l.content {
-		msg.WriteString(fmt.Sprintf("- %s\n", info.String()))
+		msg.WriteString(fmt.Sprintf("- %s\n", info))
 	}
 
-	const customIDFormat = "%s_%d_%s"
+	const customIDFormat = "%s_%s"
 	return &discordgo.InteractionResponseData{
 		Title: "List of Audios IDs",
 		Flags: discordgo.MessageFlagsEphemeral,
@@ -76,12 +73,12 @@ func (l listContent) Response() *discordgo.InteractionResponseData {
 					discordgo.Button{
 						Style:    discordgo.SecondaryButton,
 						Label:    "Previous",
-						CustomID: fmt.Sprintf(customIDFormat, previousIdsButtonID, l.pattern.Type, l.pattern.Value),
+						CustomID: fmt.Sprintf(customIDFormat, previousIdsButtonID, l.pattern),
 					},
 					discordgo.Button{
 						Style:    discordgo.PrimaryButton,
 						Label:    "Next",
-						CustomID: fmt.Sprintf(customIDFormat, nextIdsButtonID, l.pattern.Type, l.pattern.Value),
+						CustomID: fmt.Sprintf(customIDFormat, nextIdsButtonID, l.pattern),
 					},
 				},
 			},
@@ -94,7 +91,7 @@ type NextListCommandOption struct {
 }
 
 func (n NextListCommandOption) Match(customID string) bool {
-	return regexp.MustCompile(fmt.Sprintf("^%s_([0-1])_(a-z0-9)*", nextIdsButtonID)).MatchString(customID)
+	return regexp.MustCompile(fmt.Sprintf("^%s_(a-z0-9)*", nextIdsButtonID)).MatchString(customID)
 }
 
 func (n NextListCommandOption) Execute(ctx context.Context, _ *discordgo.Session, i *discordgo.InteractionCreate) (DiscordMessageReceiver, error) {
@@ -130,10 +127,10 @@ type PreviousListCommandOption struct {
 }
 
 func (p PreviousListCommandOption) Match(customID string) bool {
-	return regexp.MustCompile(fmt.Sprintf("^%s_([0-1])_(a-z0-9)*", previousIdsButtonID)).MatchString(customID)
+	return regexp.MustCompile(fmt.Sprintf("^%s_(a-z0-9)*", previousIdsButtonID)).MatchString(customID)
 }
 
-func (p PreviousListCommandOption) Execute(ctx context.Context, s *discordgo.Session, i *discordgo.InteractionCreate) (DiscordMessageReceiver, error) {
+func (p PreviousListCommandOption) Execute(ctx context.Context, _ *discordgo.Session, i *discordgo.InteractionCreate) (DiscordMessageReceiver, error) {
 	select {
 	case <-ctx.Done():
 		return nil, context.Canceled
@@ -162,11 +159,8 @@ func (p PreviousListCommandOption) Execute(ctx context.Context, s *discordgo.Ses
 }
 
 type ListCommand struct {
-	// TODO Clean up pageCounter after a few minutes
-
 	// map of pages number, which user should see
 	pageCounter map[string]int
-	services    []voice.AudioSearchService
 }
 
 func (l ListCommand) Command() *discordgo.ApplicationCommand {
@@ -227,38 +221,47 @@ func (l *ListCommand) update(size int, userID string, direction pageDirection) {
 func (l ListCommand) audioFileInfo(
 	ctx context.Context,
 	userID string,
-	option voice.SearchParams,
-) (result []api.AudioFileInfo, err error) {
-	for _, s := range l.services {
-		if !s.Active(ctx) {
-			continue
-		}
+	name string,
+) (result []string, err error) {
+	dirs, err := os.ReadDir(audio.AssertDir())
+	if err != nil {
+		return nil, err
+	}
 
-		result, err = s.AudioFileInfo(ctx, option, uint(l.pageCounter[userID]))
-		if err == nil {
-			break
-		} else {
-			slog.With(requestIDKey, ctx.Value(requestIDKey)).WarnContext(ctx, err.Error())
+	page, ok := l.pageCounter[userID]
+	if !ok {
+		page = 0
+	}
+
+	const maxPageSize = 10
+	skip := page * maxPageSize
+
+	if len(dirs) <= skip {
+		return nil, nil
+	}
+
+	for _, s := range dirs[skip:] {
+		select {
+		case <-ctx.Done():
+			return nil, context.Canceled
+		default:
+			if name == "" && strings.HasPrefix(s.Name(), name) {
+				result = append(result, s.Name())
+			}
 		}
 	}
 
 	return result, err
 }
 
-func paramsFromDiscord(data discordgo.ApplicationCommandInteractionData) (s voice.SearchParams) {
-	s = voice.SearchParams{Type: voice.IDType}
-
+func paramsFromDiscord(data discordgo.ApplicationCommandInteractionData) (name string) {
 	for _, o := range data.Options {
 		switch o.Name {
 		case audioNameOption:
-			s.Type = voice.NameType
-		case audioIdOption:
-			s.Type = voice.IDType
+			name = o.Value.(string)
 		default:
 			continue
 		}
-
-		s.Value = o.Value.(string)
 
 		return
 	}
@@ -266,18 +269,13 @@ func paramsFromDiscord(data discordgo.ApplicationCommandInteractionData) (s voic
 	return
 }
 
-func paramsFromCustomID(customID string) (s voice.SearchParams, err error) {
-	data := strings.Split(customID, "_")[1:]
-	s.Value = data[1]
-
-	typeNum, err := strconv.Atoi(data[0])
-	if err != nil {
-		return
+func paramsFromCustomID(customID string) (string, error) {
+	data := strings.Split(customID, "_")
+	if len(data) != 2 {
+		return "", errors.New("invalid customID")
 	}
 
-	s.Type = voice.AudioQueryType(typeNum)
-
-	return
+	return data[1], nil
 }
 
 func CustomID(i discordgo.InteractionCreate, pos buttonPosition) (string, error) {
@@ -294,9 +292,6 @@ func CustomID(i discordgo.InteractionCreate, pos buttonPosition) (string, error)
 	return button.CustomID, nil
 }
 
-func NewListCommand(services ...voice.AudioSearchService) *ListCommand {
-	return &ListCommand{
-		make(map[string]int),
-		services,
-	}
+func NewListCommand() *ListCommand {
+	return &ListCommand{make(map[string]int)}
 }

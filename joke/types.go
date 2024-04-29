@@ -2,7 +2,6 @@ package joke
 
 import (
 	"context"
-	"github.com/wittano/komputer/bot/internal"
 	"github.com/wittano/komputer/db"
 	"net/http"
 	"os"
@@ -15,7 +14,11 @@ type AddService interface {
 
 type SearchService interface {
 	Joke(ctx context.Context, search SearchParams) (Joke, error)
-	internal.ActiveChecker
+	ActiveChecker
+}
+
+type ActiveChecker interface {
+	Active(ctx context.Context) bool
 }
 
 func NewJokeDevService(globalCtx context.Context) SearchService {
