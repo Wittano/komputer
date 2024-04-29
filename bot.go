@@ -1,4 +1,4 @@
-package main
+package komputer
 
 import (
 	"context"
@@ -179,7 +179,7 @@ func createOptions(
 	}
 }
 
-func newDiscordBot(ctx context.Context) (*DiscordBot, error) {
+func NewDiscordBot(ctx context.Context) (*DiscordBot, error) {
 	prop, err := config.LoadBotVariables()
 	if err != nil {
 		return nil, err

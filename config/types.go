@@ -22,7 +22,7 @@ func NewBotProperties() (prop BotProperties, err error) {
 
 	prop.AppID, ok = os.LookupEnv("APPLICATION_ID")
 	if !ok || prop.AppID == "" {
-		err = fmt.Errorf("missing DISCORD_BOT_TOKEN variable")
+		err = fmt.Errorf("missing APPLICATION_ID variable")
 		return
 	}
 
