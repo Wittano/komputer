@@ -1,0 +1,19 @@
+name: Check flake repository
+on:
+  push:
+    branches: [ main ]
+jobs:
+  build:
+    name: Check nix flake for komputer
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check Nix flake inputs
+        uses: DeterminateSystems/flake-checker-action@v5
+        with:
+          send-statistics: false
+          fail-mode: true
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@v9
+      - name: Check komputer flake
+        run: nix flake check
