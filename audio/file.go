@@ -13,7 +13,7 @@ import (
 
 const (
 	defaultCacheDirAudio = "assets"
-	CacheDirAudioKey     = "CACHE_AUDIO_DIR"
+	assetsDirKey         = "ASSETS_DIR"
 )
 
 func Path(name string) string {
@@ -22,7 +22,7 @@ func Path(name string) string {
 
 func AssertDir() (path string) {
 	path = defaultCacheDirAudio
-	if cacheDir, ok := os.LookupEnv(CacheDirAudioKey); ok && cacheDir != "" {
+	if cacheDir, ok := os.LookupEnv(assetsDirKey); ok && cacheDir != "" {
 		path = cacheDir
 	}
 

@@ -16,7 +16,7 @@ func TestAudioIDs_AssetDirHasEmptyDirs(t *testing.T) {
 		os.Mkdir(filepath.Join(dir, strconv.Itoa(i)), 0700)
 	}
 
-	if err := os.Setenv(CacheDirAudioKey, dir); err != nil {
+	if err := os.Setenv(assetsDirKey, dir); err != nil {
 		t.Fatal(err)
 	}
 
@@ -42,7 +42,7 @@ func TestAudioIDs(t *testing.T) {
 		f.Close()
 	}
 
-	if err := os.Setenv(CacheDirAudioKey, dir); err != nil {
+	if err := os.Setenv(assetsDirKey, dir); err != nil {
 		t.Fatal(err)
 	}
 
