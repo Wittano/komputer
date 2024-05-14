@@ -1,74 +1,30 @@
-{ pkgs, lib, config, ... }:
-with lib;
-with builtins;
-let
-  cfg = config.komputer;
+{ lib
+, buildGoModule
+, gcc
+, pkg-config
+, libopus
+, ffmpeg
+, opusfile
+}: buildGoModule {
+  name = "komputer";
+  version = "v1.2.0";
 
-  komputer = pkgs.callPackage ./../default.nix { };
-in
-{
-  options = {
-    komputer = {
-      enable = mkEnableOption "Enable komputer discord bot";
-      package = mkOption {
-        type = types.package;
-        default = komputer;
-        description = "komputer package";
-      };
-      guildID = mkOption {
-        type = types.str;
-        description = "Discord server id, that you deploy bot";
-      };
-      applicationID = mkOption {
-        type = types.str;
-        description = "Application ID for you local version of komputer bot";
-      };
-      token = mkOption {
-        type = types.str;
-        description = ''
-          Discord token for bot. 
-          <REMEMBER!>
-          Your token never shouldn't be publish on any public git repository e.g. Github or Gitlab
-        '';
-      };
-      mongodbURI = mkOption {
-        type = types.str;
-        description = "Connection URI to your instance of mongodb";
-      };
-    };
-  };
+  src = ./.;
 
-  config = mkIf (cfg.enable) {
-    assertions = [
-      {
-        assertion = cfg.token != "";
-        message = "Option komputer.token is empty";
-      }
-      {
-        assertion = cfg.guildID != "";
-        message = "Option komputer.guildID is empty";
-      }
-      {
-        assertion = cfg.applicationID != "";
-        message = "Option komputer.applicationID is empty";
-      }
-      {
-        assertion = cfg.mongodb != "";
-        message = "Option komputer.mongodbURI is empty";
-      }
-    ];
+  vendorHash = "sha256-CThNuZ16b8SXxJAtCkDMm+mwCqaS5zrr+PbX+5N3GCc=";
 
-    systemd.services.komputer = {
-      description = "Komputer - Discord bot behave as like 'komputer'. One of character in Star Track parody series created by Dem3000";
-      wantedBy = [ "multi-user.target" ];
-      environment = {
-        DISCORD_BOT_TOKEN = cfg.token;
-        APPLICATION_ID = cfg.applicationID;
-        SERVER_GUID = cfg.guildID;
-        MONGODB_URI = cfg.mongodbURI;
-      };
-      script = "${cfg.package}/bin/komputer";
-    };
+  CGO_ENABLED = 1;
+  proxyVendor = true;
+
+  nativeBuildInputs = [ gcc pkg-config libopus ];
+  propagatedBuildInputs = [ ffmpeg opusfile ];
+
+  meta = with lib; {
+    homepage = "https://github.com/Wittano/komputer";
+    description = "Discord bot behave as like 'komputer'. One of character in Star Track parody series created by Dem3000";
+    license = licenses.gpl3;
+    maintainers = with maintainers; [ Wittano ];
+    platforms = platforms.linux;
   };
 }
 

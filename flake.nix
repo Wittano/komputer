@@ -13,9 +13,9 @@
           pkgs = import nixpkgs { inherit system; };
         in
         {
-          packages.default = pkgs.callPackage ./default.nix { };
-          devShells.default = pkgs.callPackage ./shell.nix { };
+          packages.default = pkgs.callPackage ./nixos/default.nix { };
+          devShells.default = pkgs.callPackage ./nixos/shell.nix { };
         }
-      ) // { nixosModules.default = ./nixos/default.nix; };
+      ) // { nixosModules.default = ./nixos/module.nix; };
 }
 
