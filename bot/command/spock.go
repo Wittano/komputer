@@ -3,6 +3,7 @@ package command
 import (
 	"context"
 	"fmt"
+	"github.com/bwmarrin/dgvoice"
 	"github.com/bwmarrin/discordgo"
 	"github.com/wittano/komputer/bot/audio"
 	"github.com/wittano/komputer/bot/log"
@@ -117,7 +118,7 @@ func (sc SpockCommand) playAudio(
 	}
 	defer cancel()
 
-	if err = voice.Play(playCtx, voiceChat, path, stopCh); err != nil {
+	if err = dgvoice.PlayAudioFile(playCtx, voiceChat, path, stopCh); err != nil {
 		loggerCtx.Logger.ErrorContext(playCtx, fmt.Sprintf("failed play '%s' audioPath", path), "error", err)
 	}
 }

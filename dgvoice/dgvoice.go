@@ -1,4 +1,6 @@
-package voice
+// Package dgvoice provides opus encoding and audio file playback for the
+// Discordgo package.
+package dgvoice
 
 import (
 	"bufio"
@@ -12,6 +14,11 @@ import (
 	"syscall"
 )
 
+// NOTE: This API is not final and these are likely to change.
+
+// Technically the below settings can be adjusted however that poses
+// a lot of other problems that are not handled well at this time.
+// These below values seem to provide the best overall performance
 const (
 	channels     int = 2                   // 1 for mono, 2 for stereo
 	frameRate    int = 48000               // audio sampling rate
@@ -20,7 +27,10 @@ const (
 	audioBufSize     = 16384
 )
 
-func Play(ctx context.Context, vc *discordgo.VoiceConnection, path string, stop <-chan struct{}) (err error) {
+// PlayAudioFile will play the given filename to the already connected
+// Discord voice server/channel.  voice websocket and udp socket
+// must already be setup before this will work.
+func PlayAudioFile(ctx context.Context, vc *discordgo.VoiceConnection, path string, stop <-chan struct{}) (err error) {
 	select {
 	case <-ctx.Done():
 		return context.Canceled
