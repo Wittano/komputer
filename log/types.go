@@ -8,7 +8,7 @@ import (
 
 const RequestIDKey = "requestID"
 
-type LogFunc func(l slog.Logger)
+type Func func(l slog.Logger)
 
 type Context struct {
 	Logger *slog.Logger
@@ -53,10 +53,8 @@ func NewContext(uuid string) Context {
 	}
 }
 
-func Log(ctx context.Context, logFunc LogFunc) {
-	loggerCtx, ok := ctx.(Context)
-
-	if ok {
+func Log(ctx context.Context, logFunc Func) {
+	if loggerCtx, ok := ctx.(Context); ok {
 		logFunc(*loggerCtx.Logger)
 	} else {
 		logFunc(*slog.Default())
