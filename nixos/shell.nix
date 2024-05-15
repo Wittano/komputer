@@ -1,14 +1,14 @@
-{ mkShell, go, gopls, ffmpeg, nixfmt-classic, ... }: mkShell {
+{ mkShell, go, gopls, ffmpeg, nixfmt-classic, protoc-gen-go, protobuf, protoc-gen-go-grpc, ... }: mkShell {
   hardeningDisable = [ "all" ];
-  buildInputs = [
-    # Go
+  nativeBuildInputs = [
     go
+    protobuf
+  ];
+  buildInputs = [
     gopls
-
-    # Runtime dependecies
+    protoc-gen-go-grpc
+    protoc-gen-go
     ffmpeg
-
-    # Nixpkgs
     nixfmt-classic
   ];
 

@@ -1,6 +1,7 @@
 DEST_DIR = /opt/komputer
 ARCH = $(shell uname -m)
 OUTPUT_DIR=./build
+PROTOBUF_API_DEST=./api
 
 ifeq ($(ARCH), x86_64)
 	GOARCH="amd64"
@@ -8,26 +9,41 @@ else
   	GOARCH="arm64"
 endif
 
-dev:
+.PHONY: test clean
+
+dev: proto
 	CGO_ENABLED=1 GOOS=linux GOARCH=$(GOARCH) go build -tags dev -o $(OUTPUT_DIR)/komputer ./cmd/komputer/main.go
 
-prod:
+
+prod: proto
 	CGO_ENABLED=1 GOOS=linux GOARCH=$(GOARCH) go build -o $(OUTPUT_DIR)/komputer ./cmd/komputer/main.go
 
-test:
-	go test -race ./bot/...
+tui: proto
+	go build -o $(OUTPUT_DIR)/tui ./tui/cmd/main.go
+
+protobuf: cleanProto
+	mkdir -p $(PROTOBUF_API_DEST)
+	protoc --go_out=. ./proto/*
+
+test: proto
+	go test -race ./...
 
 install: prod test
-	mkdir -p $(DEST_DIR)
-	cp -r assets $(DEST_DIR)
-	cp $(OUTPUT_DIR)/komputer $(DEST_DIR)
+	mkdir -p $(PROTOBUF_API_DEST)
+	cp -r assets $(PROTOBUF_API_DEST)
+	cp $(OUTPUT_DIR)/komputer $(PROTOBUF_API_DEST)
 
 uninstall:
-ifneq ("$(wildcard $(DEST_DIR))", "")
-	rm -r $(DEST_DIR)
+ifneq ("$(wildcard $(PROTOBUF_API_DEST))", "")
+	rm -r $(PROTOBUF_API_DEST)
 endif
 
-clean:
+clean: cleanProto
 ifneq ("$(wildcard $(OUTPUT_DIR))", "")
-	rm -r build
+	rm -r $(OUTPUT_DIR)
+endif
+
+cleanProto:
+ifneq ("$(wildcard $(PROTOBUF_API_DEST))", "")
+	rm -r $(PROTOBUF_API_DEST)
 endif

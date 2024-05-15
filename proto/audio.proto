@@ -1,7 +1,8 @@
 syntax = "proto3";
 
+option go_package = "./api";
 import "google/protobuf/empty.proto";
-import "protobuf/request.proto";
+import "proto/request.proto";
 package komputer;
 
 enum FileFormat {

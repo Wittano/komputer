@@ -1,5 +1,6 @@
 syntax = "proto3";
 
+option go_package = "./api";
 package komputer;
 
 enum Features {
