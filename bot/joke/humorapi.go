@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/wittano/komputer/log"
+	"github.com/wittano/komputer/bot/log"
 	"io"
 	"log/slog"
 	"net/http"

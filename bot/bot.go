@@ -1,4 +1,4 @@
-package komputer
+package bot
 
 import (
 	"context"
@@ -6,12 +6,12 @@ import (
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"github.com/google/uuid"
-	"github.com/wittano/komputer/command"
-	"github.com/wittano/komputer/config"
+	"github.com/wittano/komputer/bot/command"
+	"github.com/wittano/komputer/bot/config"
+	"github.com/wittano/komputer/bot/joke"
+	"github.com/wittano/komputer/bot/log"
+	"github.com/wittano/komputer/bot/voice"
 	"github.com/wittano/komputer/db"
-	"github.com/wittano/komputer/joke"
-	"github.com/wittano/komputer/log"
-	"github.com/wittano/komputer/voice"
 	"log/slog"
 	"time"
 )
@@ -145,7 +145,7 @@ func createCommands(
 		MusicStopChs:    spockVoice,
 		GuildVoiceChats: guildVoiceChats,
 	}
-	stop := command.StopCommand{spockVoice}
+	stop := command.StopCommand{MusicStopChs: spockVoice}
 	list := command.NewListCommand()
 
 	return map[string]command.DiscordSlashCommandHandler{

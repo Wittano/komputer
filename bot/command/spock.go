@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
-	"github.com/wittano/komputer/audio"
-	"github.com/wittano/komputer/log"
-	"github.com/wittano/komputer/voice"
+	"github.com/wittano/komputer/bot/audio"
+	"github.com/wittano/komputer/bot/log"
+	"github.com/wittano/komputer/bot/voice"
 	"log/slog"
 	"os"
 )

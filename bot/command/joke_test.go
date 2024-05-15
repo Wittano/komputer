@@ -3,7 +3,7 @@ package command
 import (
 	"context"
 	"errors"
-	"github.com/wittano/komputer/joke"
+	"github.com/wittano/komputer/bot/joke"
 	"go.mongodb.org/mongo-driver/mongo"
 	"testing"
 )

@@ -7,7 +7,6 @@ import (
 
 const (
 	serverGuildKey = "SERVER_GUID"
-	requestIDKey   = "requestID"
 )
 
 type DiscordSlashCommandHandler interface {

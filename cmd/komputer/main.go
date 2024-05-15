@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"github.com/wittano/komputer"
+	"github.com/wittano/komputer/bot"
 	"log"
 	"os"
 	"os/signal"
@@ -12,7 +12,7 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	b, err := komputer.NewDiscordBot(ctx)
+	b, err := bot.NewDiscordBot(ctx)
 	if err != nil {
 		log.Fatal(err)
 		return

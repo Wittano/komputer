@@ -91,8 +91,8 @@ func TestDatabaseService_FindRandomJoke(t *testing.T) {
 	mt := createMTest(t)
 
 	mt.Run("get new joke, but nothing was found", func(t *mtest.T) {
-		t.AddMockResponses(mtest.CreateSuccessResponse(bson.E{"ok", "1"},
-			bson.E{"_id", primitive.NewObjectID()}))
+		t.AddMockResponses(mtest.CreateSuccessResponse(bson.E{Key: "ok", Value: "1"},
+			bson.E{Key: "_id", Value: primitive.NewObjectID()}))
 		t.AddMockResponses(mtest.CreateCursorResponse(0, collectionName+".0", mtest.FirstBatch, bson.D{
 			{"_id", primitive.NewObjectID()},
 			{"question", testJoke.Question},

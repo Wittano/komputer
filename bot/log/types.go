@@ -11,6 +11,7 @@ const RequestIDKey = "requestID"
 type Func func(l slog.Logger)
 
 type Context struct {
+	// TODO Check out if I should change slog.Logger to zerolog.Logger
 	Logger *slog.Logger
 	Ctx    context.Context
 }

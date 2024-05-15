@@ -11,15 +11,18 @@ endif
 
 .PHONY: test clean
 
-dev: proto
+bot-dev: proto
 	CGO_ENABLED=1 GOOS=linux GOARCH=$(GOARCH) go build -tags dev -o $(OUTPUT_DIR)/komputer ./cmd/komputer/main.go
 
 
-prod: proto
+bot-prod: proto
 	CGO_ENABLED=1 GOOS=linux GOARCH=$(GOARCH) go build -o $(OUTPUT_DIR)/komputer ./cmd/komputer/main.go
 
+sever: proto
+	go build -o $(OUTPUT_DIR)/server ./cmd/server/main.go
+
 tui: proto
-	go build -o $(OUTPUT_DIR)/tui ./tui/cmd/main.go
+	go build -o $(OUTPUT_DIR)/tui ./cmd/tui/main.go
 
 protobuf: cleanProto
 	mkdir -p $(PROTOBUF_API_DEST)
@@ -27,6 +30,8 @@ protobuf: cleanProto
 
 test: proto
 	go test -race ./...
+
+all: bot-dev bot-prod sever tui
 
 install: prod test
 	mkdir -p $(PROTOBUF_API_DEST)

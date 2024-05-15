@@ -3,7 +3,7 @@ package command
 import (
 	"context"
 	"github.com/bwmarrin/discordgo"
-	"github.com/wittano/komputer/log"
+	"github.com/wittano/komputer/bot/log"
 	"log/slog"
 )
 
