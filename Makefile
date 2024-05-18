@@ -15,24 +15,25 @@ bot-dev: proto
 	CGO_ENABLED=1 GOOS=linux GOARCH=$(GOARCH) go build -tags dev -o $(OUTPUT_DIR)/komputer ./cmd/komputer/main.go
 
 
-bot-prod: proto
+bot-prod: protobuf
 	CGO_ENABLED=1 GOOS=linux GOARCH=$(GOARCH) go build -o $(OUTPUT_DIR)/komputer ./cmd/komputer/main.go
 
-sever: proto
+sever: protobuf
 	go build -o $(OUTPUT_DIR)/server ./cmd/server/main.go
 
-tui: proto
+tui: protobuf
 	go build -o $(OUTPUT_DIR)/tui ./cmd/tui/main.go
 
-protobuf: cleanProto
+protobuf:
 	mkdir -p $(PROTOBUF_API_DEST)
 	protoc --go_out=. ./proto/*
 
-test: proto
+test: protobuf
 	go test -race ./...
 
-all: bot-dev bot-prod sever tui
+all: bot-dev bot-prod sever tui test
 
+# FIXME Replaced invalid path
 install: prod test
 	mkdir -p $(PROTOBUF_API_DEST)
 	cp -r assets $(PROTOBUF_API_DEST)
