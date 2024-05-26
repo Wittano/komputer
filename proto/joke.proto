@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-option go_package = "./api";
+option go_package = "github.com/wittano/komputer";
 import "google/protobuf/empty.proto";
 import "proto/request.proto";
 package komputer;
