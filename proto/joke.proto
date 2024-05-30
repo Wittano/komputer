@@ -19,7 +19,7 @@ enum Category {
 }
 
 message Joke {
-  bytes id = 1;
+  komputer.ObjectID id = 1;
   string answer = 2;
   optional string question = 3;
   Type type = 4;
@@ -34,12 +34,22 @@ message JokeID {
   }
 }
 
-message DatabaseObjectID {
-  bytes object_id = 1;
+message JokeParams {
+  optional komputer.ObjectID id = 1;
+  optional Category category = 2;
+  optional Type type = 3;
+}
+
+message JokeParamsPagination {
+  optional komputer.ObjectID id = 1;
+  optional Category category = 2;
+  optional Type type = 3;
+  Pagination page = 4;
 }
 
 service JokeService {
-  rpc Find(komputer.FindById) returns (Joke);
+  rpc Find(JokeParams) returns (Joke);
+  rpc FindAll(JokeParamsPagination) returns (stream Joke);
   rpc Add(Joke) returns (JokeID);
-  rpc Remove(DatabaseObjectID) returns (google.protobuf.Empty);
+  rpc Remove(komputer.ObjectID) returns (google.protobuf.Empty);
 }

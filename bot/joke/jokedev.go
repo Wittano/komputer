@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/wittano/komputer/db/joke"
 	"io"
 	"net/http"
 	"time"
@@ -16,7 +17,7 @@ const (
 )
 
 type mapper interface {
-	Joke() Joke
+	Joke() joke.Joke
 }
 
 type flags struct {
@@ -39,11 +40,11 @@ type singleResponse struct {
 	Content  string `json:"joke"`
 }
 
-func (j singleResponse) Joke() Joke {
-	return Joke{
+func (j singleResponse) Joke() joke.Joke {
+	return joke.Joke{
 		Answer:   j.Content,
-		Type:     Single,
-		Category: Category(j.Category),
+		Type:     joke.Single,
+		Category: joke.Category(j.Category),
 	}
 }
 
@@ -59,12 +60,12 @@ type twoPartResponse struct {
 	Delivery string `json:"delivery"`
 }
 
-func (j twoPartResponse) Joke() Joke {
-	return Joke{
+func (j twoPartResponse) Joke() joke.Joke {
+	return joke.Joke{
 		Question: j.Setup,
 		Answer:   j.Delivery,
-		Type:     Single,
-		Category: Category(j.Category),
+		Type:     joke.Single,
+		Category: joke.Category(j.Category),
 	}
 }
 
@@ -87,30 +88,30 @@ func (d DevService) Active(ctx context.Context) (active bool) {
 	return
 }
 
-func (d *DevService) Joke(ctx context.Context, params SearchParams) (Joke, error) {
+func (d *DevService) RandomJoke(ctx context.Context, params joke.SearchParams) (joke.Joke, error) {
 	select {
 	case <-ctx.Done():
-		return Joke{}, context.Canceled
+		return joke.Joke{}, context.Canceled
 	default:
 	}
 
 	if !d.Active(ctx) {
-		return Joke{}, DevServiceLimitExceededErr
+		return joke.Joke{}, DevServiceLimitExceededErr
 	}
 
-	if params.Category == YOMAMA || params.Category == "" {
-		params.Category = Any
+	if params.Category == joke.YOMAMA || params.Category == "" {
+		params.Category = joke.Any
 	}
 
 	url := fmt.Sprintf(jokeDevAPIUrlTemplate, params.Category, params.Type)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
-		return Joke{}, err
+		return joke.Joke{}, err
 	}
 
 	res, err := d.client.Do(req)
 	if err != nil {
-		return Joke{}, err
+		return joke.Joke{}, err
 	}
 	defer res.Body.Close()
 
@@ -125,27 +126,27 @@ func (d *DevService) Joke(ctx context.Context, params SearchParams) (Joke, error
 
 		go unlockService(d.globalCtx, &d.active, resetTime)
 
-		return Joke{}, DevServiceLimitExceededErr
+		return joke.Joke{}, DevServiceLimitExceededErr
 	}
 
 	if res.StatusCode >= 400 {
-		return Joke{}, errors.New("jokedev: client or server side error")
+		return joke.Joke{}, errors.New("jokedev: client or server side error")
 	}
 
 	resBody, err := io.ReadAll(res.Body)
 	if err != nil {
-		return Joke{}, err
+		return joke.Joke{}, err
 	}
 
 	var mapper mapper
 	switch params.Type {
-	case Single:
+	case joke.Single:
 		singleRes := singleResponse{}
 
 		err = json.Unmarshal(resBody, &singleRes)
 
 		mapper = singleRes
-	case TwoPart:
+	case joke.TwoPart:
 		twoPartRes := &twoPartResponse{}
 
 		err = json.Unmarshal(resBody, &twoPartRes)
@@ -154,7 +155,7 @@ func (d *DevService) Joke(ctx context.Context, params SearchParams) (Joke, error
 	}
 
 	if err != nil {
-		return Joke{}, err
+		return joke.Joke{}, err
 	}
 
 	return mapper.Joke(), nil

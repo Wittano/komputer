@@ -5,8 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
-	"github.com/wittano/komputer/bot/joke"
 	"github.com/wittano/komputer/bot/log"
+	"github.com/wittano/komputer/db/joke"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"log/slog"
 	"math/rand"
@@ -48,7 +48,7 @@ func (j JokeCommand) Command() *discordgo.ApplicationCommand {
 			jokeTypeOption(false),
 			{
 				Name:        idOptionKey,
-				Description: "Joke ID",
+				Description: "Jokes ID",
 				Type:        discordgo.ApplicationCommandOptionString,
 				Required:    false,
 			},
@@ -73,7 +73,7 @@ findJoke:
 		return nil, DiscordError{err, "Nie udało mi się, znaleść żadnego żartu"}
 	}
 
-	res, err := service.Joke(ctx, searchQuery)
+	res, err := service.RandomJoke(ctx, searchQuery)
 	if err != nil {
 		loggerCtx.Logger.Error(err.Error())
 		goto findJoke
@@ -137,7 +137,7 @@ func jokeCategoryOption(required bool) *discordgo.ApplicationCommandOption {
 	return &discordgo.ApplicationCommandOption{
 		Type:        discordgo.ApplicationCommandOptionString,
 		Name:        categoryOptionKey,
-		Description: "Joke category",
+		Description: "Jokes category",
 		Required:    required,
 		Choices: []*discordgo.ApplicationCommandOptionChoice{
 			{
@@ -164,7 +164,7 @@ func jokeTypeOption(required bool) *discordgo.ApplicationCommandOption {
 	return &discordgo.ApplicationCommandOption{
 		Type:        discordgo.ApplicationCommandOptionString,
 		Name:        typeOptionKey,
-		Description: "Type of joke",
+		Description: "RawType of joke",
 		Required:    required,
 		Choices: []*discordgo.ApplicationCommandOptionChoice{
 			{
@@ -200,7 +200,7 @@ func (j discordJoke) singleTypeJoke() (msg *discordgo.InteractionResponseData) {
 	embeds := []*discordgo.MessageEmbed{
 		{
 			Type:        discordgo.EmbedTypeRich,
-			Title:       "Joke",
+			Title:       "Jokes",
 			Description: j.joke.Answer,
 			Color:       0x02f5f5,
 			Author: &discordgo.MessageEmbedAuthor{
@@ -234,7 +234,7 @@ func (j discordJoke) twoPartJoke() *discordgo.InteractionResponseData {
 	embeds := []*discordgo.MessageEmbed{
 		{
 			Type:  discordgo.EmbedTypeRich,
-			Title: "Joke",
+			Title: "Jokes",
 			Color: 0x02f5f5,
 			Author: &discordgo.MessageEmbedAuthor{
 				Name: "komputer",
@@ -382,7 +382,7 @@ func (n NextJokeOption) Execute(ctx context.Context, _ *discordgo.Session, i *di
 		return nil, err
 	}
 
-	res, err := service.Joke(ctx, joke.SearchParams{Type: randJokeType()})
+	res, err := service.RandomJoke(ctx, joke.SearchParams{Type: randJokeType()})
 	if err != nil {
 		return nil, err
 	}
@@ -416,7 +416,7 @@ func (s SameJokeCategoryOption) Execute(ctx context.Context, _ *discordgo.Sessio
 		return nil, err
 	}
 
-	res, err := service.Joke(ctx, joke.SearchParams{Type: randJokeType(), Category: category})
+	res, err := service.RandomJoke(ctx, joke.SearchParams{Type: randJokeType(), Category: category})
 	if err != nil {
 		return nil, err
 	}

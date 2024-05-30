@@ -21,7 +21,7 @@ message UUID {
 }
 
 message ObjectID {
-  bytes object_id = 1;
+  string object_id = 1;
 }
 
 message NameOrIdRequest {

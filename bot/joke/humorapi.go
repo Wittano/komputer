@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/wittano/komputer/bot/log"
+	"github.com/wittano/komputer/db/joke"
 	"io"
 	"log/slog"
 	"net/http"
@@ -43,25 +44,25 @@ func (h HumorAPIService) Active(ctx context.Context) (active bool) {
 	return
 }
 
-func (h *HumorAPIService) Joke(ctx context.Context, search SearchParams) (Joke, error) {
+func (h *HumorAPIService) RandomJoke(ctx context.Context, search joke.SearchParams) (joke.Joke, error) {
 	select {
 	case <-ctx.Done():
-		return Joke{}, context.Canceled
+		return joke.Joke{}, context.Canceled
 	default:
 	}
 
 	if !h.Active(ctx) {
-		return Joke{}, HumorAPILimitExceededErr
+		return joke.Joke{}, HumorAPILimitExceededErr
 	}
 
 	apiKey, ok := os.LookupEnv(humorAPIKey)
 	if !ok {
-		return Joke{}, errors.New("humorAPI: missing " + humorAPIKey)
+		return joke.Joke{}, errors.New("humorAPI: missing " + humorAPIKey)
 	}
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, humorApiURL+humorAPICategory(search.Category), nil)
 	if err != nil {
-		return Joke{}, err
+		return joke.Joke{}, err
 	}
 
 	req.Header["X-RapidAPI-Key"] = []string{apiKey}
@@ -69,7 +70,7 @@ func (h *HumorAPIService) Joke(ctx context.Context, search SearchParams) (Joke, 
 
 	res, err := h.client.Do(req)
 	if err != nil {
-		return Joke{}, err
+		return joke.Joke{}, err
 	}
 	defer res.Body.Close()
 
@@ -81,7 +82,7 @@ func (h *HumorAPIService) Joke(ctx context.Context, search SearchParams) (Joke, 
 
 		go unlockService(h.globalCtx, &h.active, resetTime)
 
-		return Joke{}, HumorAPILimitExceededErr
+		return joke.Joke{}, HumorAPILimitExceededErr
 	} else if res.StatusCode != http.StatusOK {
 		msg, err := io.ReadAll(res.Body)
 		if err != nil {
@@ -91,41 +92,41 @@ func (h *HumorAPIService) Joke(ctx context.Context, search SearchParams) (Joke, 
 			msg = []byte{}
 		}
 
-		return Joke{}, fmt.Errorf("humorAPI: failed to get joke. status '%d', msg: '%s'", res.StatusCode, msg)
+		return joke.Joke{}, fmt.Errorf("humorAPI: failed to get joke. status '%d', msg: '%s'", res.StatusCode, msg)
 	}
 
 	select {
 	case <-ctx.Done():
-		return Joke{}, context.Canceled
+		return joke.Joke{}, context.Canceled
 	default:
 	}
 
 	resBody, err := io.ReadAll(res.Body)
 	if err != nil {
-		return Joke{}, err
+		return joke.Joke{}, err
 	}
 
-	var joke humorAPIResponse
-	if err = json.Unmarshal(resBody, &joke); err != nil {
-		return Joke{}, err
+	var humorRes humorAPIResponse
+	if err = json.Unmarshal(resBody, &humorRes); err != nil {
+		return joke.Joke{}, err
 	}
 
-	return Joke{
+	return joke.Joke{
 		Category: search.Category,
-		Type:     Single,
-		Answer:   joke.Content,
+		Type:     joke.Single,
+		Answer:   humorRes.Content,
 	}, nil
 }
 
-func humorAPICategory(category Category) (res string) {
+func humorAPICategory(category joke.Category) (res string) {
 	switch category {
-	case PROGRAMMING:
+	case joke.PROGRAMMING:
 		res = "nerdy"
-	case DARK:
+	case joke.DARK:
 		res = "dark"
-	case YOMAMA:
+	case joke.YOMAMA:
 		res = "yo_mama"
-	case Any:
+	case joke.Any:
 	default:
 		res = "one_liner"
 	}

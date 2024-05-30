@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/jarcoal/httpmock"
+	"github.com/wittano/komputer/db/joke"
 	"net/http"
 	"os"
 	"strconv"
@@ -45,17 +46,17 @@ func TestDevService_Get(t *testing.T) {
 	ctx := context.Background()
 	service := NewJokeDevService(ctx)
 
-	joke, err := service.Joke(ctx, testParams)
+	res, err := service.RandomJoke(ctx, testParams)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if joke.Answer != testSingleJokeDev.Content {
-		t.Fatalf("Invalid joke response. Expected: '%s', Result: '%s'", testSingleJokeDev.Content, joke.Answer)
+	if res.Answer != testSingleJokeDev.Content {
+		t.Fatalf("Invalid res response. Expected: '%s', Result: '%s'", testSingleJokeDev.Content, res.Answer)
 	}
 
-	if joke.Category != Category(testSingleJokeDev.Category) {
-		t.Fatalf("Invalid category. Expected: '%s', Result: '%s'", testParams, joke.Category)
+	if res.Category != joke.Category(testSingleJokeDev.Category) {
+		t.Fatalf("Invalid category. Expected: '%s', Result: '%s'", testParams, res.Category)
 	}
 }
 
@@ -80,7 +81,7 @@ func TestDevService_GetAndApiReturnInvalidStatus(t *testing.T) {
 
 			service := NewJokeDevService(ctx)
 
-			if _, err := service.Joke(ctx, testParams); err == nil {
+			if _, err := service.RandomJoke(ctx, testParams); err == nil {
 				t.Fatal("service didn't handle correct a bad/invalid http status")
 			}
 		})
@@ -102,7 +103,7 @@ func TestDevService_GetWithApiLimitExceeded(t *testing.T) {
 	ctx := context.Background()
 	service := NewJokeDevService(ctx)
 
-	if _, err := service.Joke(ctx, testParams); !errors.Is(err, DevServiceLimitExceededErr) {
+	if _, err := service.RandomJoke(ctx, testParams); !errors.Is(err, DevServiceLimitExceededErr) {
 		t.Fatal(err)
 	}
 }
@@ -122,11 +123,11 @@ func TestDevService_Active(t *testing.T) {
 
 	service := NewJokeDevService(ctx)
 
-	if _, err := service.Joke(ctx, testParams); !errors.Is(err, DevServiceLimitExceededErr) {
+	if _, err := service.RandomJoke(ctx, testParams); !errors.Is(err, DevServiceLimitExceededErr) {
 		t.Fatal(err)
 	}
 
-	if _, err := service.Joke(ctx, testParams); !errors.Is(err, DevServiceLimitExceededErr) {
+	if _, err := service.RandomJoke(ctx, testParams); !errors.Is(err, DevServiceLimitExceededErr) {
 		t.Fatal(err)
 	}
 

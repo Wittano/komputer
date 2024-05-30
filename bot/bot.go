@@ -12,6 +12,7 @@ import (
 	"github.com/wittano/komputer/bot/log"
 	"github.com/wittano/komputer/bot/voice"
 	"github.com/wittano/komputer/db"
+	dbJoke "github.com/wittano/komputer/db/joke"
 	"log/slog"
 	"time"
 )
@@ -34,7 +35,7 @@ func (sc slashCommandHandler) handleSlashCommand(s *discordgo.Session, i *discor
 	requestID := uuid.New().String()
 	loggerCtx := log.NewContext(requestID)
 	deadlineCtx, cancel := context.WithTimeout(loggerCtx, cmdTimeout)
-	ctx := context.WithValue(deadlineCtx, joke.GuildIDKey, i.GuildID)
+	ctx := context.WithValue(deadlineCtx, dbJoke.GuildIDKey, i.GuildID)
 	defer cancel()
 
 	userID := i.Member.User.ID
@@ -123,8 +124,8 @@ func (d *DiscordBot) Close() (err error) {
 	return
 }
 
-func createJokeGetServices(globalCtx context.Context, database *db.MongodbDatabase) []joke.SearchService {
-	return []joke.SearchService{
+func createJokeGetServices(globalCtx context.Context, database *db.MongodbDatabase) []dbJoke.SearchService {
+	return []dbJoke.SearchService{
 		jokeDevServiceID:  joke.NewJokeDevService(globalCtx),
 		humorAPIServiceID: joke.NewHumorAPIService(globalCtx),
 		databaseServiceID: joke.NewDatabaseJokeService(database),
@@ -133,12 +134,12 @@ func createJokeGetServices(globalCtx context.Context, database *db.MongodbDataba
 
 func createCommands(
 	globalCtx context.Context,
-	services []joke.SearchService,
+	services []dbJoke.SearchService,
 	spockVoice map[string]chan struct{},
 	guildVoiceChats map[string]voice.ChatInfo,
 ) map[string]command.DiscordSlashCommandHandler {
 	welcome := command.WelcomeCommand{}
-	addJoke := command.AddJokeCommand{Service: services[databaseServiceID].(joke.DatabaseService)}
+	addJoke := command.AddJokeCommand{Service: services[databaseServiceID].(dbJoke.Database)}
 	getJoke := command.JokeCommand{Services: services}
 	spock := command.SpockCommand{
 		GlobalCtx:       globalCtx,
@@ -159,7 +160,7 @@ func createCommands(
 }
 
 func createOptions(
-	services []joke.SearchService,
+	services []dbJoke.SearchService,
 	commands map[string]command.DiscordSlashCommandHandler,
 ) []command.DiscordEventHandler {
 	apologies := command.ApologiesOption{}

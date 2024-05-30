@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-const testUri = "mongodb+srv://username:password@server/database"
+const testUri = "Mongodb+srv://username:password@server/database"
 
 func TestNewMongodbDatabase(t *testing.T) {
 	os.Setenv(MongodbURIKey, testUri)
@@ -28,7 +28,7 @@ func TestMongodbDatabase_ClientButURIMissing(t *testing.T) {
 	db := Mongodb(ctx)
 
 	if _, err := db.Client(ctx); err == nil {
-		t.Fatal("mongodb connection was established!")
+		t.Fatal("Mongodb connection was established!")
 	}
 }
 
@@ -39,6 +39,6 @@ func TestMongodbDatabase_ClientButConnectionFailed(t *testing.T) {
 	db := Mongodb(ctx)
 
 	if _, err := db.Client(ctx); err == nil {
-		t.Fatal("mongodb connection was established!")
+		t.Fatal("Mongodb connection was established!")
 	}
 }

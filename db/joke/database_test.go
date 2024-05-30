@@ -41,7 +41,7 @@ func TestDatabaseService_Add(t *testing.T) {
 
 		ctx := context.Background()
 
-		service := DatabaseService{test.NewMockedMongodbService(ctx, t.Client)}
+		service := Database{test.NewMockedMongodbService(ctx, t.Client)}
 
 		if _, err := service.Add(ctx, testJoke); err != nil {
 			mt.Fatal(err)
@@ -53,7 +53,7 @@ func TestDatabaseService_AddWithContextCancelled(t *testing.T) {
 	ctx, cancel := context.WithDeadline(context.Background(), time.Now())
 	cancel()
 
-	service := DatabaseService{test.NewMockedMongodbService(ctx, nil)}
+	service := Database{test.NewMockedMongodbService(ctx, nil)}
 
 	if _, err := service.Add(ctx, testJoke); err == nil {
 		t.Fatal("Context wasn't cancelled")
@@ -64,7 +64,7 @@ func TestDatabaseService_JokeWithContextCancelled(t *testing.T) {
 	ctx, cancel := context.WithDeadline(context.Background(), time.Now())
 	cancel()
 
-	service := DatabaseService{test.NewMockedMongodbService(ctx, nil)}
+	service := Database{test.NewMockedMongodbService(ctx, nil)}
 
 	if _, err := service.Joke(ctx, testParams); err == nil {
 		t.Fatal("Context wasn't cancelled")
@@ -79,7 +79,7 @@ func TestDatabaseService_JokeReturnEmptyWithoutError(t *testing.T) {
 
 		ctx := context.Background()
 
-		service := DatabaseService{test.NewMockedMongodbService(ctx, t.Client)}
+		service := Database{test.NewMockedMongodbService(ctx, t.Client)}
 
 		if _, err := service.Joke(ctx, testParams); err == nil {
 			mt.Fatal("Something was found in database, but it shouldn't")
@@ -104,27 +104,27 @@ func TestDatabaseService_FindRandomJoke(t *testing.T) {
 
 		ctx := context.Background()
 
-		service := DatabaseService{test.NewMockedMongodbService(ctx, t.Client)}
+		service := Database{test.NewMockedMongodbService(ctx, t.Client)}
 
-		joke, err := service.Joke(ctx, SearchParams{})
+		res, err := service.Joke(ctx, SearchParams{})
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		if joke.Category != testJoke.Category {
-			t.Fatalf("Invalid Category. Expected '%s', Result: '%s'", testJoke.Category, joke.Category)
+		if res.Category != testJoke.Category {
+			t.Fatalf("Invalid RawCategory. Expected '%s', Result: '%s'", testJoke.Category, res.Category)
 		}
-		if joke.Type != testJoke.Type {
-			t.Fatalf("Invalid Type. Expected '%s', Result: '%s'", testJoke.Type, joke.Type)
+		if res.Type != testJoke.Type {
+			t.Fatalf("Invalid RawType. Expected '%s', Result: '%s'", testJoke.Type, res.Type)
 		}
-		if joke.GuildID != testJoke.GuildID {
-			t.Fatalf("Invalid GuildID. Expected '%s', Result: '%s'", testJoke.GuildID, joke.GuildID)
+		if res.GuildID != testJoke.GuildID {
+			t.Fatalf("Invalid GuildID. Expected '%s', Result: '%s'", testJoke.GuildID, res.GuildID)
 		}
-		if joke.Question != testJoke.Question {
-			t.Fatalf("Invalid Question. Expected '%s', Result: '%s'", testJoke.Question, joke.Question)
+		if res.Question != testJoke.Question {
+			t.Fatalf("Invalid Question. Expected '%s', Result: '%s'", testJoke.Question, res.Question)
 		}
-		if joke.Answer != testJoke.Answer {
-			t.Fatalf("Invalid Answer. Expected '%s', Result: '%s'", testJoke.Answer, joke.Answer)
+		if res.Answer != testJoke.Answer {
+			t.Fatalf("Invalid Answer. Expected '%s', Result: '%s'", testJoke.Answer, res.Answer)
 		}
 	})
 }
@@ -135,7 +135,7 @@ func TestDatabaseService_ActiveWithContextCancelled(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		cancel()
 
-		service := DatabaseService{test.NewMockedMongodbService(ctx, t.Client)}
+		service := Database{test.NewMockedMongodbService(ctx, t.Client)}
 
 		if service.Active(ctx) {
 			t.Fatal("service can still running and handle new requests")
@@ -151,36 +151,10 @@ func TestDatabaseService_Active(t *testing.T) {
 
 		ctx := context.Background()
 
-		service := DatabaseService{test.NewMockedMongodbService(ctx, t.Client)}
+		service := Database{test.NewMockedMongodbService(ctx, t.Client)}
 
 		if !service.Active(ctx) {
 			t.Fatal("service isn't responding")
 		}
 	})
-}
-
-func TestUnlockService(t *testing.T) {
-	testFlag := false
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	resetTime := time.Now()
-
-	unlockService(ctx, &testFlag, resetTime)
-
-	if testFlag != true {
-		t.Fatal("Service doesn't unlock")
-	}
-}
-
-func TestUnlockService_ParentContextCancelled(t *testing.T) {
-	testFlag := false
-	ctx, cancel := context.WithCancel(context.Background())
-	resetTime := time.Now().Add(1 * time.Hour)
-
-	cancel()
-	unlockService(ctx, &testFlag, resetTime)
-
-	if testFlag != true {
-		t.Fatal("Service doesn't unlock")
-	}
 }

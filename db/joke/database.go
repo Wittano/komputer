@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	komputer "github.com/wittano/komputer/api/proto"
 	"github.com/wittano/komputer/db"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -18,50 +19,17 @@ const (
 	GuildIDKey     = "guildID"
 )
 
-type (
-	Type     string
-	Category string
-)
-
-const (
-	Single  Type = "single"
-	TwoPart Type = "twopart"
-)
-
-const (
-	PROGRAMMING Category = "Programming"
-	MISC        Category = "Misc"
-	DARK        Category = "Dark"
-	YOMAMA      Category = "YoMama"
-	Any         Category = "Any"
-)
-
-type Joke struct {
-	ID       primitive.ObjectID `bson:"_id"`
-	Question string             `bson:"question"`
-	Answer   string             `bson:"answer"`
-	Type     Type               `bson:"type"`
-	Category Category           `bson:"category"`
-	GuildID  string             `bson:"guild_id"`
+type Database struct {
+	Mongodb db.MongodbService
 }
 
-type SearchParams struct {
-	Type     Type
-	Category Category
-	ID       primitive.ObjectID
-}
-
-type DatabaseService struct {
-	mongodb db.MongodbService
-}
-
-func (d DatabaseService) Active(ctx context.Context) bool {
+func (d Database) Active(ctx context.Context) bool {
 	const maxTimeoutTime = 500
 
 	ctx, cancel := context.WithTimeout(ctx, maxTimeoutTime*time.Millisecond)
 	defer cancel()
 
-	client, err := d.mongodb.Client(ctx)
+	client, err := d.Mongodb.Client(ctx)
 	if err != nil {
 		return false
 	}
@@ -74,14 +42,14 @@ func (d DatabaseService) Active(ctx context.Context) bool {
 	return true
 }
 
-func (d DatabaseService) Add(ctx context.Context, joke Joke) (string, error) {
+func (d Database) Add(ctx context.Context, joke Joke) (string, error) {
 	select {
 	case <-ctx.Done():
 		return "", context.Canceled
 	default:
 	}
 
-	mongodb, err := d.mongodb.Client(ctx)
+	mongodb, err := d.Mongodb.Client(ctx)
 	if err != nil {
 		return "", err
 	}
@@ -94,21 +62,38 @@ func (d DatabaseService) Add(ctx context.Context, joke Joke) (string, error) {
 	return res.InsertedID.(primitive.ObjectID).Hex(), nil
 }
 
-// Joke Try to find Joke from Mongodb database. If SearchParams is empty, then function will find 1 random joke
-func (d DatabaseService) Joke(ctx context.Context, search SearchParams) (Joke, error) {
+func (d Database) RandomJoke(ctx context.Context, search SearchParams) (Joke, error) {
+	jokes, err := d.Jokes(ctx, search, nil)
+	if err != nil {
+		return Joke{}, err
+	}
+
+	return jokes[rand.Int()%len(jokes)], nil
+}
+
+func (d Database) Joke(ctx context.Context, search SearchParams) (Joke, error) {
+	jokes, err := d.Jokes(ctx, search, nil)
+	if err != nil {
+		return Joke{}, err
+	}
+
+	return jokes[0], nil
+}
+
+func (d Database) Jokes(ctx context.Context, search SearchParams, page *komputer.Pagination) ([]Joke, error) {
 	select {
 	case <-ctx.Done():
-		return Joke{}, context.Canceled
+		return nil, context.Canceled
 	default:
 	}
 
 	if !d.Active(ctx) {
-		return Joke{}, errors.New("databases isn't responding")
+		return nil, errors.New("databases isn't responding")
 	}
 
-	mongodb, err := d.mongodb.Client(ctx)
+	mongodb, err := d.Mongodb.Client(ctx)
 	if err != nil {
-		return Joke{}, err
+		return nil, err
 	}
 
 	if search.Category == "" {
@@ -122,11 +107,26 @@ func (d DatabaseService) Joke(ctx context.Context, search SearchParams) (Joke, e
 	// Create query to database
 	const matchQueryKey = "$match"
 
+	var (
+		pageSize uint32 = 10
+		pageNr   uint32 = 0
+	)
+
+	if page != nil {
+		if page.Size > 0 {
+			pageSize = page.Size
+		}
+		if page.Page > 0 {
+			pageNr = page.Page
+		}
+	}
+
 	pipeline := mongo.Pipeline{{{
 		"$sample", bson.D{{
-			"size", 10,
+			"size", pageSize,
 		}},
 	}},
+		{{Key: "$skip", Value: pageNr * pageSize}},
 		{{
 			matchQueryKey, bson.D{
 				{
@@ -158,36 +158,42 @@ func (d DatabaseService) Joke(ctx context.Context, search SearchParams) (Joke, e
 	// SearchParams
 	res, err := mongodb.Database(db.DatabaseName).Collection(collectionName).Aggregate(ctx, pipeline)
 	if err != nil {
-		return Joke{}, err
+		return nil, err
 	}
 	defer res.Close(ctx)
 
 	var jokes []Joke
 	if err = res.All(ctx, &jokes); err != nil {
-		return Joke{}, err
+		return nil, err
 	}
 
 	if len(jokes) == 0 {
-		return Joke{}, fmt.Errorf("jokes with category '%s', type '%s' wasn't found", search.Category, search.Type)
+		return nil, fmt.Errorf("jokes with category '%s', type '%s' wasn't found", search.Category, search.Type)
 	}
 
-	return jokes[rand.Int()%len(jokes)], nil
+	return jokes, nil
 }
 
-func unlockService(ctx context.Context, activeFlag *bool, resetTime time.Time) {
-	deadlineCtx, cancel := context.WithDeadline(ctx, resetTime)
-	defer cancel()
-
-	for {
-		if *activeFlag {
-			return
-		}
-
-		select {
-		case <-deadlineCtx.Done():
-			*activeFlag = true
-			return
-		default:
-		}
+func (d Database) Remove(ctx context.Context, id string) error {
+	select {
+	case <-ctx.Done():
+		return context.Canceled
+	default:
 	}
+
+	if !d.Active(ctx) {
+		return errors.New("databases isn't responding")
+	}
+
+	client, err := d.Mongodb.Client(ctx)
+	if err != nil {
+		return err
+	}
+
+	filter := bson.D{{"$match", bson.D{{
+		"_id", id,
+	}}}}
+
+	_, err = client.Database(db.DatabaseName).Collection(collectionName).DeleteOne(ctx, filter)
+	return err
 }
