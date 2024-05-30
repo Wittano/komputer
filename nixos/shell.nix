@@ -1,8 +1,9 @@
-{ mkShell, go, gopls, ffmpeg, nixfmt-classic, protoc-gen-go, protobuf, protoc-gen-go-grpc, ... }: mkShell {
+{ mkShell, go, gopls, ffmpeg, nixfmt-classic, protoc-gen-go, protobuf, protoc-gen-go-grpc, act, ... }: mkShell {
   hardeningDisable = [ "all" ];
   nativeBuildInputs = [
     go
     protobuf
+    act
   ];
   buildInputs = [
     gopls

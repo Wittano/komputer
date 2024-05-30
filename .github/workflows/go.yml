@@ -13,5 +13,16 @@ jobs:
       uses: actions/setup-go@v4
       with:
         go-version: '1.22'
+    - name: Install protobuf packages
+      run: |
+        curl -OL https://github.com/protocolbuffers/protobuf/releases/download/v27.0/protoc-27.0-linux-x86_64.zip
+        
+        unzip protoc-27.0-linux-x86_64.zip -d protoc3
+        
+        sudo mv protoc3/bin/* /usr/local/bin/
+        sudo mv protoc3/include/* /usr/local/include/
+        
+        go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.28
+        go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.2
     - name: Test
-      run: go test -race -v ./...
+      run: make test
