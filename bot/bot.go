@@ -139,7 +139,6 @@ func createCommands(
 	guildVoiceChats map[string]voice.ChatInfo,
 ) map[string]command.DiscordSlashCommandHandler {
 	welcome := command.WelcomeCommand{}
-	addJoke := command.AddJokeCommand{Service: services[databaseServiceID].(dbJoke.Database)}
 	getJoke := command.JokeCommand{Services: services}
 	spock := command.SpockCommand{
 		GlobalCtx:       globalCtx,
@@ -151,7 +150,6 @@ func createCommands(
 
 	return map[string]command.DiscordSlashCommandHandler{
 		command.WelcomeCommandName: welcome,
-		command.AddJokeCommandName: addJoke,
 		command.GetJokeCommandName: getJoke,
 		command.SpockCommandName:   spock,
 		command.StopCommandName:    stop,

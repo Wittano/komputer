@@ -91,6 +91,7 @@ func newJoke(j *komputer.Joke) (new joke.Joke, err error) {
 	new.Type, err = joke.RawType(j.Type)
 	new.Answer = j.Answer
 	new.GuildID = j.GuildId
+	new.ID = primitive.NewObjectID()
 
 	if j.Question != nil {
 		new.Question = *j.Question
@@ -105,8 +106,9 @@ func searchParams(params apiJokeParams) (p joke.SearchParams, err error) {
 		return
 	}
 
-	if params.GetId() != nil {
-		p.ID, err = primitive.ObjectIDFromHex(params.GetId().ObjectId)
+	id := params.GetId()
+	if id != nil {
+		p.ID, err = primitive.ObjectIDFromHex(id.ObjectId)
 	}
 
 	p.Type, err = joke.RawType(params.GetType())

@@ -18,12 +18,9 @@ const (
 	idOptionKey       = "id"
 	categoryOptionKey = "category"
 	typeOptionKey     = "type"
-	questionOptionKey = "question"
-	answerOptionKey   = "answer"
 )
 
 const (
-	AddJokeCommandName = "add-joke"
 	GetJokeCommandName = "joke"
 )
 
@@ -293,69 +290,6 @@ func buttonReactions() []discordgo.MessageComponent {
 			},
 		},
 	}
-}
-
-type AddJokeCommand struct {
-	Service joke.AddService
-}
-
-func (a AddJokeCommand) Command() *discordgo.ApplicationCommand {
-	return &discordgo.ApplicationCommand{
-		Name:        AddJokeCommandName,
-		Description: "Add new joke to server database",
-		GuildID:     os.Getenv("SERVER_GUID"),
-		Type:        discordgo.ChatApplicationCommand,
-		Options: []*discordgo.ApplicationCommandOption{
-			jokeCategoryOption(true),
-			jokeTypeOption(true),
-			{
-				Name:        answerOptionKey,
-				Description: "Main part of joke",
-				Type:        discordgo.ApplicationCommandOptionString,
-				Required:    true,
-			},
-			{
-				Name:        questionOptionKey,
-				Description: "Question part in two-part joke",
-				Type:        discordgo.ApplicationCommandOptionString,
-				Required:    false,
-			},
-		},
-	}
-}
-
-func (a AddJokeCommand) Execute(ctx context.Context, _ *discordgo.Session, i *discordgo.InteractionCreate) (DiscordMessageReceiver, error) {
-	newJoke := jokeFromOptions(i.Data.(discordgo.ApplicationCommandInteractionData))
-
-	if newJoke.Answer == "" {
-		return nil, DiscordError{Err: errors.New("joke: missing answer"), Msg: "Zrujnowałeś ten żart, Panie Kapitanie"}
-	}
-
-	newJoke.ID = primitive.NewObjectID()
-
-	id, err := a.Service.Add(ctx, newJoke)
-	if err != nil {
-		return nil, err
-	}
-
-	return SimpleMessage{Msg: fmt.Sprintf("BEEP BOOP. Dodałem twój żart panie Kapitanie. Jego ID to `%s`", id), Hidden: true}, nil
-}
-
-func jokeFromOptions(data discordgo.ApplicationCommandInteractionData) (j joke.Joke) {
-	for _, o := range data.Options {
-		switch o.Name {
-		case categoryOptionKey:
-			j.Category = joke.Category(o.Value.(string))
-		case typeOptionKey:
-			j.Type = joke.Type(o.Value.(string))
-		case answerOptionKey:
-			j.Answer = o.Value.(string)
-		case questionOptionKey:
-			j.Question = o.Value.(string)
-		}
-	}
-
-	return
 }
 
 type ApologiesOption struct{}
