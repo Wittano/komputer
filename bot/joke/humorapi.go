@@ -11,6 +11,7 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"sync"
 	"time"
 )
 
@@ -30,10 +31,11 @@ var HumorAPILimitExceededErr = errors.New("humorAPI: daily limit of jokes was ex
 type HumorAPIService struct {
 	client    http.Client
 	active    bool
+	m         sync.Mutex
 	globalCtx context.Context
 }
 
-func (h HumorAPIService) Active(ctx context.Context) (active bool) {
+func (h *HumorAPIService) Active(ctx context.Context) (active bool) {
 	select {
 	case <-ctx.Done():
 		active = false
@@ -77,10 +79,12 @@ func (h *HumorAPIService) RandomJoke(ctx context.Context, search joke.SearchPara
 	limitExceeded := len(res.Header[xAPIQuotaLeftHeaderName]) > 0 && res.Header[xAPIQuotaLeftHeaderName][0] == "0"
 
 	if res.StatusCode == http.StatusTooManyRequests || res.StatusCode == http.StatusPaymentRequired || limitExceeded {
+		h.m.Lock()
 		h.active = false
 		resetTime := time.Now().Add(time.Hour * 24)
 
-		go unlockService(h.globalCtx, &h.active, resetTime)
+		go unlockService(h.globalCtx, &h.m, &h.active, resetTime)
+		h.m.Unlock()
 
 		return joke.Joke{}, HumorAPILimitExceededErr
 	} else if res.StatusCode != http.StatusOK {

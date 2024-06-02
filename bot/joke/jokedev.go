@@ -8,6 +8,7 @@ import (
 	"github.com/wittano/komputer/db/joke"
 	"io"
 	"net/http"
+	"sync"
 	"time"
 )
 
@@ -74,10 +75,11 @@ var DevServiceLimitExceededErr = errors.New("jokedev: current limit exceeded")
 type DevService struct {
 	client    http.Client
 	active    bool
+	m         sync.Mutex
 	globalCtx context.Context
 }
 
-func (d DevService) Active(ctx context.Context) (active bool) {
+func (d *DevService) Active(ctx context.Context) (active bool) {
 	select {
 	case <-ctx.Done():
 		active = false
@@ -121,10 +123,12 @@ func (d *DevService) RandomJoke(ctx context.Context, params joke.SearchParams) (
 
 	if res.StatusCode == http.StatusTooManyRequests || isLimitExceeded {
 		const rateLimitReset = "RateLimit-Reset"
+		d.m.Lock()
 		resetTime := resetTime(res.Header[rateLimitReset])
 		d.active = false
 
-		go unlockService(d.globalCtx, &d.active, resetTime)
+		go unlockService(d.globalCtx, &d.m, &d.active, resetTime)
+		d.m.Unlock()
 
 		return joke.Joke{}, DevServiceLimitExceededErr
 	}

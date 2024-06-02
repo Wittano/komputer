@@ -6,29 +6,33 @@ import (
 	"github.com/wittano/komputer/db/joke"
 	"net/http"
 	"os"
+	"sync"
 	"time"
 )
 
 func NewJokeDevService(globalCtx context.Context) joke.SearchService {
-	client := http.Client{Timeout: time.Second * 1}
-
-	return &DevService{client, true, globalCtx}
+	return &DevService{
+		client:    http.Client{Timeout: time.Second},
+		active:    true,
+		globalCtx: globalCtx,
+	}
 }
 
 func NewHumorAPIService(globalCtx context.Context) joke.SearchService {
-	client := http.Client{Timeout: time.Second * 1}
-
 	env, ok := os.LookupEnv(humorAPIKey)
-	active := ok || env != ""
 
-	return &HumorAPIService{client, active, globalCtx}
+	return &HumorAPIService{
+		client:    http.Client{Timeout: time.Second},
+		active:    ok || env != "",
+		globalCtx: globalCtx,
+	}
 }
 
-func NewDatabaseJokeService(database db.MongodbService) joke.Database {
+func NewJokeDatabase(database db.MongodbService) joke.Database {
 	return joke.Database{Mongodb: database}
 }
 
-func unlockService(ctx context.Context, activeFlag *bool, resetTime time.Time) {
+func unlockService(ctx context.Context, m *sync.Mutex, activeFlag *bool, resetTime time.Time) {
 	deadlineCtx, cancel := context.WithDeadline(ctx, resetTime)
 	defer cancel()
 
@@ -39,7 +43,9 @@ func unlockService(ctx context.Context, activeFlag *bool, resetTime time.Time) {
 
 		select {
 		case <-deadlineCtx.Done():
+			m.Lock()
 			*activeFlag = true
+			m.Unlock()
 			return
 		default:
 		}
