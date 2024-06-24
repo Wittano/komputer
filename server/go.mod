@@ -1,4 +1,4 @@
-module server
+module github.com/wittano/komputer/server
 
 go 1.22
 

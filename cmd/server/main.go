@@ -2,8 +2,8 @@ package main
 
 import (
 	"flag"
+	"github.com/wittano/komputer/server"
 	"log"
-	"server"
 )
 
 func main() {
