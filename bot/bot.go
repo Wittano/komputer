@@ -128,7 +128,7 @@ func createJokeGetServices(globalCtx context.Context, database *db.MongodbDataba
 	return []dbJoke.SearchService{
 		jokeDevServiceID:  joke.NewJokeDevService(globalCtx),
 		humorAPIServiceID: joke.NewHumorAPIService(globalCtx),
-		databaseServiceID: joke.NewDatabaseJokeService(database),
+		databaseServiceID: joke.NewJokeDatabase(database),
 	}
 }
 

@@ -43,6 +43,8 @@ func newGRPGServer() *grpc.Server {
 	mongodb := db.Mongodb(ctx)
 
 	komputer.RegisterJokeServiceServer(s, &jokeServer{Db: joke.Database{Mongodb: mongodb}})
+	komputer.RegisterAudioServiceServer(s, &audioServer{})
+	komputer.RegisterAudioFileServiceServer(s, &fileServer{})
 
 	return s
 }

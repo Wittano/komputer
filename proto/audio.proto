@@ -17,10 +17,10 @@ message AudioInfo {
 
 message Audio {
   AudioInfo info = 1;
-  bytes file = 2;
+  bytes chunk = 2;
 }
 
-message File {
+message FileBuffer {
   bytes content = 1;
   uint64 size = 2;
 }
@@ -30,12 +30,17 @@ message UploadAudioResponse {
   uint32 size = 2;
 }
 
+message DownloadRequest {
+  optional UUID uuid = 1;
+  optional string name = 2;
+}
+
 service AudioService {
   rpc List(komputer.Pagination) returns (stream AudioInfo);
   rpc Add(stream Audio) returns (UploadAudioResponse);
-  rpc Remove(NameOrIdRequest) returns (google.protobuf.Empty);
+  rpc Remove(NameOrIdAudioRequest) returns (google.protobuf.Empty);
 }
 
 service AudioFileService {
-  rpc Download(FindById) returns (stream File);
+  rpc Download(DownloadRequest) returns (stream FileBuffer);
 }

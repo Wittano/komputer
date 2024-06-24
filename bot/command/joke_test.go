@@ -24,7 +24,7 @@ func TestSelectGetService(t *testing.T) {
 	testServices := []dbJoke.SearchService{
 		joke.NewJokeDevService(ctx),
 		joke.NewHumorAPIService(ctx),
-		joke.NewDatabaseJokeService(dumpMongoService{}),
+		joke.NewJokeDatabase(dumpMongoService{}),
 	}
 
 	service, err := findService(ctx, testServices)
@@ -47,7 +47,7 @@ func TestFindJokeService_ContextCancelled(t *testing.T) {
 	testServices := []dbJoke.SearchService{
 		joke.NewJokeDevService(ctx),
 		joke.NewHumorAPIService(ctx),
-		joke.NewDatabaseJokeService(dumpMongoService{}),
+		joke.NewJokeDatabase(dumpMongoService{}),
 	}
 
 	if _, err := findService(ctx, testServices); err == nil {
@@ -58,7 +58,7 @@ func TestFindJokeService_ContextCancelled(t *testing.T) {
 func TestFindJokeService_ServicesIsDeactivated(t *testing.T) {
 	ctx := context.Background()
 	services := []dbJoke.SearchService{
-		joke.NewDatabaseJokeService(dumpMongoService{}),
+		joke.NewJokeDatabase(dumpMongoService{}),
 	}
 
 	if _, err := findService(ctx, services); err == nil {

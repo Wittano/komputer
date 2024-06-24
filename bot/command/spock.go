@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/bwmarrin/dgvoice"
 	"github.com/bwmarrin/discordgo"
-	"github.com/wittano/komputer/bot/audio"
+	"github.com/wittano/komputer/audio"
 	"github.com/wittano/komputer/bot/log"
 	"github.com/wittano/komputer/bot/voice"
 	"log/slog"
@@ -133,7 +133,7 @@ func audioPath(data discordgo.ApplicationCommandInteractionData) (path string, e
 		}
 	}
 
-	if name == "" && err == nil {
+	if name == "" {
 		path, err = audio.RandomPath()
 	} else {
 		path = audio.Path(path)

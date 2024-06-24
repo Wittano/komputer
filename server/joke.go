@@ -41,12 +41,8 @@ func (j jokeServer) FindAll(identity *komputer.JokeParamsPagination, server komp
 		return err
 	}
 
-	page := identity.Page
-	if page == nil {
-		page = &komputer.Pagination{Size: 10}
-	}
-
-	jokes, err := j.Db.Jokes(server.Context(), p, identity.Page)
+	page := paginationOrDefault(identity.Page)
+	jokes, err := j.Db.Jokes(server.Context(), p, page)
 	if err != nil {
 		return err
 	}

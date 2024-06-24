@@ -49,6 +49,34 @@ func Paths() (paths []string, err error) {
 	return
 }
 
+// PathsWithPagination get fixed-sized list of audio paths from assert dictionary
+func PathsWithPagination(page uint32, size uint32) (paths []string, err error) {
+	dirs, err := os.ReadDir(AssertDir())
+	if err != nil {
+		return nil, err
+	}
+
+	skipFiles := int(page * size)
+	if len(dirs) < skipFiles {
+		return []string{}, nil
+	} else if len(dirs) <= 0 {
+		return nil, errors.New("assert directory is empty")
+	}
+
+	paths = make([]string, 0, size)
+	for _, dir := range dirs[skipFiles:] {
+		if dir.Type() != os.ModeDir {
+			paths = append(paths, dir.Name())
+		}
+
+		if len(paths) >= int(size) {
+			break
+		}
+	}
+
+	return
+}
+
 func RandomPath() (string, error) {
 	paths, err := Paths()
 	if err != nil {
