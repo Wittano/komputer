@@ -169,12 +169,10 @@ func (d *DevService) RandomJoke(ctx context.Context, params joke.SearchParams) (
 func resetTime(rateLimitReset []string) (t time.Time) {
 	if len(rateLimitReset) > 0 {
 		var err error
-		if t, err = time.Parse("Sun, 06 Nov 1994 08:49:37 GMT", rateLimitReset[0]); err != nil {
-			t = time.Now().Add(24 * time.Hour)
+		if t, err = time.Parse("Sun, 06 Nov 1994 08:49:37 GMT", rateLimitReset[0]); err == nil {
+			return
 		}
-	} else {
-		t = time.Now().Add(24 * time.Hour)
 	}
 
-	return t
+	return time.Now().Add(24 * time.Hour)
 }

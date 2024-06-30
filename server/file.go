@@ -15,12 +15,13 @@ type fileServer struct {
 	komputer.UnimplementedAudioFileServiceServer
 }
 
-func (fs fileServer) Download(request *komputer.DownloadRequest, server komputer.AudioFileService_DownloadServer) error {
-	if request == nil {
-		return errors.New("download: missing request data")
+// TODO Verification of service structe
+func (fs fileServer) Download(req *komputer.DownloadRequest, server komputer.AudioFileService_DownloadServer) error {
+	if req == nil {
+		return errors.New("download: missing req data")
 	}
 
-	path := audio.Path(filename(request))
+	path := audio.Path(filename(req))
 	f, err := os.Open(path)
 	if err != nil {
 		slog.Error("failed find f "+path, err)
@@ -53,13 +54,13 @@ func (fs fileServer) Download(request *komputer.DownloadRequest, server komputer
 	return nil
 }
 
-func filename(request *komputer.DownloadRequest) (name string) {
-	if request == nil {
+func filename(req *komputer.DownloadRequest) (name string) {
+	if req == nil {
 		return
 	}
 
 	var uuid *komputer.UUID
-	uuid, name = request.GetUuid(), request.GetName()
+	uuid, name = req.GetUuid(), req.GetName()
 
 	if uuid == nil {
 		return

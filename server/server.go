@@ -9,6 +9,7 @@ import (
 	"log"
 	"net"
 	"strconv"
+	"sync"
 )
 
 type Server struct {
@@ -43,7 +44,7 @@ func newGRPGServer() *grpc.Server {
 	mongodb := db.Mongodb(ctx)
 
 	komputer.RegisterJokeServiceServer(s, &jokeServer{Db: joke.Database{Mongodb: mongodb}})
-	komputer.RegisterAudioServiceServer(s, &audioServer{})
+	komputer.RegisterAudioServiceServer(s, &audioServer{m: new(sync.Mutex)})
 	komputer.RegisterAudioFileServiceServer(s, &fileServer{})
 
 	return s
