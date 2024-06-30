@@ -2,7 +2,7 @@ package audio
 
 import (
 	"errors"
-	"fmt"
+	"github.com/wittano/komputer/test"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -33,7 +33,7 @@ func TestAudioIDs_AssetDirHasEmptyDirs(t *testing.T) {
 
 func TestAudioIDs(t *testing.T) {
 	const expectedFilesNumber = 5
-	if err := createTestAssertDir(t, expectedFilesNumber); err != nil {
+	if err := test.CreateAssertDir(t, expectedFilesNumber); err != nil {
 		t.Fatal(err)
 	}
 
@@ -72,7 +72,7 @@ func TestPathsWithPagination_ButEmptyDictionary(t *testing.T) {
 
 func TestPathsWithPagination_PageIsOverANumberOfFiles(t *testing.T) {
 	const expectedFilesNumber = 5
-	if err := createTestAssertDir(t, expectedFilesNumber); err != nil {
+	if err := test.CreateAssertDir(t, expectedFilesNumber); err != nil {
 		t.Fatal(err)
 	}
 
@@ -88,7 +88,7 @@ func TestPathsWithPagination_PageIsOverANumberOfFiles(t *testing.T) {
 
 func TestPathsWithPagination(t *testing.T) {
 	const expectedFilesNumber = 50
-	if err := createTestAssertDir(t, expectedFilesNumber); err != nil {
+	if err := test.CreateAssertDir(t, expectedFilesNumber); err != nil {
 		t.Fatal(err)
 	}
 
@@ -114,21 +114,4 @@ func TestPathsWithPagination_AssertDirNotFound(t *testing.T) {
 	if _, err := PathsWithPagination(0, 10); err == nil {
 		t.Fatalf("Assert dictionary was found")
 	}
-}
-
-func createTestAssertDir(t *testing.T, n int) (err error) {
-	dir := t.TempDir()
-	if err := os.Setenv(assetsDirKey, dir); err != nil {
-		t.Fatal(err)
-	}
-
-	for i := 0; i < n; i++ {
-		f, err := os.CreateTemp(dir, fmt.Sprintf("test-%d.*.mp3", i))
-		if err != nil {
-			t.Fatal(err)
-		}
-		err = f.Close()
-	}
-
-	return
 }

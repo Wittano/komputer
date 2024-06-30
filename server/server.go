@@ -2,7 +2,7 @@ package server
 
 import (
 	"context"
-	komputer "github.com/wittano/komputer/api/proto"
+	pb "github.com/wittano/komputer/api/proto"
 	"github.com/wittano/komputer/db"
 	"github.com/wittano/komputer/db/joke"
 	"google.golang.org/grpc"
@@ -13,39 +13,38 @@ import (
 )
 
 type Server struct {
-	l    net.Listener
-	serv *grpc.Server
+	l          net.Listener
+	cancelFunc context.CancelFunc
+	serv       *grpc.Server
 }
 
-func (s Server) Start() error {
+func (s *Server) Start() error {
 	log.Printf("Server listing on port %serv\n", s.l.Addr())
 
 	return s.serv.Serve(s.l)
 }
 
-func (s Server) Close() error {
+func (s *Server) Close() error {
 	s.serv.Stop()
+	s.cancelFunc()
 	return s.l.Close()
 }
 
-func New(port uint64) (Server, error) {
-	l, err := net.Listen("tcp", strconv.FormatUint(port, 10))
+func New(port uint64) (*Server, error) {
+	l, err := net.Listen("tcp", "0.0.0.0:"+strconv.FormatUint(port, 10))
 	if err != nil {
-		return Server{}, err
+		return nil, err
 	}
 
-	return Server{l, newGRPGServer()}, nil
-}
-
-func newGRPGServer() *grpc.Server {
 	s := grpc.NewServer()
+	ctx, cancel := context.WithCancel(context.Background())
+	server := &Server{l, cancel, s}
 
-	ctx := context.Background()
 	mongodb := db.Mongodb(ctx)
 
-	komputer.RegisterJokeServiceServer(s, &jokeServer{Db: joke.Database{Mongodb: mongodb}})
-	komputer.RegisterAudioServiceServer(s, &audioServer{m: new(sync.Mutex)})
-	komputer.RegisterAudioFileServiceServer(s, &fileServer{})
+	pb.RegisterJokeServiceServer(s, &jokeServer{Db: joke.Database{Mongodb: mongodb}})
+	pb.RegisterAudioServiceServer(s, &audioServer{m: new(sync.Mutex)})
+	pb.RegisterAudioFileServiceServer(s, &fileServer{})
 
-	return s
+	return server, nil
 }

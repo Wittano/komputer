@@ -16,7 +16,7 @@ type fileServer struct {
 }
 
 // TODO Verification of service structe
-func (fs fileServer) Download(req *komputer.DownloadRequest, server komputer.AudioFileService_DownloadServer) error {
+func (fs fileServer) Download(req *komputer.DownloadFile, server komputer.AudioFileService_DownloadServer) error {
 	if req == nil {
 		return errors.New("download: missing req data")
 	}
@@ -54,7 +54,7 @@ func (fs fileServer) Download(req *komputer.DownloadRequest, server komputer.Aud
 	return nil
 }
 
-func filename(req *komputer.DownloadRequest) (name string) {
+func filename(req *komputer.DownloadFile) (name string) {
 	if req == nil {
 		return
 	}

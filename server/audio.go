@@ -7,6 +7,8 @@ import (
 	"github.com/google/uuid"
 	pb "github.com/wittano/komputer/api/proto"
 	"github.com/wittano/komputer/audio"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"os"
 	"sync"
@@ -57,14 +59,17 @@ func (a audioServer) Add(server pb.AudioService_AddServer) error {
 	}
 }
 
-func (a audioServer) Remove(_ context.Context, req *pb.RemoveAudioRequest) (e *emptypb.Empty, err error) {
+func (a audioServer) Remove(_ context.Context, req *pb.RemoveAudio) (e *emptypb.Empty, err error) {
 	e = &emptypb.Empty{}
 	if req == nil {
 		return
 	}
 
 	for _, query := range req.Name {
-		err = errors.Join(err, os.Remove(query))
+		rmErr := os.Remove(audio.Path(query))
+		if rmErr != nil {
+			err = errors.Join(err, status.Error(codes.NotFound, rmErr.Error()))
+		}
 	}
 
 	return
