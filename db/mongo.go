@@ -25,7 +25,7 @@ func (m *MongodbDatabase) Close() (err error) {
 	err = m.db.Disconnect(m.ctx)
 	m.db = nil
 
-	return err
+	return
 }
 
 func (m *MongodbDatabase) Client(ctx context.Context) (*mongo.Client, error) {
@@ -69,11 +69,7 @@ func Mongodb(ctx context.Context) *MongodbDatabase {
 	}
 
 	db = new(MongodbDatabase)
-
-	if uri, ok := os.LookupEnv(MongodbURIKey); ok {
-		db.uri = uri
-	}
-
+	db.uri, _ = os.LookupEnv(MongodbURIKey)
 	db.ctx = ctx
 
 	return db
