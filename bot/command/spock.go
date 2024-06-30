@@ -134,9 +134,9 @@ func audioPath(data discordgo.ApplicationCommandInteractionData) (path string, e
 	}
 
 	if name == "" {
-		path, err = audio.RandomPath()
+		path, err = audio.RandomAudioName()
 	} else {
-		path = audio.Path(path)
+		path, err = audio.Path(path)
 	}
 
 	return

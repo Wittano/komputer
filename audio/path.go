@@ -2,11 +2,13 @@ package audio
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"math/rand"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"syscall"
 	"time"
 )
@@ -16,8 +18,41 @@ const (
 	assetsDirKey         = "ASSETS_DIR"
 )
 
-func Path(name string) string {
-	return filepath.Join(AssertDir(), name)
+func Path(name string) (path string, err error) {
+	assertDir := AssertDir()
+	path = filepath.Join(assertDir, name)
+	_, err = os.Stat(path)
+	if err != nil {
+		path, err = searchPathByNameOrUUID(name)
+	}
+
+	return
+}
+
+func searchPathByNameOrUUID(prefix string) (p string, err error) {
+	var paths []string
+	paths, err = Paths()
+	if err != nil {
+		return
+	}
+
+	for _, p = range paths {
+		base := filepath.Base(p)
+		if strings.HasPrefix(base, prefix) {
+			return
+		} else {
+			split := strings.Split(base, "-")
+			if len(split) < 2 {
+				continue
+			}
+
+			if strings.HasPrefix(strings.Join(split[1:], "-"), prefix) {
+				return
+			}
+		}
+	}
+
+	return "", fmt.Errorf("path with prefix %s wasn't found", prefix)
 }
 
 func AssertDir() (path string) {
@@ -30,7 +65,8 @@ func AssertDir() (path string) {
 }
 
 func Paths() (paths []string, err error) {
-	dirs, err := os.ReadDir(AssertDir())
+	assertDir := AssertDir()
+	dirs, err := os.ReadDir(assertDir)
 	if err != nil {
 		return nil, err
 	}
@@ -42,7 +78,7 @@ func Paths() (paths []string, err error) {
 	paths = make([]string, 0, len(dirs))
 	for _, dir := range dirs {
 		if dir.Type() != os.ModeDir {
-			paths = append(paths, dir.Name())
+			paths = append(paths, filepath.Join(assertDir, dir.Name()))
 		}
 	}
 
@@ -77,7 +113,7 @@ func PathsWithPagination(page uint32, size uint32) (paths []string, err error) {
 	return
 }
 
-func RandomPath() (string, error) {
+func RandomAudioName() (string, error) {
 	paths, err := Paths()
 	if err != nil {
 		return "", err

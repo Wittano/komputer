@@ -2,7 +2,9 @@ package test
 
 import (
 	"fmt"
+	"github.com/google/uuid"
 	"os"
+	"path/filepath"
 	"testing"
 )
 
@@ -16,9 +18,9 @@ func CreateAssertDir(t *testing.T, n int) (err error) {
 	}
 
 	for i := 0; i < n; i++ {
-		f, err := os.CreateTemp(dir, fmt.Sprintf("test-%d.*.mp3", i))
+		f, err := os.Create(filepath.Join(dir, fmt.Sprintf("test-%s.mp3", uuid.NewString())))
 		if err != nil {
-			t.Fatal(err)
+			return err
 		}
 		err = f.Close()
 	}

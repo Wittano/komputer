@@ -6,36 +6,41 @@ import (
 	"fmt"
 	komputer "github.com/wittano/komputer/api/proto"
 	"github.com/wittano/komputer/audio"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"io"
 	"log/slog"
 	"os"
 )
 
+const downloadBufSize = 1024 * 1024
+
 type fileServer struct {
 	komputer.UnimplementedAudioFileServiceServer
 }
 
-// TODO Verification of service structe
 func (fs fileServer) Download(req *komputer.DownloadFile, server komputer.AudioFileService_DownloadServer) error {
 	if req == nil {
-		return errors.New("download: missing req data")
+		return status.Error(codes.InvalidArgument, "download: missing required data")
 	}
 
-	path := audio.Path(filename(req))
+	path, err := audio.Path(filename(req))
+	if err != nil {
+		return status.Error(codes.NotFound, err.Error())
+	}
+
 	f, err := os.Open(path)
 	if err != nil {
 		slog.Error("failed find f "+path, err)
-		return err
+		return status.Error(codes.NotFound, err.Error())
 	}
 	defer f.Close()
 
-	ctx := server.Context()
-
-	buf := make([]byte, 1024)
+	buf := make([]byte, downloadBufSize)
 	for {
 		select {
-		case <-ctx.Done():
-			return context.Canceled
+		case <-server.Context().Done():
+			return status.Error(codes.Canceled, context.Canceled.Error())
 		default:
 		}
 
@@ -43,11 +48,12 @@ func (fs fileServer) Download(req *komputer.DownloadFile, server komputer.AudioF
 		if errors.Is(err, io.EOF) {
 			break
 		} else if err != nil {
-			return err
+			return status.Error(codes.Internal, err.Error())
 		}
 
 		if err = server.Send(&komputer.FileBuffer{Content: buf, Size: uint64(n)}); err != nil {
-			return err
+			slog.Error("failed send chunk of file", err)
+			return status.Error(codes.Internal, err.Error())
 		}
 	}
 
@@ -66,5 +72,9 @@ func filename(req *komputer.DownloadFile) (name string) {
 		return
 	}
 
-	return fmt.Sprintf("%s-%s", name, uuid)
+	if name == "" {
+		return string(uuid.Uuid)
+	}
+
+	return fmt.Sprintf("%s-%s", name, uuid.Uuid)
 }

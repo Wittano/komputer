@@ -35,7 +35,7 @@ func (c closers) Close() (err error) {
 	return
 }
 
-func createClient() (client pb.AudioServiceClient, server io.Closer, err error) {
+func createAudioClient() (client pb.AudioServiceClient, server io.Closer, err error) {
 	s, err := New(port)
 	if err != nil {
 		return nil, nil, err
@@ -59,7 +59,7 @@ func createClient() (client pb.AudioServiceClient, server io.Closer, err error) 
 }
 
 func TestRemoveAudio(t *testing.T) {
-	client, closer, err := createClient()
+	client, closer, err := createAudioClient()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -74,13 +74,17 @@ func TestRemoveAudio(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	for i, p := range paths {
+		paths[i] = filepath.Base(p)
+	}
+
 	if _, err := client.Remove(context.Background(), &pb.RemoveAudio{Name: paths}); err != nil {
 		t.Fatal(err)
 	}
 }
 
 func TestUploadFile(t *testing.T) {
-	client, closer, err := createClient()
+	client, closer, err := createAudioClient()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -116,13 +120,18 @@ func TestUploadFile(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if s, err := os.Stat(audio.Path(res.Filename)); err != nil || s.Size() == 0 {
+	path, err = audio.Path(res.Filename)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if s, err := os.Stat(path); err != nil || s.Size() == 0 {
 		t.Fatalf("failed upload file: %v", err)
 	}
 }
 
 func TestUploadFile_FileAlreadyExists(t *testing.T) {
-	client, closer, err := createClient()
+	client, closer, err := createAudioClient()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -132,9 +141,9 @@ func TestUploadFile_FileAlreadyExists(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	path := audio.Path("test")
-	f, err := os.Create(path)
-	if err != nil {
+	path := filepath.Join(audio.AssertDir(), "test")
+	f, createErr := os.Create(path)
+	if errors.Join(err, createErr) != nil {
 		t.Fatal(err)
 	}
 	f.Close()
@@ -164,7 +173,7 @@ func fillTempFile(t *testing.T, path string) error {
 	}
 	defer f.Close()
 
-	for i := 0; i < 1000; i++ {
+	for i := 0; i < 100; i++ {
 		if _, err := f.WriteString(strconv.Itoa(rand.Int()) + "\n"); err != nil {
 			return err
 		}

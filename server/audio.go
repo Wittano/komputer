@@ -35,21 +35,22 @@ func (a audioServer) List(pagination *pb.Pagination, server pb.AudioService_List
 	return
 }
 
+// TODO Add file validation
 func (a audioServer) Add(server pb.AudioService_AddServer) error {
 	id := uuid.NewString()
 	var path string
 
 	au, err := server.Recv()
-	if err != nil && !errors.Is(err, io.EOF) {
+	if err != nil {
 		return status.Error(codes.Internal, err.Error())
 	}
 
-	if fileExistsInAssetsDir(au.Info.Name) {
+	if _, err := audio.Path(au.Info.Name); err == nil {
 		return status.Error(codes.AlreadyExists, fmt.Sprintf("file %s already exists", au.Info.Name))
 	}
 
 	if path == "" {
-		path = audio.Path(fmt.Sprintf("%s-%s.%s", au.Info.Name, id, strings.ToLower(au.Info.Type.String())))
+		path = filepath.Join(audio.AssertDir(), fmt.Sprintf("%s-%s.%s", au.Info.Name, id, strings.ToLower(au.Info.Type.String())))
 	}
 
 	f, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE, 0600)
@@ -95,24 +96,13 @@ func (a audioServer) Remove(_ context.Context, req *pb.RemoveAudio) (e *emptypb.
 	}
 
 	for _, query := range req.Name {
-		rmErr := os.Remove(audio.Path(query))
-		if rmErr != nil {
-			err = errors.Join(err, status.Error(codes.NotFound, rmErr.Error()))
+		path, err := audio.Path(query)
+		if err != nil {
+			return nil, status.Error(codes.NotFound, err.Error())
 		}
-	}
 
-	return
-}
-
-func fileExistsInAssetsDir(filename string) (exists bool) {
-	dir, err := os.ReadDir(audio.AssertDir())
-	if err != nil {
-		return
-	}
-
-	for _, d := range dir {
-		if strings.HasPrefix(d.Name(), filename) {
-			return true
+		if err = os.Remove(path); err != nil {
+			return nil, status.Error(codes.Internal, err.Error())
 		}
 	}
 
