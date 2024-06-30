@@ -10,9 +10,9 @@ replace (
 )
 
 require (
-	github.com/wittano/komputer/bot v0.0.0-20240610193926-c76ee77cc375
+	github.com/wittano/komputer/bot v0.0.0-20240624170725-850a337ddf55
 	github.com/wittano/komputer/server v0.0.0
-	go.mongodb.org/mongo-driver v1.15.1
+	go.mongodb.org/mongo-driver v1.16.0
 	google.golang.org/grpc v1.64.0
 	google.golang.org/protobuf v1.34.2
 )
