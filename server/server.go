@@ -9,7 +9,6 @@ import (
 	"log"
 	"net"
 	"strconv"
-	"sync"
 )
 
 type Server struct {
@@ -43,7 +42,7 @@ func New(port uint64) (*Server, error) {
 	mongodb := db.Mongodb(ctx)
 
 	pb.RegisterJokeServiceServer(s, &jokeServer{Db: joke.Database{Mongodb: mongodb}})
-	pb.RegisterAudioServiceServer(s, &audioServer{m: new(sync.Mutex)})
+	pb.RegisterAudioServiceServer(s, &audioServer{})
 	pb.RegisterAudioFileServiceServer(s, &fileServer{})
 
 	return server, nil

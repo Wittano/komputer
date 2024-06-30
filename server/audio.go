@@ -10,12 +10,13 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
+	"io"
 	"os"
-	"sync"
+	"path/filepath"
+	"strings"
 )
 
 type audioServer struct {
-	m *sync.Mutex
 	pb.UnimplementedAudioServiceServer
 }
 
@@ -24,7 +25,7 @@ func (a audioServer) List(pagination *pb.Pagination, server pb.AudioService_List
 
 	paths, err := audio.PathsWithPagination(page.Page, page.Size)
 	if err != nil {
-		return
+		return status.Error(codes.NotFound, err.Error())
 	}
 
 	for _, path := range paths {
@@ -34,29 +35,57 @@ func (a audioServer) List(pagination *pb.Pagination, server pb.AudioService_List
 	return
 }
 
-// TODO Verification upload request structure
 func (a audioServer) Add(server pb.AudioService_AddServer) error {
-	for {
-		au, err := server.Recv()
-		if err != nil {
-			return err
-		}
+	id := uuid.NewString()
+	var path string
 
-		path := audio.Path(fmt.Sprintf("%s-%s.%s", au.Info.Name, uuid.NewString(), au.Info.Type.String()))
-
-		f, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE, 0600)
-		if err != nil {
-			return err
-		}
-		f.Close()
-
-		a.m.Lock()
-		if _, err := f.Write(au.Chunk); err != nil {
-			a.m.Unlock()
-			return err
-		}
-		a.m.Unlock()
+	au, err := server.Recv()
+	if err != nil && !errors.Is(err, io.EOF) {
+		return status.Error(codes.Internal, err.Error())
 	}
+
+	if fileExistsInAssetsDir(au.Info.Name) {
+		return status.Error(codes.AlreadyExists, fmt.Sprintf("file %s already exists", au.Info.Name))
+	}
+
+	if path == "" {
+		path = audio.Path(fmt.Sprintf("%s-%s.%s", au.Info.Name, id, strings.ToLower(au.Info.Type.String())))
+	}
+
+	f, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE, 0600)
+	if err != nil {
+		return status.Error(codes.FailedPrecondition, err.Error())
+	}
+	defer f.Close()
+
+	for {
+		select {
+		case <-server.Context().Done():
+			return status.Error(codes.Canceled, context.Canceled.Error())
+		default:
+		}
+
+		if len(au.Chunk) == 0 {
+			break
+		}
+
+		if _, err = f.Write(au.Chunk); err != nil {
+			return status.Error(codes.Internal, err.Error())
+		}
+
+		if au, err = server.Recv(); err != nil && errors.Is(err, io.EOF) {
+			break
+		} else if err != nil {
+			return status.Error(codes.Internal, err.Error())
+		}
+	}
+
+	stat, err := os.Stat(path)
+	if err != nil {
+		return status.Error(codes.NotFound, "uploaded file wasn't found")
+	}
+
+	return server.SendAndClose(&pb.UploadAudioResponse{Size: uint64(stat.Size()), Filename: filepath.Base(path)})
 }
 
 func (a audioServer) Remove(_ context.Context, req *pb.RemoveAudio) (e *emptypb.Empty, err error) {
@@ -69,6 +98,21 @@ func (a audioServer) Remove(_ context.Context, req *pb.RemoveAudio) (e *emptypb.
 		rmErr := os.Remove(audio.Path(query))
 		if rmErr != nil {
 			err = errors.Join(err, status.Error(codes.NotFound, rmErr.Error()))
+		}
+	}
+
+	return
+}
+
+func fileExistsInAssetsDir(filename string) (exists bool) {
+	dir, err := os.ReadDir(audio.AssertDir())
+	if err != nil {
+		return
+	}
+
+	for _, d := range dir {
+		if strings.HasPrefix(d.Name(), filename) {
+			return true
 		}
 	}
 

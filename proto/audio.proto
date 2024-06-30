@@ -26,8 +26,8 @@ message FileBuffer {
 }
 
 message UploadAudioResponse {
-  bytes uuid = 1;
-  uint32 size = 2;
+  string filename = 1;
+  uint64 size = 2;
 }
 
 message DownloadFile {
