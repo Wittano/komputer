@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/google/uuid"
-	komputer "github.com/wittano/komputer/api/proto"
+	pb "github.com/wittano/komputer/api/proto"
 	"github.com/wittano/komputer/audio"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"os"
@@ -13,10 +13,11 @@ import (
 )
 
 type audioServer struct {
-	komputer.UnimplementedAudioServiceServer
+	m *sync.Mutex
+	pb.UnimplementedAudioServiceServer
 }
 
-func (a audioServer) List(pagination *komputer.Pagination, server komputer.AudioService_ListServer) (err error) {
+func (a audioServer) List(pagination *pb.Pagination, server pb.AudioService_ListServer) (err error) {
 	page := paginationOrDefault(pagination)
 
 	paths, err := audio.PathsWithPagination(page.Page, page.Size)
@@ -25,13 +26,14 @@ func (a audioServer) List(pagination *komputer.Pagination, server komputer.Audio
 	}
 
 	for _, path := range paths {
-		err = errors.Join(err, server.Send(&komputer.AudioInfo{Name: path, Type: komputer.FileFormat_MP3}))
+		err = errors.Join(err, server.Send(&pb.AudioInfo{Name: path, Type: pb.FileFormat_MP3}))
 	}
 
 	return
 }
 
-func (a audioServer) Add(server komputer.AudioService_AddServer) error {
+// TODO Verification upload request structure
+func (a audioServer) Add(server pb.AudioService_AddServer) error {
 	for {
 		au, err := server.Recv()
 		if err != nil {
@@ -46,57 +48,24 @@ func (a audioServer) Add(server komputer.AudioService_AddServer) error {
 		}
 		f.Close()
 
-		m := sync.Mutex{}
-
-		m.Lock()
+		a.m.Lock()
 		if _, err := f.Write(au.Chunk); err != nil {
-			m.Unlock()
+			a.m.Unlock()
 			return err
 		}
-		m.Unlock()
+		a.m.Unlock()
 	}
 }
 
-func (a audioServer) Remove(ctx context.Context, request *komputer.NameOrIdAudioRequest) (e *emptypb.Empty, err error) {
+func (a audioServer) Remove(_ context.Context, req *pb.RemoveAudioRequest) (e *emptypb.Empty, err error) {
 	e = &emptypb.Empty{}
-	if request == nil || len(request.Query) == 0 {
-		return e, nil
+	if req == nil {
+		return
 	}
 
-	var wg sync.WaitGroup
-	for _, query := range request.Query {
-		if query == nil {
-			continue
-		}
-
-		wg.Add(1)
-		go func(q *komputer.FileQuery) {
-			err = remove(ctx, &wg, q)
-		}(query)
+	for _, query := range req.Name {
+		err = errors.Join(err, os.Remove(query))
 	}
-	wg.Wait()
 
 	return
-}
-
-func remove(ctx context.Context, wg *sync.WaitGroup, query *komputer.FileQuery) error {
-	defer wg.Done()
-	select {
-	case <-ctx.Done():
-		return context.Canceled
-	default:
-	}
-
-	uid, name := query.GetUuid(), query.GetName()
-
-	var path string
-	if uid != nil && name != "" {
-		path = audio.Path(fmt.Sprintf("%s-%s", name, uid.Uuid))
-	}
-
-	if path == "" {
-		return os.ErrNotExist
-	}
-
-	return os.Remove(path)
 }

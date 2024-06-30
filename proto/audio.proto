@@ -30,17 +30,21 @@ message UploadAudioResponse {
   uint32 size = 2;
 }
 
-message DownloadRequest {
+message DownloadFile {
   optional UUID uuid = 1;
   optional string name = 2;
+}
+
+message RemoveAudio {
+  repeated string name = 1;
 }
 
 service AudioService {
   rpc List(komputer.Pagination) returns (stream AudioInfo);
   rpc Add(stream Audio) returns (UploadAudioResponse);
-  rpc Remove(NameOrIdAudioRequest) returns (google.protobuf.Empty);
+  rpc Remove(RemoveAudio) returns (google.protobuf.Empty);
 }
 
 service AudioFileService {
-  rpc Download(DownloadRequest) returns (stream FileBuffer);
+  rpc Download(DownloadFile) returns (stream FileBuffer);
 }
