@@ -29,20 +29,9 @@ protobuf:
 	protoc --go_out=./api --go_opt=paths=source_relative --go-grpc_out=./api --go-grpc_opt=paths=source_relative proto/*
 
 test: protobuf
-	find . -name go.mod -execdir go test ./... \;
+	CGO_CFLAGS="-w" find . -name go.mod -execdir go test ./... \;
 
 all: bot-prod sever tui test
-
-# FIXME Replaced invalid path
-install: prod test
-	mkdir -p $(PROTOBUF_API_DEST)
-	cp -r assets $(PROTOBUF_API_DEST)
-	cp $(OUTPUT_DIR)/komputer $(PROTOBUF_API_DEST)
-
-uninstall:
-ifneq ("$(wildcard $(PROTOBUF_API_DEST))", "")
-	rm -r $(PROTOBUF_API_DEST)
-endif
 
 clean: cleanProto
 ifneq ("$(wildcard $(OUTPUT_DIR))", "")
