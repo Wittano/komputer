@@ -38,7 +38,6 @@ func (a audioServer) List(pagination *pb.Pagination, server pb.AudioService_List
 // TODO Add file validation
 func (a audioServer) Add(server pb.AudioService_AddServer) error {
 	id := uuid.NewString()
-	var path string
 
 	au, err := server.Recv()
 	if err != nil {
@@ -49,10 +48,7 @@ func (a audioServer) Add(server pb.AudioService_AddServer) error {
 		return status.Error(codes.AlreadyExists, fmt.Sprintf("file %s already exists", au.Info.Name))
 	}
 
-	if path == "" {
-		path = filepath.Join(audio.AssertDir(), fmt.Sprintf("%s-%s.%s", au.Info.Name, id, strings.ToLower(au.Info.Type.String())))
-	}
-
+	path := filepath.Join(audio.AssertDir(), fmt.Sprintf("%s-%s.%s", au.Info.Name, id, strings.ToLower(au.Info.Type.String())))
 	f, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE, 0600)
 	if err != nil {
 		return status.Error(codes.FailedPrecondition, err.Error())
