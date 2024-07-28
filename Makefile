@@ -2,6 +2,7 @@ DEST_DIR = /opt/komputer
 ARCH = $(shell uname -m)
 OUTPUT_DIR=./build
 PROTOBUF_API_DEST=./api
+DB_PATH ?= db.sqlite
 
 ifeq ($(ARCH), x86_64)
 	GOARCH="amd64"
@@ -37,6 +38,9 @@ test-server: protobuf
 	CGO_CFLAGS="-w" go test ./server/...;
 
 all: bot-prod sever tui test
+
+update-database:
+	migrate -database sqlite3://$(DB_PATH) -path db/migrations up
 
 clean: cleanProto
 ifneq ("$(wildcard $(OUTPUT_DIR))", "")

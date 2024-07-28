@@ -33,3 +33,6 @@ assets
 # Nix
 result
 api
+
+# Sqlit
+*.sqlite
