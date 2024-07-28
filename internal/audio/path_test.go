@@ -2,7 +2,7 @@ package audio
 
 import (
 	"errors"
-	"github.com/wittano/komputer/test"
+	"github.com/wittano/komputer/internal/test"
 	"os"
 	"path/filepath"
 	"strconv"

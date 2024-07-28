@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 	komputer "github.com/wittano/komputer/api/proto"
-	"github.com/wittano/komputer/audio"
+	"github.com/wittano/komputer/internal/audio"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"io"

@@ -3,6 +3,6 @@ go 1.22.2
 use (
 	.
 	bot
-	dgvoice
+	./internal/dgvoice
 	server
 )

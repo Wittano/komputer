@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/bwmarrin/dgvoice"
 	"github.com/bwmarrin/discordgo"
-	"github.com/wittano/komputer/audio"
+	"github.com/wittano/komputer/internal/audio"
 	"github.com/wittano/komputer/bot/log"
 	"github.com/wittano/komputer/bot/voice"
 	"log/slog"

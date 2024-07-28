@@ -2,7 +2,7 @@ module github.com/wittano/komputer/bot
 
 go 1.22.2
 
-replace github.com/bwmarrin/dgvoice => ./../dgvoice
+replace github.com/bwmarrin/dgvoice => ./../internal/dgvoice
 
 require (
 	github.com/bwmarrin/dgvoice v0.0.0-20210225172318-caaac756e02e

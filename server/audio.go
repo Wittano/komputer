@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	pb "github.com/wittano/komputer/api/proto"
-	"github.com/wittano/komputer/audio"
+	"github.com/wittano/komputer/internal/audio"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"

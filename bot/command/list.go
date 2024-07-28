@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
-	"github.com/wittano/komputer/audio"
+	"github.com/wittano/komputer/internal/audio"
 	"os"
 	"regexp"
 	"strings"

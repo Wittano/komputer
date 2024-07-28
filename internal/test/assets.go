@@ -13,14 +13,15 @@ const assetsDirKey = "ASSETS_DIR"
 func CreateAssertDir(t *testing.T, n int) (err error) {
 	dir := t.TempDir()
 
-	if err := os.Setenv(assetsDirKey, dir); err != nil {
+	if err = os.Setenv(assetsDirKey, dir); err != nil {
 		t.Fatal(err)
 	}
 
 	for i := 0; i < n; i++ {
-		f, err := os.Create(filepath.Join(dir, fmt.Sprintf("test-%s.mp3", uuid.NewString())))
+		var f *os.File
+		f, err = os.Create(filepath.Join(dir, fmt.Sprintf("test-%s.mp3", uuid.NewString())))
 		if err != nil {
-			return err
+			return
 		}
 		err = f.Close()
 	}
