@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/jarcoal/httpmock"
-	"github.com/wittano/komputer/db/joke"
+	"github.com/wittano/komputer/internal/joke"
 	"net/http"
 	"os"
 	"strconv"

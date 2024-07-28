@@ -5,7 +5,8 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/jarcoal/httpmock"
-	"github.com/wittano/komputer/db/joke"
+	"github.com/wittano/komputer/internal"
+	"github.com/wittano/komputer/internal/joke"
 	"net/http"
 	"os"
 	"strconv"
@@ -13,11 +14,11 @@ import (
 )
 
 var (
-	testParams = joke.SearchParams{
+	testParams = internal.SearchParams{
 		Type:     joke.Single,
 		Category: joke.Any,
 	}
-	testJoke = joke.Joke{
+	testJoke = joke.DbModel{
 		Question: "testQuestion",
 		Answer:   "testAnswer",
 		Type:     joke.Single,
@@ -51,17 +52,17 @@ func TestHumorAPIService_Get(t *testing.T) {
 	ctx := context.Background()
 	service := NewHumorAPIService(ctx)
 
-	joke, err := service.RandomJoke(ctx, testParams)
+	j, err := service.RandomJoke(ctx, testParams)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if joke.Answer != testHumorAPIResponse.Content {
-		t.Fatalf("Invalid joke response. Expected: '%s', Result: '%s'", testHumorAPIResponse.Content, joke.Answer)
+	if j.Answer != testHumorAPIResponse.Content {
+		t.Fatalf("Invalid j response. Expected: '%s', Result: '%s'", testHumorAPIResponse.Content, j.Answer)
 	}
 
-	if joke.Category != testParams.Category {
-		t.Fatalf("Invalid category. Expected: '%s', Result: '%s'", testParams, joke.Category)
+	if j.Category != testParams.Category {
+		t.Fatalf("Invalid category. Expected: '%s', Result: '%s'", testParams, j.Category)
 	}
 }
 

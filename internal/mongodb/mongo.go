@@ -1,4 +1,4 @@
-package db
+package mongodb
 
 import (
 	"context"
@@ -11,13 +11,13 @@ import (
 
 const MongodbURIKey = "MONGODB_URI"
 
-type MongodbDatabase struct {
+type Database struct {
 	uri string
 	ctx context.Context
 	db  *mongo.Client
 }
 
-func (m *MongodbDatabase) Close() (err error) {
+func (m *Database) Close() (err error) {
 	if m.db == nil {
 		return nil
 	}
@@ -28,7 +28,7 @@ func (m *MongodbDatabase) Close() (err error) {
 	return
 }
 
-func (m *MongodbDatabase) Client(ctx context.Context) (*mongo.Client, error) {
+func (m *Database) Client(ctx context.Context) (*mongo.Client, error) {
 	select {
 	case <-ctx.Done():
 		return nil, context.Canceled
@@ -61,14 +61,14 @@ func (m *MongodbDatabase) Client(ctx context.Context) (*mongo.Client, error) {
 	return m.db, nil
 }
 
-var db *MongodbDatabase
+var db *Database
 
-func Mongodb(ctx context.Context) *MongodbDatabase {
+func NewMongodb(ctx context.Context) *Database {
 	if db != nil {
 		return db
 	}
 
-	db = new(MongodbDatabase)
+	db = new(Database)
 	db.uri, _ = os.LookupEnv(MongodbURIKey)
 	db.ctx = ctx
 

@@ -6,7 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/wittano/komputer/bot/log"
-	"github.com/wittano/komputer/db/joke"
+	"github.com/wittano/komputer/internal"
+	"github.com/wittano/komputer/internal/joke"
 	"io"
 	"log/slog"
 	"net/http"
@@ -46,25 +47,25 @@ func (h *HumorAPIService) Active(ctx context.Context) (active bool) {
 	return
 }
 
-func (h *HumorAPIService) RandomJoke(ctx context.Context, search joke.SearchParams) (joke.Joke, error) {
+func (h *HumorAPIService) RandomJoke(ctx context.Context, search internal.SearchParams) (joke.DbModel, error) {
 	select {
 	case <-ctx.Done():
-		return joke.Joke{}, context.Canceled
+		return joke.DbModel{}, context.Canceled
 	default:
 	}
 
 	if !h.Active(ctx) {
-		return joke.Joke{}, HumorAPILimitExceededErr
+		return joke.DbModel{}, HumorAPILimitExceededErr
 	}
 
 	apiKey, ok := os.LookupEnv(humorAPIKey)
 	if !ok {
-		return joke.Joke{}, errors.New("humorAPI: missing " + humorAPIKey)
+		return joke.DbModel{}, errors.New("humorAPI: missing " + humorAPIKey)
 	}
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, humorApiURL+humorAPICategory(search.Category), nil)
 	if err != nil {
-		return joke.Joke{}, err
+		return joke.DbModel{}, err
 	}
 
 	req.Header["X-RapidAPI-Key"] = []string{apiKey}
@@ -72,7 +73,7 @@ func (h *HumorAPIService) RandomJoke(ctx context.Context, search joke.SearchPara
 
 	res, err := h.client.Do(req)
 	if err != nil {
-		return joke.Joke{}, err
+		return joke.DbModel{}, err
 	}
 	defer res.Body.Close()
 
@@ -86,7 +87,7 @@ func (h *HumorAPIService) RandomJoke(ctx context.Context, search joke.SearchPara
 		go unlockService(h.globalCtx, &h.m, &h.active, resetTime)
 		h.m.Unlock()
 
-		return joke.Joke{}, HumorAPILimitExceededErr
+		return joke.DbModel{}, HumorAPILimitExceededErr
 	} else if res.StatusCode != http.StatusOK {
 		msg, err := io.ReadAll(res.Body)
 		if err != nil {
@@ -96,26 +97,26 @@ func (h *HumorAPIService) RandomJoke(ctx context.Context, search joke.SearchPara
 			msg = []byte{}
 		}
 
-		return joke.Joke{}, fmt.Errorf("humorAPI: failed to get joke. status '%d', msg: '%s'", res.StatusCode, msg)
+		return joke.DbModel{}, fmt.Errorf("humorAPI: failed to get joke. status '%d', msg: '%s'", res.StatusCode, msg)
 	}
 
 	select {
 	case <-ctx.Done():
-		return joke.Joke{}, context.Canceled
+		return joke.DbModel{}, context.Canceled
 	default:
 	}
 
 	resBody, err := io.ReadAll(res.Body)
 	if err != nil {
-		return joke.Joke{}, err
+		return joke.DbModel{}, err
 	}
 
 	var humorRes humorAPIResponse
 	if err = json.Unmarshal(resBody, &humorRes); err != nil {
-		return joke.Joke{}, err
+		return joke.DbModel{}, err
 	}
 
-	return joke.Joke{
+	return joke.DbModel{
 		Category: search.Category,
 		Type:     joke.Single,
 		Answer:   humorRes.Content,

@@ -1,11 +1,12 @@
-package joke
+package mongodb
 
 import (
 	"context"
 	"errors"
 	"fmt"
 	komputer "github.com/wittano/komputer/api/proto"
-	"github.com/wittano/komputer/db"
+	"github.com/wittano/komputer/internal"
+	"github.com/wittano/komputer/internal/joke"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -19,17 +20,17 @@ const (
 	GuildIDKey     = "guildID"
 )
 
-type Database struct {
-	Mongodb db.MongodbService
+type Service struct {
+	Db DatabaseGetter
 }
 
-func (d Database) Active(ctx context.Context) bool {
+func (d Service) Active(ctx context.Context) bool {
 	const maxTimeoutTime = 500
 
 	ctx, cancel := context.WithTimeout(ctx, maxTimeoutTime*time.Millisecond)
 	defer cancel()
 
-	client, err := d.Mongodb.Client(ctx)
+	client, err := d.Db.Client(ctx)
 	if err != nil {
 		return false
 	}
@@ -42,19 +43,19 @@ func (d Database) Active(ctx context.Context) bool {
 	return true
 }
 
-func (d Database) Add(ctx context.Context, joke Joke) (string, error) {
+func (d Service) Add(ctx context.Context, joke joke.DbModel) (string, error) {
 	select {
 	case <-ctx.Done():
 		return "", context.Canceled
 	default:
 	}
 
-	mongodb, err := d.Mongodb.Client(ctx)
+	mongodb, err := d.Db.Client(ctx)
 	if err != nil {
 		return "", err
 	}
 
-	res, err := mongodb.Database(db.DatabaseName).Collection(collectionName).InsertOne(ctx, joke)
+	res, err := mongodb.Database(DatabaseName).Collection(collectionName).InsertOne(ctx, joke)
 	if err != nil {
 		return "", err
 	}
@@ -62,25 +63,25 @@ func (d Database) Add(ctx context.Context, joke Joke) (string, error) {
 	return res.InsertedID.(primitive.ObjectID).Hex(), nil
 }
 
-func (d Database) RandomJoke(ctx context.Context, search SearchParams) (Joke, error) {
+func (d Service) RandomJoke(ctx context.Context, search internal.SearchParams) (joke.DbModel, error) {
 	jokes, err := d.Jokes(ctx, search, nil)
 	if err != nil {
-		return Joke{}, err
+		return joke.DbModel{}, err
 	}
 
 	return jokes[rand.Int()%len(jokes)], nil
 }
 
-func (d Database) Joke(ctx context.Context, search SearchParams) (Joke, error) {
+func (d Service) Joke(ctx context.Context, search internal.SearchParams) (joke.DbModel, error) {
 	jokes, err := d.Jokes(ctx, search, nil)
 	if err != nil {
-		return Joke{}, err
+		return joke.DbModel{}, err
 	}
 
 	return jokes[0], nil
 }
 
-func (d Database) Jokes(ctx context.Context, search SearchParams, page *komputer.Pagination) ([]Joke, error) {
+func (d Service) Jokes(ctx context.Context, search internal.SearchParams, page *komputer.Pagination) ([]joke.DbModel, error) {
 	select {
 	case <-ctx.Done():
 		return nil, context.Canceled
@@ -91,17 +92,17 @@ func (d Database) Jokes(ctx context.Context, search SearchParams, page *komputer
 		return nil, errors.New("databases isn't responding")
 	}
 
-	mongodb, err := d.Mongodb.Client(ctx)
+	mongodb, err := d.Db.Client(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	if search.Category == "" {
-		search.Category = Any
+		search.Category = joke.Any
 	}
 
 	if search.Type == "" {
-		search.Type = Single
+		search.Type = joke.Single
 	}
 
 	// Create query to database
@@ -147,7 +148,7 @@ func (d Database) Jokes(ctx context.Context, search SearchParams, page *komputer
 		}})
 	}
 
-	if search.Category != "" && search.Category != Any {
+	if search.Category != "" && search.Category != joke.Any {
 		pipeline = append(pipeline, bson.D{{
 			matchQueryKey, bson.D{{
 				"category", search.Category,
@@ -156,13 +157,13 @@ func (d Database) Jokes(ctx context.Context, search SearchParams, page *komputer
 	}
 
 	// SearchParams
-	res, err := mongodb.Database(db.DatabaseName).Collection(collectionName).Aggregate(ctx, pipeline)
+	res, err := mongodb.Database(DatabaseName).Collection(collectionName).Aggregate(ctx, pipeline)
 	if err != nil {
 		return nil, err
 	}
 	defer res.Close(ctx)
 
-	var jokes []Joke
+	var jokes []joke.DbModel
 	if err = res.All(ctx, &jokes); err != nil {
 		return nil, err
 	}
@@ -174,7 +175,7 @@ func (d Database) Jokes(ctx context.Context, search SearchParams, page *komputer
 	return jokes, nil
 }
 
-func (d Database) Remove(ctx context.Context, id string) error {
+func (d Service) Remove(ctx context.Context, id string) error {
 	select {
 	case <-ctx.Done():
 		return context.Canceled
@@ -185,7 +186,7 @@ func (d Database) Remove(ctx context.Context, id string) error {
 		return errors.New("databases isn't responding")
 	}
 
-	client, err := d.Mongodb.Client(ctx)
+	client, err := d.Db.Client(ctx)
 	if err != nil {
 		return err
 	}
@@ -194,6 +195,6 @@ func (d Database) Remove(ctx context.Context, id string) error {
 		"_id", id,
 	}}}}
 
-	_, err = client.Database(db.DatabaseName).Collection(collectionName).DeleteOne(ctx, filter)
+	_, err = client.Database(DatabaseName).Collection(collectionName).DeleteOne(ctx, filter)
 	return err
 }

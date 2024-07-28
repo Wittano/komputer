@@ -1,4 +1,4 @@
-package db
+package mongodb
 
 import (
 	"context"
@@ -8,7 +8,7 @@ import (
 
 const DatabaseName = "komputer"
 
-type MongodbService interface {
+type DatabaseGetter interface {
 	io.Closer
 	Client(ctx context.Context) (*mongo.Client, error)
 }

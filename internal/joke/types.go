@@ -1,25 +1,10 @@
 package joke
 
 import (
-	"context"
 	"errors"
 	komputer "github.com/wittano/komputer/api/proto"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
-
-type AddService interface {
-	Add(ctx context.Context, joke Joke) (string, error)
-}
-
-type SearchService interface {
-	// RandomJoke Joke Try to find Joke from Mongodb database. If SearchParams is empty, then function will find 1 random joke
-	RandomJoke(ctx context.Context, search SearchParams) (Joke, error)
-	ActiveChecker
-}
-
-type ActiveChecker interface {
-	Active(ctx context.Context) bool
-}
 
 type (
 	Type     string
@@ -103,7 +88,7 @@ func RawCategory(api komputer.Category) (c Category, err error) {
 	return
 }
 
-type Joke struct {
+type DbModel struct {
 	ID       primitive.ObjectID `bson:"_id"`
 	Question string             `bson:"question"`
 	Answer   string             `bson:"answer"`
@@ -112,7 +97,7 @@ type Joke struct {
 	GuildID  string             `bson:"guild_id"`
 }
 
-func (j Joke) ApiResponse() (*komputer.Joke, error) {
+func (j DbModel) ApiResponse() (*komputer.Joke, error) {
 	ty, err := j.Type.ApiType()
 	if err != nil {
 		return nil, err
@@ -131,10 +116,4 @@ func (j Joke) ApiResponse() (*komputer.Joke, error) {
 		Category: ca,
 		GuildId:  j.GuildID,
 	}, nil
-}
-
-type SearchParams struct {
-	Type     Type
-	Category Category
-	ID       primitive.ObjectID
 }

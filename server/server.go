@@ -3,8 +3,7 @@ package server
 import (
 	"context"
 	pb "github.com/wittano/komputer/api/proto"
-	"github.com/wittano/komputer/db"
-	"github.com/wittano/komputer/db/joke"
+	"github.com/wittano/komputer/internal/mongodb"
 	"google.golang.org/grpc"
 	"log"
 	"net"
@@ -39,9 +38,9 @@ func New(port uint64) (*Server, error) {
 	ctx, cancel := context.WithCancel(context.Background())
 	server := &Server{l, cancel, s}
 
-	mongodb := db.Mongodb(ctx)
+	database := mongodb.NewMongodb(ctx)
 
-	pb.RegisterJokeServiceServer(s, &jokeServer{Db: joke.Database{Mongodb: mongodb}})
+	pb.RegisterJokeServiceServer(s, &jokeServer{Db: mongodb.Service{Db: database}})
 	pb.RegisterAudioServiceServer(s, &audioServer{})
 	pb.RegisterAudioFileServiceServer(s, &fileServer{})
 

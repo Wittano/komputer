@@ -1,8 +1,9 @@
-package joke
+package mongodb
 
 import (
 	"context"
-	"github.com/wittano/komputer/db"
+	"github.com/wittano/komputer/internal"
+	"github.com/wittano/komputer/internal/joke"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -12,15 +13,15 @@ import (
 )
 
 var (
-	testParams = SearchParams{
-		Type:     Single,
-		Category: Any,
+	testParams = internal.SearchParams{
+		Type:     joke.Single,
+		Category: joke.Any,
 	}
-	testJoke = Joke{
+	testJoke = joke.DbModel{
 		Question: "testQuestion",
 		Answer:   "testAnswer",
-		Type:     Single,
-		Category: Any,
+		Type:     joke.Single,
+		Category: joke.Any,
 		GuildID:  "",
 	}
 )
@@ -42,7 +43,7 @@ func createMTest(t *testing.T) *mtest.T {
 	return mtest.New(t, mtest.NewOptions().
 		ClientType(mtest.Mock).
 		CollectionName(collectionName).
-		DatabaseName(db.DatabaseName))
+		DatabaseName(DatabaseName))
 }
 
 func TestDatabaseService_Add(t *testing.T) {
@@ -54,8 +55,8 @@ func TestDatabaseService_Add(t *testing.T) {
 
 		ctx := context.Background()
 
-		var r db.MongodbService = &mongodbService{t.Client, ctx}
-		service := Database{r}
+		r := &mongodbService{t.Client, ctx}
+		service := Service{r}
 
 		if _, err := service.Add(ctx, testJoke); err != nil {
 			mt.Fatal(err)
@@ -67,8 +68,8 @@ func TestDatabaseService_AddWithContextCancelled(t *testing.T) {
 	ctx, cancel := context.WithDeadline(context.Background(), time.Now())
 	cancel()
 
-	var r db.MongodbService = &mongodbService{nil, ctx}
-	service := Database{r}
+	var r DatabaseGetter = &mongodbService{nil, ctx}
+	service := Service{r}
 
 	if _, err := service.Add(ctx, testJoke); err == nil {
 		t.Fatal("Context wasn't cancelled")
@@ -79,8 +80,8 @@ func TestDatabaseService_JokeWithContextCancelled(t *testing.T) {
 	ctx, cancel := context.WithDeadline(context.Background(), time.Now())
 	cancel()
 
-	var r db.MongodbService = &mongodbService{nil, ctx}
-	service := Database{r}
+	r := &mongodbService{nil, ctx}
+	service := Service{r}
 
 	if _, err := service.Joke(ctx, testParams); err == nil {
 		t.Fatal("Context wasn't cancelled")
@@ -91,12 +92,12 @@ func TestDatabaseService_JokeReturnEmptyWithoutError(t *testing.T) {
 	mt := createMTest(t)
 
 	mt.Run("get new joke, but nothing was found", func(t *mtest.T) {
-		t.AddMockResponses(mtest.CreateCursorResponse(1, db.DatabaseName+"."+collectionName, mtest.FirstBatch, bson.D{}))
+		t.AddMockResponses(mtest.CreateCursorResponse(1, DatabaseName+"."+collectionName, mtest.FirstBatch, bson.D{}))
 
 		ctx := context.Background()
 
-		var r db.MongodbService = &mongodbService{t.Client, ctx}
-		service := Database{r}
+		r := &mongodbService{t.Client, ctx}
+		service := Service{r}
 
 		if _, err := service.Joke(ctx, testParams); err == nil {
 			mt.Fatal("Something was found in database, but it shouldn't")
@@ -121,10 +122,10 @@ func TestDatabaseService_FindRandomJoke(t *testing.T) {
 
 		ctx := context.Background()
 
-		var r db.MongodbService = &mongodbService{t.Client, ctx}
-		service := Database{r}
+		r := &mongodbService{t.Client, ctx}
+		service := Service{r}
 
-		res, err := service.Joke(ctx, SearchParams{})
+		res, err := service.Joke(ctx, internal.SearchParams{})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -153,8 +154,8 @@ func TestDatabaseService_ActiveWithContextCancelled(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		cancel()
 
-		var r db.MongodbService = &mongodbService{t.Client, ctx}
-		service := Database{r}
+		r := &mongodbService{t.Client, ctx}
+		service := Service{r}
 
 		if service.Active(ctx) {
 			t.Fatal("service can still running and handle new requests")
@@ -170,8 +171,8 @@ func TestDatabaseService_Active(t *testing.T) {
 
 		ctx := context.Background()
 
-		var r db.MongodbService = &mongodbService{t.Client, ctx}
-		service := Database{r}
+		r := &mongodbService{t.Client, ctx}
+		service := Service{r}
 
 		if !service.Active(ctx) {
 			t.Fatal("service isn't responding")

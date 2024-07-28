@@ -4,13 +4,15 @@ import (
 	"context"
 	"errors"
 	komputer "github.com/wittano/komputer/api/proto"
-	"github.com/wittano/komputer/db/joke"
+	"github.com/wittano/komputer/internal"
+	"github.com/wittano/komputer/internal/joke"
+	"github.com/wittano/komputer/internal/mongodb"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 type jokeServer struct {
-	Db joke.Database
+	Db mongodb.Service
 
 	komputer.UnimplementedJokeServiceServer
 }
@@ -77,7 +79,7 @@ func (j jokeServer) Add(ctx context.Context, joke *komputer.Joke) (*komputer.Jok
 	return &komputer.JokeID{Id: &komputer.JokeID_ObjectId{ObjectId: []byte(id)}}, err
 }
 
-func newJoke(j *komputer.Joke) (new joke.Joke, err error) {
+func newJoke(j *komputer.Joke) (new joke.DbModel, err error) {
 	if j == nil {
 		err = errors.New("missing joke data")
 		return
@@ -96,7 +98,7 @@ func newJoke(j *komputer.Joke) (new joke.Joke, err error) {
 	return
 }
 
-func searchParams(params apiJokeParams) (p joke.SearchParams, err error) {
+func searchParams(params apiJokeParams) (p internal.SearchParams, err error) {
 	if params == nil {
 		err = errors.New("missing joke params")
 		return

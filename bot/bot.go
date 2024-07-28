@@ -11,8 +11,8 @@ import (
 	"github.com/wittano/komputer/bot/joke"
 	"github.com/wittano/komputer/bot/log"
 	"github.com/wittano/komputer/bot/voice"
-	"github.com/wittano/komputer/db"
-	dbJoke "github.com/wittano/komputer/db/joke"
+	"github.com/wittano/komputer/internal"
+	"github.com/wittano/komputer/internal/mongodb"
 	"log/slog"
 	"time"
 )
@@ -35,7 +35,7 @@ func (sc slashCommandHandler) handleSlashCommand(s *discordgo.Session, i *discor
 	requestID := uuid.New().String()
 	loggerCtx := log.NewContext(requestID)
 	deadlineCtx, cancel := context.WithTimeout(loggerCtx, cmdTimeout)
-	ctx := context.WithValue(deadlineCtx, dbJoke.GuildIDKey, i.GuildID)
+	ctx := context.WithValue(deadlineCtx, mongodb.GuildIDKey, i.GuildID)
 	defer cancel()
 
 	userID := i.Member.User.ID
@@ -102,7 +102,7 @@ func handleEventResponse(ctx context.Context, s *discordgo.Session, i *discordgo
 type DiscordBot struct {
 	ctx           context.Context
 	bot           *discordgo.Session
-	mongodb       db.MongodbService
+	mongodb       *mongodb.Database
 	spockVoiceChs voice.SpockVoiceChannels
 }
 
@@ -124,8 +124,8 @@ func (d *DiscordBot) Close() (err error) {
 	return
 }
 
-func createJokeGetServices(globalCtx context.Context, database *db.MongodbDatabase) []dbJoke.SearchService {
-	return []dbJoke.SearchService{
+func createJokeGetServices(globalCtx context.Context, database *mongodb.Database) []internal.SearchService {
+	return []internal.SearchService{
 		jokeDevServiceID:  joke.NewJokeDevService(globalCtx),
 		humorAPIServiceID: joke.NewHumorAPIService(globalCtx),
 		databaseServiceID: joke.NewJokeDatabase(database),
@@ -134,7 +134,7 @@ func createJokeGetServices(globalCtx context.Context, database *db.MongodbDataba
 
 func createCommands(
 	globalCtx context.Context,
-	services []dbJoke.SearchService,
+	services []internal.SearchService,
 	spockVoice map[string]chan struct{},
 	guildVoiceChats map[string]voice.ChatInfo,
 ) map[string]command.DiscordSlashCommandHandler {
@@ -158,7 +158,7 @@ func createCommands(
 }
 
 func createOptions(
-	services []dbJoke.SearchService,
+	services []internal.SearchService,
 	commands map[string]command.DiscordSlashCommandHandler,
 ) []command.DiscordEventHandler {
 	apologies := command.ApologiesOption{}
@@ -197,7 +197,7 @@ func NewDiscordBot(ctx context.Context) (*DiscordBot, error) {
 	bot.AddHandler(vcHandler.HandleVoiceChannelUpdate)
 
 	// Register slash commands
-	database := db.Mongodb(ctx)
+	database := mongodb.NewMongodb(ctx)
 	services := createJokeGetServices(ctx, database)
 	commands := createCommands(ctx, services, spockVoiceChns, guildVoiceChats)
 	for _, c := range commands {

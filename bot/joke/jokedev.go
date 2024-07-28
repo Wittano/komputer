@@ -5,7 +5,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/wittano/komputer/db/joke"
+	"github.com/wittano/komputer/internal"
+	"github.com/wittano/komputer/internal/joke"
 	"io"
 	"net/http"
 	"sync"
@@ -18,7 +19,7 @@ const (
 )
 
 type mapper interface {
-	Joke() joke.Joke
+	Joke() joke.DbModel
 }
 
 type flags struct {
@@ -41,8 +42,8 @@ type singleResponse struct {
 	Content  string `json:"joke"`
 }
 
-func (j singleResponse) Joke() joke.Joke {
-	return joke.Joke{
+func (j singleResponse) Joke() joke.DbModel {
+	return joke.DbModel{
 		Answer:   j.Content,
 		Type:     joke.Single,
 		Category: joke.Category(j.Category),
@@ -61,8 +62,8 @@ type twoPartResponse struct {
 	Delivery string `json:"delivery"`
 }
 
-func (j twoPartResponse) Joke() joke.Joke {
-	return joke.Joke{
+func (j twoPartResponse) Joke() joke.DbModel {
+	return joke.DbModel{
 		Question: j.Setup,
 		Answer:   j.Delivery,
 		Type:     joke.Single,
@@ -90,15 +91,15 @@ func (d *DevService) Active(ctx context.Context) (active bool) {
 	return
 }
 
-func (d *DevService) RandomJoke(ctx context.Context, params joke.SearchParams) (joke.Joke, error) {
+func (d *DevService) RandomJoke(ctx context.Context, params internal.SearchParams) (joke.DbModel, error) {
 	select {
 	case <-ctx.Done():
-		return joke.Joke{}, context.Canceled
+		return joke.DbModel{}, context.Canceled
 	default:
 	}
 
 	if !d.Active(ctx) {
-		return joke.Joke{}, DevServiceLimitExceededErr
+		return joke.DbModel{}, DevServiceLimitExceededErr
 	}
 
 	if params.Category == joke.YOMAMA || params.Category == "" {
@@ -108,12 +109,12 @@ func (d *DevService) RandomJoke(ctx context.Context, params joke.SearchParams) (
 	url := fmt.Sprintf(jokeDevAPIUrlTemplate, params.Category, params.Type)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
-		return joke.Joke{}, err
+		return joke.DbModel{}, err
 	}
 
 	res, err := d.client.Do(req)
 	if err != nil {
-		return joke.Joke{}, err
+		return joke.DbModel{}, err
 	}
 	defer res.Body.Close()
 
@@ -130,16 +131,16 @@ func (d *DevService) RandomJoke(ctx context.Context, params joke.SearchParams) (
 		go unlockService(d.globalCtx, &d.m, &d.active, resetTime)
 		d.m.Unlock()
 
-		return joke.Joke{}, DevServiceLimitExceededErr
+		return joke.DbModel{}, DevServiceLimitExceededErr
 	}
 
 	if res.StatusCode >= 400 {
-		return joke.Joke{}, errors.New("jokedev: client or server side error")
+		return joke.DbModel{}, errors.New("jokedev: client or server side error")
 	}
 
 	resBody, err := io.ReadAll(res.Body)
 	if err != nil {
-		return joke.Joke{}, err
+		return joke.DbModel{}, err
 	}
 
 	var mapper mapper
@@ -159,7 +160,7 @@ func (d *DevService) RandomJoke(ctx context.Context, params joke.SearchParams) (
 	}
 
 	if err != nil {
-		return joke.Joke{}, err
+		return joke.DbModel{}, err
 	}
 
 	return mapper.Joke(), nil

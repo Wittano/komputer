@@ -6,7 +6,8 @@ import (
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"github.com/wittano/komputer/bot/log"
-	"github.com/wittano/komputer/db/joke"
+	"github.com/wittano/komputer/internal"
+	"github.com/wittano/komputer/internal/joke"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"log/slog"
 	"math/rand"
@@ -31,7 +32,7 @@ const (
 )
 
 type JokeCommand struct {
-	Services []joke.SearchService
+	Services []internal.SearchService
 }
 
 func (j JokeCommand) Command() *discordgo.ApplicationCommand {
@@ -82,11 +83,11 @@ findJoke:
 	}, nil
 }
 
-func findService(ctx context.Context, services []joke.SearchService) (joke.SearchService, error) {
+func findService(ctx context.Context, services []internal.SearchService) (internal.SearchService, error) {
 	if len(services) == 1 {
 		service := services[0]
 
-		if checker, ok := service.(joke.ActiveChecker); ok && !checker.Active(ctx) {
+		if checker, ok := service.(internal.ActiveChecker); ok && !checker.Active(ctx) {
 			return nil, errors.New("all joke services is disabled")
 		}
 
@@ -100,7 +101,7 @@ func findService(ctx context.Context, services []joke.SearchService) (joke.Searc
 		return findService(ctx, services)
 	}
 
-	if activeService, ok := service.(joke.ActiveChecker); ok && !activeService.Active(ctx) {
+	if activeService, ok := service.(internal.ActiveChecker); ok && !activeService.Active(ctx) {
 		services = slices.Delete(services, i, i+1)
 		return findService(ctx, services)
 	}
@@ -108,8 +109,8 @@ func findService(ctx context.Context, services []joke.SearchService) (joke.Searc
 	return service, nil
 }
 
-// Get joke.SearchParams from Discord options
-func searchParams(ctx context.Context, data discordgo.ApplicationCommandInteractionData) (query joke.SearchParams) {
+// Get internal.SearchParams from Discord options
+func searchParams(ctx context.Context, data discordgo.ApplicationCommandInteractionData) (query internal.SearchParams) {
 	query.Type, query.Category = joke.Single, joke.Any
 
 	for _, o := range data.Options {
@@ -179,7 +180,7 @@ func jokeTypeOption(required bool) *discordgo.ApplicationCommandOption {
 
 type discordJoke struct {
 	username string
-	joke     joke.Joke
+	joke     joke.DbModel
 }
 
 func (j discordJoke) Response() (msg *discordgo.InteractionResponseData) {
@@ -303,7 +304,7 @@ func (a ApologiesOption) Execute(_ context.Context, _ *discordgo.Session, _ *dis
 }
 
 type NextJokeOption struct {
-	Services []joke.SearchService
+	Services []internal.SearchService
 }
 
 func (n NextJokeOption) Match(customID string) bool {
@@ -316,7 +317,7 @@ func (n NextJokeOption) Execute(ctx context.Context, _ *discordgo.Session, i *di
 		return nil, err
 	}
 
-	res, err := service.RandomJoke(ctx, joke.SearchParams{Type: randJokeType()})
+	res, err := service.RandomJoke(ctx, internal.SearchParams{Type: randJokeType()})
 	if err != nil {
 		return nil, err
 	}
@@ -334,7 +335,7 @@ func randJokeType() joke.Type {
 }
 
 type SameJokeCategoryOption struct {
-	Services []joke.SearchService
+	Services []internal.SearchService
 }
 
 func (s SameJokeCategoryOption) Match(customID string) bool {
@@ -350,7 +351,7 @@ func (s SameJokeCategoryOption) Execute(ctx context.Context, _ *discordgo.Sessio
 		return nil, err
 	}
 
-	res, err := service.RandomJoke(ctx, joke.SearchParams{Type: randJokeType(), Category: category})
+	res, err := service.RandomJoke(ctx, internal.SearchParams{Type: randJokeType(), Category: category})
 	if err != nil {
 		return nil, err
 	}

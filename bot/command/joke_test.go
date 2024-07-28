@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"github.com/wittano/komputer/bot/joke"
-	dbJoke "github.com/wittano/komputer/db/joke"
+	"github.com/wittano/komputer/internal"
 	"go.mongodb.org/mongo-driver/mongo"
 	"testing"
 )
@@ -21,7 +21,7 @@ func (d dumpMongoService) Client(_ context.Context) (*mongo.Client, error) {
 
 func TestSelectGetService(t *testing.T) {
 	ctx := context.Background()
-	testServices := []dbJoke.SearchService{
+	testServices := []internal.SearchService{
 		joke.NewJokeDevService(ctx),
 		joke.NewHumorAPIService(ctx),
 		joke.NewJokeDatabase(dumpMongoService{}),
@@ -44,7 +44,7 @@ func TestSelectGetService(t *testing.T) {
 func TestFindJokeService_ContextCancelled(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	testServices := []dbJoke.SearchService{
+	testServices := []internal.SearchService{
 		joke.NewJokeDevService(ctx),
 		joke.NewHumorAPIService(ctx),
 		joke.NewJokeDatabase(dumpMongoService{}),
@@ -57,7 +57,7 @@ func TestFindJokeService_ContextCancelled(t *testing.T) {
 
 func TestFindJokeService_ServicesIsDeactivated(t *testing.T) {
 	ctx := context.Background()
-	services := []dbJoke.SearchService{
+	services := []internal.SearchService{
 		joke.NewJokeDatabase(dumpMongoService{}),
 	}
 
