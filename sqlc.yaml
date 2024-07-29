@@ -1,0 +1,12 @@
+version: "2"
+sql:
+  - engine: "sqlite"
+    schema: "db/migrations"
+    queries: "db/sql"
+    database:
+      uri: sqlite://db.sqlite
+    gen:
+      go:
+        package: "sql"
+        out: "sql"
+        sql_package: "pgx/v5"

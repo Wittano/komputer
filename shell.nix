@@ -8,6 +8,7 @@
 , protoc-gen-go-grpc
 , act
 , go-migrate
+, sqlc
 , ...
 }: mkShell {
   hardeningDisable = [ "all" ];
@@ -15,6 +16,7 @@
     go
     protobuf
     go-migrate
+    sqlc
     act
   ];
   buildInputs = [

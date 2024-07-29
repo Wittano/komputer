@@ -2,7 +2,6 @@ DEST_DIR = /opt/komputer
 ARCH = $(shell uname -m)
 OUTPUT_DIR=./build
 PROTOBUF_API_DEST=./api
-DB_PATH ?= db.sqlite
 
 ifeq ($(ARCH), x86_64)
 	GOARCH="amd64"
@@ -12,14 +11,14 @@ endif
 
 .PHONY: test clean
 
-bot-dev: proto
+bot-dev: proto gen-sql
 	CGO_ENABLED=1 GOOS=linux GOARCH=$(GOARCH) go build -tags dev -o $(OUTPUT_DIR)/komputer ./cmd/komputer/main.go
 
 
-bot-prod: protobuf
+bot-prod: protobuf gen-sql
 	CGO_ENABLED=1 GOOS=linux GOARCH=$(GOARCH) go build -o $(OUTPUT_DIR)/komputer ./cmd/komputer/main.go
 
-sever: protobuf
+sever: protobuf gen-sql
 	go build -o $(OUTPUT_DIR)/server ./cmd/server/main.go
 
 tui: protobuf
@@ -31,7 +30,7 @@ protobuf:
 
 test: test-bot test-server
 
-test-bot: protobuf
+test-bot: protobuf gen-sql
 	CGO_CFLAGS="-w" go test ./bot/...;
 
 test-server: protobuf
@@ -39,11 +38,16 @@ test-server: protobuf
 
 all: bot-prod sever tui test
 
+DB_PATH=db.sqlite
+
 update-database:
 ifeq (,$(wildcard $(DB_PATH)))
 	touch $(DB_PATH)
 endif
 	migrate -database sqlite3://$(DB_PATH) -path db/migrations up
+
+gen-sql:
+	sqlc -f sqlc.yaml generate
 
 clean: cleanProto
 ifneq ("$(wildcard $(OUTPUT_DIR))", "")
