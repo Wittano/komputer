@@ -40,6 +40,9 @@ test-server: protobuf
 all: bot-prod sever tui test
 
 update-database:
+ifeq (,$(wildcard $(DB_PATH)))
+	touch $(DB_PATH)
+endif
 	migrate -database sqlite3://$(DB_PATH) -path db/migrations up
 
 clean: cleanProto
