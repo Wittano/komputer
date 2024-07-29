@@ -7,11 +7,11 @@
 , opusfile
 }: buildGoModule {
   name = "komputer";
-  version = "v1.2.0";
+  version = "v1.2.1";
 
   src = ./.;
 
-  vendorHash = "sha256-CThNuZ16b8SXxJAtCkDMm+mwCqaS5zrr+PbX+5N3GCc=";
+  vendorHash = "sha256-B/kII44/cuzGwO/pWCamFl7clHbz/qon4YgtUHYWV30=";
 
   CGO_ENABLED = 1;
   proxyVendor = true;

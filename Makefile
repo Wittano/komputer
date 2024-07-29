@@ -1,4 +1,3 @@
-DEST_DIR = /opt/komputer
 ARCH = $(shell uname -m)
 OUTPUT_DIR=./build
 PROTOBUF_API_DEST=./api
@@ -11,50 +10,20 @@ endif
 
 .PHONY: test clean
 
-bot-dev: proto gen-sql
+bot-dev:
 	CGO_ENABLED=1 GOOS=linux GOARCH=$(GOARCH) go build -tags dev -o $(OUTPUT_DIR)/komputer ./cmd/komputer/main.go
 
 
-bot-prod: protobuf gen-sql
+bot-prod:
 	CGO_ENABLED=1 GOOS=linux GOARCH=$(GOARCH) go build -o $(OUTPUT_DIR)/komputer ./cmd/komputer/main.go
 
-sever: protobuf gen-sql
-	go build -o $(OUTPUT_DIR)/server ./cmd/server/main.go
+test: test-bot
 
-tui: protobuf
-	go build -o $(OUTPUT_DIR)/tui ./cmd/tui/main.go
-
-protobuf:
-	mkdir -p $(PROTOBUF_API_DEST)
-	protoc --go_out=./api --go_opt=paths=source_relative --go-grpc_out=./api --go-grpc_opt=paths=source_relative proto/*
-
-test: test-bot test-server
-
-test-bot: protobuf gen-sql
+test-bot:
 	CGO_CFLAGS="-w" go test ./bot/...;
 
-test-server: protobuf
-	CGO_CFLAGS="-w" go test ./server/...;
-
-all: bot-prod sever tui test
-
-DB_PATH=db.sqlite
-
-update-database:
-ifeq (,$(wildcard $(DB_PATH)))
-	touch $(DB_PATH)
-endif
-	migrate -database sqlite3://$(DB_PATH) -path db/migrations up
-
-gen-sql:
-	sqlc -f sqlc.yaml generate
-
-clean: cleanProto
+all: bot-prod test
+clean:
 ifneq ("$(wildcard $(OUTPUT_DIR))", "")
 	rm -r $(OUTPUT_DIR)
-endif
-
-cleanProto:
-ifneq ("$(wildcard $(PROTOBUF_API_DEST))", "")
-	rm -r $(PROTOBUF_API_DEST)
 endif

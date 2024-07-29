@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	komputer "github.com/wittano/komputer/api/proto"
 	"github.com/wittano/komputer/internal"
 	"github.com/wittano/komputer/internal/joke"
 	"go.mongodb.org/mongo-driver/bson"
@@ -64,7 +63,7 @@ func (d Service) Add(ctx context.Context, joke joke.DbModel) (string, error) {
 }
 
 func (d Service) RandomJoke(ctx context.Context, search internal.SearchParams) (joke.DbModel, error) {
-	jokes, err := d.Jokes(ctx, search, nil)
+	jokes, err := d.Jokes(ctx, search)
 	if err != nil {
 		return joke.DbModel{}, err
 	}
@@ -73,7 +72,7 @@ func (d Service) RandomJoke(ctx context.Context, search internal.SearchParams) (
 }
 
 func (d Service) Joke(ctx context.Context, search internal.SearchParams) (joke.DbModel, error) {
-	jokes, err := d.Jokes(ctx, search, nil)
+	jokes, err := d.Jokes(ctx, search)
 	if err != nil {
 		return joke.DbModel{}, err
 	}
@@ -81,7 +80,11 @@ func (d Service) Joke(ctx context.Context, search internal.SearchParams) (joke.D
 	return jokes[0], nil
 }
 
-func (d Service) Jokes(ctx context.Context, search internal.SearchParams, page *komputer.Pagination) ([]joke.DbModel, error) {
+func (d Service) Jokes(ctx context.Context, search internal.SearchParams) ([]joke.DbModel, error) {
+	// This function should accept pagination, but during creating gRPC server,
+	// I decided to revert all changes with gRPC API, because the project is finished.
+	// I don't add a new feature or extra tools to him
+
 	select {
 	case <-ctx.Done():
 		return nil, context.Canceled
@@ -112,15 +115,6 @@ func (d Service) Jokes(ctx context.Context, search internal.SearchParams, page *
 		pageSize uint32 = 10
 		pageNr   uint32 = 0
 	)
-
-	if page != nil {
-		if page.Size > 0 {
-			pageSize = page.Size
-		}
-		if page.Page > 0 {
-			pageNr = page.Page
-		}
-	}
 
 	pipeline := mongo.Pipeline{{{
 		"$sample", bson.D{{

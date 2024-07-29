@@ -4,5 +4,4 @@ use (
 	.
 	bot
 	./internal/dgvoice
-	server
 )
