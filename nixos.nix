@@ -3,7 +3,7 @@ with lib;
 let
   cfg = config.komputer;
 
-  komputer = pkgs.callPackage ./../default.nix { };
+  komputer = pkgs.callPackage ./default.nix { };
 in
 {
   options = {
@@ -15,7 +15,7 @@ in
         description = "komputer package";
       };
       guildID = mkOption {
-        type = types nullOr types.str;
+        type = types.nullOr types.str;
         default = null;
         description = "Discord server id, that you deploy bot";
       };
@@ -62,7 +62,7 @@ in
         DISCORD_BOT_TOKEN = cfg.token;
         APPLICATION_ID = cfg.applicationID;
         MONGODB_URI = cfg.mongodbURI;
-      } // attrsets.optionAtts (cfg.guildID != null) { SERVER_GUID = cfg.guildID; };
+      } // (attrsets.optionalAttrs (cfg ? guildID && cfg.guildID != null) { SERVER_GUID = cfg.guildID; });
       script = "${cfg.package}/bin/komputer";
     };
   };
