@@ -15,7 +15,8 @@ in
         description = "komputer package";
       };
       guildID = mkOption {
-        type = types.str;
+        type = types nullOr types.str;
+        default = null;
         description = "Discord server id, that you deploy bot";
       };
       applicationID = mkOption {
@@ -44,15 +45,11 @@ in
         message = "Option komputer.token is empty";
       }
       {
-        assertion = cfg.guildID != "";
-        message = "Option komputer.guildID is empty";
-      }
-      {
         assertion = cfg.applicationID != "";
         message = "Option komputer.applicationID is empty";
       }
       {
-        assertion = cfg.mongodb != "";
+        assertion = cfg.mongodbURI != "";
         message = "Option komputer.mongodbURI is empty";
       }
     ];
@@ -60,12 +57,12 @@ in
     systemd.services.komputer = {
       description = "Komputer - Discord bot behave as like 'komputer'. One of character in Star Track parody series created by Dem3000";
       wantedBy = [ "multi-user.target" ];
+      path = cfg.package.propagatedBuildInputs or [];
       environment = {
         DISCORD_BOT_TOKEN = cfg.token;
         APPLICATION_ID = cfg.applicationID;
-        SERVER_GUID = cfg.guildID;
         MONGODB_URI = cfg.mongodbURI;
-      };
+      } // attrsets.optionAtts (cfg.guildID != null) { SERVER_GUID = cfg.guildID; };
       script = "${cfg.package}/bin/komputer";
     };
   };
