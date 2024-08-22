@@ -37,3 +37,4 @@ api
 # Sqlit
 *.sqlite
 sql
+.envrc

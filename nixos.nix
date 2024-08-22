@@ -2,7 +2,6 @@
 with lib;
 let
   cfg = config.komputer;
-
   komputer = pkgs.callPackage ./default.nix { };
 in
 {
@@ -12,27 +11,17 @@ in
       package = mkOption {
         type = types.package;
         default = komputer;
-        description = "komputer package";
       };
-      guildID = mkOption {
-        type = types.nullOr types.str;
-        default = null;
-        description = "Discord server id, that you deploy bot";
-      };
-      applicationID = mkOption {
-        type = types.str;
+      applicationIDSecretPath = mkOption {
+        type = types.path;
         description = "Application ID for you local version of komputer bot";
       };
-      token = mkOption {
-        type = types.str;
-        description = ''
-          Discord token for bot. 
-          <REMEMBER!>
-          Your token never shouldn't be publish on any public git repository e.g. Github or Gitlab
-        '';
+      tokenSecretPath = mkOption {
+        type = types.path;
+        description = "Path to file, that contain discord token for bot";
       };
-      mongodbURI = mkOption {
-        type = types.str;
+      mongodbURISecretPath = mkOption {
+        type = types.path;
         description = "Connection URI to your instance of mongodb";
       };
     };
@@ -41,15 +30,15 @@ in
   config = mkIf (cfg.enable) {
     assertions = [
       {
-        assertion = cfg.token != "";
+        assertion = cfg.tokenSecretPath != "";
         message = "Option komputer.token is empty";
       }
       {
-        assertion = cfg.applicationID != "";
+        assertion = cfg.applicationIDSecretPath != "";
         message = "Option komputer.applicationID is empty";
       }
       {
-        assertion = cfg.mongodbURI != "";
+        assertion = cfg.mongodbURISecretPath != "";
         message = "Option komputer.mongodbURI is empty";
       }
     ];
@@ -57,12 +46,12 @@ in
     systemd.services.komputer = {
       description = "Komputer - Discord bot behave as like 'komputer'. One of character in Star Track parody series created by Dem3000";
       wantedBy = [ "multi-user.target" ];
-      path = cfg.package.propagatedBuildInputs or [];
+      path = cfg.package.propagatedBuildInputs or [ ];
       environment = {
-        DISCORD_BOT_TOKEN = cfg.token;
-        APPLICATION_ID = cfg.applicationID;
-        MONGODB_URI = cfg.mongodbURI;
-      } // (attrsets.optionalAttrs (cfg ? guildID && cfg.guildID != null) { SERVER_GUID = cfg.guildID; });
+        DISCORD_BOT_TOKEN_PATH = cfg.tokenSecretPath;
+        APPLICATION_ID_PATH = cfg.applicationIDSecretPath;
+        MONGODB_URI_PATH = cfg.mongodbURISecretPath;
+      };
       script = "${cfg.package}/bin/komputer";
     };
   };
