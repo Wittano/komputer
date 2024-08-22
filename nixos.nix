@@ -24,6 +24,10 @@ in
         type = types.path;
         description = "Connection URI to your instance of mongodb";
       };
+      audioDir = mkOption {
+        type = types.path;
+        description = "Path to audio assets dictionary";
+      };
     };
   };
 
@@ -46,11 +50,12 @@ in
     systemd.services.komputer = {
       description = "Komputer - Discord bot behave as like 'komputer'. One of character in Star Track parody series created by Dem3000";
       wantedBy = [ "multi-user.target" ];
-      path = cfg.package.propagatedBuildInputs or [ ];
+      path = with pkgs; [ ffmpeg opusfile ];
       environment = {
         DISCORD_BOT_TOKEN_PATH = cfg.tokenSecretPath;
         APPLICATION_ID_PATH = cfg.applicationIDSecretPath;
         MONGODB_URI_PATH = cfg.mongodbURISecretPath;
+        ASSETS_DIR = cfg.audioDir;
       };
       script = "${cfg.package}/bin/komputer";
     };
