@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/jarcoal/httpmock"
+	"github.com/wittano/komputer/bot/log"
 	"github.com/wittano/komputer/internal"
 	"github.com/wittano/komputer/internal/joke"
 	"net/http"
@@ -17,13 +18,6 @@ var (
 	testParams = internal.SearchParams{
 		Type:     joke.Single,
 		Category: joke.Any,
-	}
-	testJoke = joke.DbModel{
-		Question: "testQuestion",
-		Answer:   "testAnswer",
-		Type:     joke.Single,
-		Category: joke.Any,
-		GuildID:  "",
 	}
 )
 
@@ -49,7 +43,7 @@ func TestHumorAPIService_Get(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	ctx := context.Background()
+	ctx := log.NewContext(context.Background(), "")
 	service := NewHumorAPIService(ctx)
 
 	j, err := service.RandomJoke(ctx, testParams)
@@ -67,7 +61,7 @@ func TestHumorAPIService_Get(t *testing.T) {
 }
 
 func TestHumorAPIService_GetWithMissingApiKey(t *testing.T) {
-	ctx := context.Background()
+	ctx := log.NewContext(context.Background(), "")
 	service := NewHumorAPIService(ctx)
 	if _, err := service.RandomJoke(ctx, testParams); err == nil {
 		t.Fatal("service found API key, but it didn't set")
@@ -93,9 +87,10 @@ func TestHumorAPIService_GetWithApiReturnInvalidStatus(t *testing.T) {
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
 
+			logCtx := log.NewContext(ctx, "")
 			service := NewHumorAPIService(ctx)
 
-			if _, err := service.RandomJoke(ctx, testParams); err == nil {
+			if _, err := service.RandomJoke(logCtx, testParams); err == nil {
 				t.Fatal("service didn't handle correct a bad/invalid http status")
 			}
 		})
@@ -114,7 +109,7 @@ func TestHumorAPIService_GetWithApiLimitExceeded(t *testing.T) {
 		return
 	}
 
-	ctx := context.Background()
+	ctx := log.NewContext(context.Background(), "")
 	service := NewHumorAPIService(ctx)
 
 	if _, err := service.RandomJoke(ctx, testParams); !errors.Is(err, HumorAPILimitExceededErr) {
@@ -137,13 +132,14 @@ func TestHumorAPIService_Active(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	service := NewHumorAPIService(ctx)
+	logCtx := log.NewContext(ctx, "")
+	service := NewHumorAPIService(logCtx)
 
-	if _, err := service.RandomJoke(ctx, testParams); !errors.Is(err, HumorAPILimitExceededErr) {
+	if _, err := service.RandomJoke(logCtx, testParams); !errors.Is(err, HumorAPILimitExceededErr) {
 		t.Fatal(err)
 	}
 
-	if _, err := service.RandomJoke(ctx, testParams); !errors.Is(err, HumorAPILimitExceededErr) {
+	if _, err := service.RandomJoke(logCtx, testParams); !errors.Is(err, HumorAPILimitExceededErr) {
 		t.Fatal(err)
 	}
 

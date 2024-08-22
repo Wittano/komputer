@@ -2,6 +2,7 @@ package internal
 
 import (
 	"context"
+	"github.com/wittano/komputer/bot/log"
 	"github.com/wittano/komputer/internal/joke"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -12,7 +13,7 @@ type AddService interface {
 
 type SearchService interface {
 	// RandomJoke Joke Try to find Joke from Db database. If SearchParams is empty, then function will find 1 random joke
-	RandomJoke(ctx context.Context, search SearchParams) (joke.DbModel, error)
+	RandomJoke(ctx log.Context, search SearchParams) (joke.DbModel, error)
 	ActiveChecker
 }
 

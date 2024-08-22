@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/wittano/komputer/bot/log"
 	"github.com/wittano/komputer/internal"
 	"github.com/wittano/komputer/internal/joke"
 	"io"
@@ -91,7 +92,7 @@ func (d *DevService) Active(ctx context.Context) (active bool) {
 	return
 }
 
-func (d *DevService) RandomJoke(ctx context.Context, params internal.SearchParams) (joke.DbModel, error) {
+func (d *DevService) RandomJoke(ctx log.Context, params internal.SearchParams) (joke.DbModel, error) {
 	select {
 	case <-ctx.Done():
 		return joke.DbModel{}, context.Canceled

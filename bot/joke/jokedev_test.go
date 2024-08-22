@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/jarcoal/httpmock"
+	"github.com/wittano/komputer/bot/log"
 	"github.com/wittano/komputer/internal/joke"
 	"net/http"
 	"os"
@@ -43,7 +44,7 @@ func TestDevService_Get(t *testing.T) {
 		return
 	}
 
-	ctx := context.Background()
+	ctx := log.NewContext(context.Background(), "")
 	service := NewJokeDevService(ctx)
 
 	res, err := service.RandomJoke(ctx, testParams)
@@ -79,9 +80,10 @@ func TestDevService_GetAndApiReturnInvalidStatus(t *testing.T) {
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
 
-			service := NewJokeDevService(ctx)
+			logCtx := log.NewContext(ctx, "")
+			service := NewJokeDevService(logCtx)
 
-			if _, err := service.RandomJoke(ctx, testParams); err == nil {
+			if _, err := service.RandomJoke(logCtx, testParams); err == nil {
 				t.Fatal("service didn't handle correct a bad/invalid http status")
 			}
 		})
@@ -100,7 +102,7 @@ func TestDevService_GetWithApiLimitExceeded(t *testing.T) {
 		return
 	}
 
-	ctx := context.Background()
+	ctx := log.NewContext(context.Background(), "")
 	service := NewJokeDevService(ctx)
 
 	if _, err := service.RandomJoke(ctx, testParams); !errors.Is(err, DevServiceLimitExceededErr) {
@@ -119,15 +121,16 @@ func TestDevService_Active(t *testing.T) {
 	os.Setenv(humorAPIKey, "123")
 
 	ctx, cancel := context.WithCancel(context.Background())
+	logCtx := log.NewContext(ctx, "")
 	defer cancel()
 
 	service := NewJokeDevService(ctx)
 
-	if _, err := service.RandomJoke(ctx, testParams); !errors.Is(err, DevServiceLimitExceededErr) {
+	if _, err := service.RandomJoke(logCtx, testParams); !errors.Is(err, DevServiceLimitExceededErr) {
 		t.Fatal(err)
 	}
 
-	if _, err := service.RandomJoke(ctx, testParams); !errors.Is(err, DevServiceLimitExceededErr) {
+	if _, err := service.RandomJoke(logCtx, testParams); !errors.Is(err, DevServiceLimitExceededErr) {
 		t.Fatal(err)
 	}
 

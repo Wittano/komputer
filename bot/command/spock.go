@@ -5,10 +5,9 @@ import (
 	"fmt"
 	"github.com/bwmarrin/dgvoice"
 	"github.com/bwmarrin/discordgo"
-	"github.com/wittano/komputer/internal/audio"
 	"github.com/wittano/komputer/bot/log"
 	"github.com/wittano/komputer/bot/voice"
-	"log/slog"
+	"github.com/wittano/komputer/internal/audio"
 	"os"
 )
 
@@ -41,7 +40,7 @@ func (sc SpockCommand) Command() *discordgo.ApplicationCommand {
 }
 
 func (sc SpockCommand) Execute(
-	ctx context.Context,
+	ctx log.Context,
 	s *discordgo.Session,
 	i *discordgo.InteractionCreate,
 ) (DiscordMessageReceiver, error) {
@@ -54,18 +53,14 @@ func (sc SpockCommand) Execute(
 
 	info, ok := sc.GuildVoiceChats[i.GuildID]
 	if !ok || info.UserCount == 0 {
-		log.Log(ctx, func(l slog.Logger) {
-			l.Error(fmt.Sprintf(fmt.Sprintf("user with ID '%s' wasn't found on any voice chat on '%s' server", i.Member.User.ID, i.GuildID)))
-		})
+		ctx.Logger.Error(fmt.Sprintf(fmt.Sprintf("user with ID '%s' wasn't found on any voice chat on '%s' server", i.Member.User.ID, i.GuildID)))
 
 		return SimpleMessage{Msg: "Kapitanie gdzie jesteś? Wejdź na kanał głosowy a ja dołącze"}, nil
 	}
 
 	path, err := audioPath(i.Data.(discordgo.ApplicationCommandInteractionData))
 	if err != nil {
-		log.Log(ctx, func(l slog.Logger) {
-			l.Error("failed find song path", "error", err)
-		})
+		ctx.Logger.Error("failed find song path", "error", err)
 
 		return SimpleMessage{Msg: "Panie kapitanie, nie znalazłem utworu"}, nil
 	}

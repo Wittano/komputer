@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
+	"github.com/wittano/komputer/bot/log"
 	"github.com/wittano/komputer/internal/audio"
 	"os"
 	"regexp"
@@ -94,7 +95,7 @@ func (n NextListCommandOption) Match(customID string) bool {
 	return regexp.MustCompile(fmt.Sprintf("^%s_(a-z0-9)*", nextIdsButtonID)).MatchString(customID)
 }
 
-func (n NextListCommandOption) Execute(ctx context.Context, _ *discordgo.Session, i *discordgo.InteractionCreate) (DiscordMessageReceiver, error) {
+func (n NextListCommandOption) Execute(ctx log.Context, _ *discordgo.Session, i *discordgo.InteractionCreate) (DiscordMessageReceiver, error) {
 	select {
 	case <-ctx.Done():
 		return nil, context.Canceled
@@ -130,7 +131,7 @@ func (p PreviousListCommandOption) Match(customID string) bool {
 	return regexp.MustCompile(fmt.Sprintf("^%s_(a-z0-9)*", previousIdsButtonID)).MatchString(customID)
 }
 
-func (p PreviousListCommandOption) Execute(ctx context.Context, _ *discordgo.Session, i *discordgo.InteractionCreate) (DiscordMessageReceiver, error) {
+func (p PreviousListCommandOption) Execute(ctx log.Context, _ *discordgo.Session, i *discordgo.InteractionCreate) (DiscordMessageReceiver, error) {
 	select {
 	case <-ctx.Done():
 		return nil, context.Canceled
@@ -189,7 +190,7 @@ func (l ListCommand) Command() *discordgo.ApplicationCommand {
 }
 
 func (l ListCommand) Execute(
-	ctx context.Context,
+	ctx log.Context,
 	_ *discordgo.Session,
 	i *discordgo.InteractionCreate,
 ) (DiscordMessageReceiver, error) {
@@ -213,7 +214,7 @@ func (l *ListCommand) update(size int, userID string, direction pageDirection) {
 
 	if size == 0 || l.pageCounter[userID] < 0 {
 		l.pageCounter[userID] = 0
-	} else if size != 0 && l.pageCounter[userID] >= 0 {
+	} else if l.pageCounter[userID] >= 0 {
 		l.pageCounter[userID] += int(direction)
 	}
 }

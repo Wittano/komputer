@@ -11,21 +11,20 @@ const RequestIDKey = "requestID"
 type Func func(l slog.Logger)
 
 type Context struct {
-	// TODO Check out if I should change slog.Logger to zerolog.Logger
 	Logger *slog.Logger
-	Ctx    context.Context
+	ctx    context.Context
 }
 
 func (c Context) Deadline() (deadline time.Time, ok bool) {
-	return c.Ctx.Deadline()
+	return c.ctx.Deadline()
 }
 
 func (c Context) Done() <-chan struct{} {
-	return c.Ctx.Done()
+	return c.ctx.Done()
 }
 
 func (c Context) Err() error {
-	return c.Ctx.Err()
+	return c.ctx.Err()
 }
 
 func (c Context) Value(key any) any {
@@ -33,7 +32,7 @@ func (c Context) Value(key any) any {
 		return c.Logger
 	}
 
-	return c.Ctx.Value(key)
+	return c.ctx.Value(key)
 }
 
 // NewCtxWithRequestID returns new empty context with logger and requestID.
@@ -44,20 +43,12 @@ func NewCtxWithRequestID(ctx context.Context) Context {
 		requestID = ""
 	}
 
-	return NewContext(requestID)
+	return NewContext(nil, requestID)
 }
 
-func NewContext(uuid string) Context {
+func NewContext(ctx context.Context, uuid string) Context {
 	return Context{
 		slog.With(RequestIDKey, uuid),
-		context.WithValue(context.Background(), RequestIDKey, uuid),
-	}
-}
-
-func Log(ctx context.Context, logFunc Func) {
-	if loggerCtx, ok := ctx.(Context); ok {
-		logFunc(*loggerCtx.Logger)
-	} else {
-		logFunc(*slog.Default())
+		context.WithValue(ctx, RequestIDKey, uuid),
 	}
 }

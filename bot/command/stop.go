@@ -1,8 +1,8 @@
 package command
 
 import (
-	"context"
 	"github.com/bwmarrin/discordgo"
+	"github.com/wittano/komputer/bot/log"
 	"os"
 )
 
@@ -22,7 +22,7 @@ func (sc StopCommand) Command() *discordgo.ApplicationCommand {
 }
 
 func (sc StopCommand) Execute(
-	ctx context.Context,
+	ctx log.Context,
 	s *discordgo.Session,
 	i *discordgo.InteractionCreate,
 ) (res DiscordMessageReceiver, _ error) {

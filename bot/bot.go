@@ -33,10 +33,10 @@ func (sc slashCommandHandler) handleSlashCommand(s *discordgo.Session, i *discor
 	const cmdTimeout = time.Second * 2
 
 	requestID := uuid.New().String()
-	loggerCtx := log.NewContext(requestID)
-	deadlineCtx, cancel := context.WithTimeout(loggerCtx, cmdTimeout)
-	ctx := context.WithValue(deadlineCtx, mongodb.GuildIDKey, i.GuildID)
+	deadlineCtx, cancel := context.WithTimeout(sc.ctx, cmdTimeout)
 	defer cancel()
+	valueCtx := context.WithValue(deadlineCtx, mongodb.GuildIDKey, i.GuildID)
+	ctx := log.NewContext(valueCtx, requestID)
 
 	userID := i.Member.User.ID
 	// Handle options assigned to slash commands
@@ -45,9 +45,7 @@ func (sc slashCommandHandler) handleSlashCommand(s *discordgo.Session, i *discor
 
 		for _, option := range sc.options {
 			if matcher, ok := option.(command.DiscordOptionMatcher); ok && matcher.Match(customID) {
-				log.Log(ctx, func(log slog.Logger) {
-					log.InfoContext(ctx, fmt.Sprintf("user '%s' select '%s' option", userID, customID))
-				})
+				ctx.Logger.InfoContext(ctx, fmt.Sprintf("user '%s' select '%s' option", userID, customID))
 
 				handleEventResponse(ctx, s, i, option)
 
@@ -59,37 +57,31 @@ func (sc slashCommandHandler) handleSlashCommand(s *discordgo.Session, i *discor
 	defer func() {
 		if r := recover(); r != nil {
 			cancel()
-			log.Log(ctx, func(log slog.Logger) {
-				log.Error("unexpected error during handle command", r)
-			})
+			ctx.Logger.Error("unexpected error during handle command", r)
 		}
 	}()
 
 	// Handle slash commands
 	name := i.ApplicationCommandData().Name
 	if cmd, ok := sc.commands[name]; ok {
-		log.Log(ctx, func(l slog.Logger) {
-			l.InfoContext(ctx, fmt.Sprintf("user '%s' execute slash command '%s'", userID, name))
-		})
+		ctx.Logger.InfoContext(ctx, fmt.Sprintf("user '%s' execute slash command '%s'", userID, name))
 
 		handleEventResponse(ctx, s, i, cmd)
 	} else {
 		msg := command.SimpleMessage{Msg: "Kapitanie co chcesz zrobić?", Hidden: true}
 
-		log.Log(ctx, func(l slog.Logger) {
-			l.WarnContext(ctx, "someone try execute unknown command")
-		})
+		ctx.Logger.WarnContext(ctx, "someone try execute unknown command")
 		command.CreateDiscordInteractionResponse(ctx, i, s, msg)
 	}
 }
 
-func handleEventResponse(ctx context.Context, s *discordgo.Session, i *discordgo.InteractionCreate, event command.DiscordEventHandler) {
+func handleEventResponse(ctx log.Context, s *discordgo.Session, i *discordgo.InteractionCreate, event command.DiscordEventHandler) {
 	msg, err := event.Execute(ctx, s, i)
 
 	if errors.Is(err, command.DiscordError{}) {
 		errors.As(err, &msg)
 	} else if err != nil {
-		ctx.(log.Context).Logger.ErrorContext(ctx, err.Error())
+		ctx.Logger.ErrorContext(ctx, err.Error())
 
 		msg = command.DiscordError{
 			Err: err,

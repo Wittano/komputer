@@ -1,8 +1,8 @@
 package command
 
 import (
-	"context"
 	"github.com/bwmarrin/discordgo"
+	"github.com/wittano/komputer/bot/log"
 )
 
 const (
@@ -15,7 +15,7 @@ type DiscordSlashCommandHandler interface {
 }
 
 type DiscordEventHandler interface {
-	Execute(ctx context.Context, s *discordgo.Session, i *discordgo.InteractionCreate) (DiscordMessageReceiver, error)
+	Execute(ctx log.Context, s *discordgo.Session, i *discordgo.InteractionCreate) (DiscordMessageReceiver, error)
 }
 
 type DiscordOptionMatcher interface {

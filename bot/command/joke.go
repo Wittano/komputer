@@ -9,7 +9,6 @@ import (
 	"github.com/wittano/komputer/internal"
 	"github.com/wittano/komputer/internal/joke"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"log/slog"
 	"math/rand"
 	"os"
 	"slices"
@@ -54,10 +53,8 @@ func (j JokeCommand) Command() *discordgo.ApplicationCommand {
 	}
 }
 
-func (j JokeCommand) Execute(ctx context.Context, _ *discordgo.Session, i *discordgo.InteractionCreate) (DiscordMessageReceiver, error) {
+func (j JokeCommand) Execute(ctx log.Context, _ *discordgo.Session, i *discordgo.InteractionCreate) (DiscordMessageReceiver, error) {
 	searchQuery := searchParams(ctx, i.Data.(discordgo.ApplicationCommandInteractionData))
-
-	loggerCtx := ctx.(log.Context)
 
 findJoke:
 	select {
@@ -73,7 +70,7 @@ findJoke:
 
 	res, err := service.RandomJoke(ctx, searchQuery)
 	if err != nil {
-		loggerCtx.Logger.Error(err.Error())
+		ctx.Logger.Error(err.Error())
 		goto findJoke
 	}
 
@@ -83,7 +80,7 @@ findJoke:
 	}, nil
 }
 
-func findService(ctx context.Context, services []internal.SearchService) (internal.SearchService, error) {
+func findService(ctx log.Context, services []internal.SearchService) (internal.SearchService, error) {
 	if len(services) == 1 {
 		service := services[0]
 
@@ -110,7 +107,7 @@ func findService(ctx context.Context, services []internal.SearchService) (intern
 }
 
 // Get internal.SearchParams from Discord options
-func searchParams(ctx context.Context, data discordgo.ApplicationCommandInteractionData) (query internal.SearchParams) {
+func searchParams(ctx log.Context, data discordgo.ApplicationCommandInteractionData) (query internal.SearchParams) {
 	query.Type, query.Category = joke.Single, joke.Any
 
 	for _, o := range data.Options {
@@ -122,9 +119,7 @@ func searchParams(ctx context.Context, data discordgo.ApplicationCommandInteract
 		case idOptionKey:
 			query.ID = o.Value.(primitive.ObjectID)
 		default:
-			log.Log(ctx, func(log slog.Logger) {
-				log.Warn(fmt.Sprintf("Invalid searchOption for %s", o.Name))
-			})
+			ctx.Logger.Warn(fmt.Sprintf("Invalid searchOption for %s", o.Name))
 		}
 	}
 
@@ -299,7 +294,7 @@ func (a ApologiesOption) Match(customID string) bool {
 	return customID == ApologiesButtonName
 }
 
-func (a ApologiesOption) Execute(_ context.Context, _ *discordgo.Session, _ *discordgo.InteractionCreate) (DiscordMessageReceiver, error) {
+func (a ApologiesOption) Execute(_ log.Context, _ *discordgo.Session, _ *discordgo.InteractionCreate) (DiscordMessageReceiver, error) {
 	return SimpleMessage{Msg: "Przepraszam"}, nil
 }
 
@@ -311,7 +306,7 @@ func (n NextJokeOption) Match(customID string) bool {
 	return customID == NextJokeButtonName
 }
 
-func (n NextJokeOption) Execute(ctx context.Context, _ *discordgo.Session, i *discordgo.InteractionCreate) (DiscordMessageReceiver, error) {
+func (n NextJokeOption) Execute(ctx log.Context, _ *discordgo.Session, i *discordgo.InteractionCreate) (DiscordMessageReceiver, error) {
 	service, err := findService(ctx, n.Services)
 	if err != nil {
 		return nil, err
@@ -342,7 +337,7 @@ func (s SameJokeCategoryOption) Match(customID string) bool {
 	return customID == SameJokeCategoryButtonName
 }
 
-func (s SameJokeCategoryOption) Execute(ctx context.Context, _ *discordgo.Session, i *discordgo.InteractionCreate) (DiscordMessageReceiver, error) {
+func (s SameJokeCategoryOption) Execute(ctx log.Context, _ *discordgo.Session, i *discordgo.InteractionCreate) (DiscordMessageReceiver, error) {
 	fields := i.Message.Embeds[0].Fields
 	category := joke.Category(fields[len(fields)-1].Value)
 

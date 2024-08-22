@@ -9,7 +9,6 @@ import (
 	"github.com/wittano/komputer/internal"
 	"github.com/wittano/komputer/internal/joke"
 	"io"
-	"log/slog"
 	"net/http"
 	"os"
 	"sync"
@@ -47,7 +46,7 @@ func (h *HumorAPIService) Active(ctx context.Context) (active bool) {
 	return
 }
 
-func (h *HumorAPIService) RandomJoke(ctx context.Context, search internal.SearchParams) (joke.DbModel, error) {
+func (h *HumorAPIService) RandomJoke(ctx log.Context, search internal.SearchParams) (joke.DbModel, error) {
 	select {
 	case <-ctx.Done():
 		return joke.DbModel{}, context.Canceled
@@ -91,9 +90,7 @@ func (h *HumorAPIService) RandomJoke(ctx context.Context, search internal.Search
 	} else if res.StatusCode != http.StatusOK {
 		msg, err := io.ReadAll(res.Body)
 		if err != nil {
-			log.Log(ctx, func(l slog.Logger) {
-				l.ErrorContext(ctx, "humorAPI: failed read response body", "error", err)
-			})
+			ctx.Logger.ErrorContext(ctx, "humorAPI: failed read response body", "error", err)
 			msg = []byte{}
 		}
 

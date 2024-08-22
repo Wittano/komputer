@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/wittano/komputer/bot/log"
 	"github.com/wittano/komputer/internal"
 	"github.com/wittano/komputer/internal/joke"
 	"go.mongodb.org/mongo-driver/bson"
@@ -62,7 +63,7 @@ func (d Service) Add(ctx context.Context, joke joke.DbModel) (string, error) {
 	return res.InsertedID.(primitive.ObjectID).Hex(), nil
 }
 
-func (d Service) RandomJoke(ctx context.Context, search internal.SearchParams) (joke.DbModel, error) {
+func (d Service) RandomJoke(ctx log.Context, search internal.SearchParams) (joke.DbModel, error) {
 	jokes, err := d.Jokes(ctx, search)
 	if err != nil {
 		return joke.DbModel{}, err

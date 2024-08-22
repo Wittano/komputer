@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"github.com/wittano/komputer/bot/joke"
+	"github.com/wittano/komputer/bot/log"
 	"github.com/wittano/komputer/internal"
 	"go.mongodb.org/mongo-driver/mongo"
 	"testing"
@@ -20,7 +21,7 @@ func (d dumpMongoService) Client(_ context.Context) (*mongo.Client, error) {
 }
 
 func TestSelectGetService(t *testing.T) {
-	ctx := context.Background()
+	ctx := log.NewContext(context.Background(), "")
 	testServices := []internal.SearchService{
 		joke.NewJokeDevService(ctx),
 		joke.NewHumorAPIService(ctx),
@@ -43,6 +44,7 @@ func TestSelectGetService(t *testing.T) {
 
 func TestFindJokeService_ContextCancelled(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
+	logCtx := log.NewContext(ctx, "")
 	cancel()
 	testServices := []internal.SearchService{
 		joke.NewJokeDevService(ctx),
@@ -50,13 +52,13 @@ func TestFindJokeService_ContextCancelled(t *testing.T) {
 		joke.NewJokeDatabase(dumpMongoService{}),
 	}
 
-	if _, err := findService(ctx, testServices); err == nil {
+	if _, err := findService(logCtx, testServices); err == nil {
 		t.Fatal("Some services was found, but shouldn't")
 	}
 }
 
 func TestFindJokeService_ServicesIsDeactivated(t *testing.T) {
-	ctx := context.Background()
+	ctx := log.NewContext(context.Background(), "")
 	services := []internal.SearchService{
 		joke.NewJokeDatabase(dumpMongoService{}),
 	}

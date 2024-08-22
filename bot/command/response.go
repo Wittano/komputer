@@ -1,10 +1,8 @@
 package command
 
 import (
-	"context"
 	"github.com/bwmarrin/discordgo"
 	"github.com/wittano/komputer/bot/log"
-	"log/slog"
 )
 
 const komputerMsgPrefix = "BEEP BOOP. "
@@ -45,13 +43,11 @@ func (s SimpleMessage) Response() (msg *discordgo.InteractionResponseData) {
 	return
 }
 
-func CreateDiscordInteractionResponse(ctx context.Context, i *discordgo.InteractionCreate, s *discordgo.Session, msg DiscordMessageReceiver) {
+func CreateDiscordInteractionResponse(ctx log.Context, i *discordgo.InteractionCreate, s *discordgo.Session, msg DiscordMessageReceiver) {
 	if err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: msg.Response(),
 	}); err != nil {
-		log.Log(ctx, func(l slog.Logger) {
-			l.Error("failed send response to discord user", "error", err)
-		})
+		ctx.Logger.Error("failed send response to discord user", "error", err)
 	}
 }
