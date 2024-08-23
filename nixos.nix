@@ -49,7 +49,7 @@ in
 
     systemd.services.komputer = {
       description = "Komputer - Discord bot behave as like 'komputer'. One of character in Star Track parody series created by Dem3000";
-      after = [ "networking.target" ];
+      after = [ "network.target" "network-online.target" ];
       wantedBy = [ "multi-user.target" ];
       path = with pkgs; [ ffmpeg opusfile ];
       environment = {
