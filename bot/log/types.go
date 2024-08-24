@@ -43,7 +43,7 @@ func NewCtxWithRequestID(ctx context.Context) Context {
 		requestID = ""
 	}
 
-	return NewContext(nil, requestID)
+	return NewContext(context.Background(), requestID)
 }
 
 func NewContext(ctx context.Context, uuid string) Context {

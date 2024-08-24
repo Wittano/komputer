@@ -6,6 +6,7 @@
 , act
 , ...
 }: mkShell {
+  NIX_HARDENING_ENABLE = "";
   hardeningDisable = [ "all" ];
   nativeBuildInputs = [
     go
